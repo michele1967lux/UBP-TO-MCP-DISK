@@ -21,14 +21,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-# MCP-COMPAT (ARCH-008): Import OperationContext for dual path support
-try:
-    from ubp_enterprise_hybrid.modules.cores._shared.operation_context import OperationContext
-except ModuleNotFoundError:
-    try:
-        from _shared.operation_context import OperationContext
-    except ModuleNotFoundError:
-        from ..._shared.operation_context import OperationContext
+import sys
+from pathlib import Path as _Path
+_portable_path = str(_Path(__file__).resolve().parent.parent.parent)
+if _portable_path not in sys.path:
+    sys.path.insert(0, _portable_path)
+
+from _portable.context import PortableContext
 
 from .providers import (
     # Enums
@@ -90,35 +89,16 @@ class CitationManagerAdapter:
         # State
         self._initialized = False
     
-    # MCP-COMPAT: OperationContext helpers (ARCH-008)
-    def _build_context_from_di(self) -> OperationContext:
-        """Build OperationContext from DI — backward compatibility for REST path."""
-        return OperationContext(
+    def _build_context_from_di(self) -> PortableContext:
+        return PortableContext(
             client_id="default",
             user_id=None,
             session_id=None,
-            source="rest",
+            source="portable",
         )
 
-    def _normalize_ctx(self, ctx: Any) -> OperationContext:
-        """Normalize any context format to OperationContext."""
-        if ctx is None:
-            return self._build_context_from_di()
-        if isinstance(ctx, OperationContext):
-            return ctx
-        if hasattr(ctx, "user") and ctx.user:
-            user_id = getattr(ctx.user, "user_id", None)
-            roles = getattr(ctx.user, "roles", [])
-            client_id = getattr(ctx.user, "client_id", "default")
-            if not isinstance(roles, (list, tuple)):
-                roles = []
-            return OperationContext(
-                client_id=str(client_id) if client_id else "default",
-                user_id=str(user_id) if user_id else None,
-                roles=list(roles),
-                source="rest",
-            )
-        return self._build_context_from_di()
+    def _normalize_ctx(self, ctx: Any) -> PortableContext:
+        return PortableContext.normalize(ctx)
     
     # ========================================================================
     # Lifecycle Operations
@@ -518,7 +498,7 @@ class CitationManagerAdapter:
             return {"success": False, "error": "Citation not found"}
         
         style_enum = CitationStyle(style) if style else self._default_style
-        formatted = self._formatter.format_citation(citation, style_enum)
+        formatted = self._formatter.format(citation, style_enum)
         
         return {
             "success": True,
