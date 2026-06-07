@@ -1,0 +1,203 @@
+{
+  "layer1_knn": {
+    "collection": "routing_prototypes_v2",
+    "top_k": 15,
+    "max_per_lane": 3,
+    "anti_lambda": 0.3,
+    "anti_relative_threshold": 0.85,
+    "anti_proto_min_signal": 0.6,
+    "penalty_min_pos_score": 0.6,
+    "min_lane_hits": 1,
+    "absolute_floor": 0.25,
+    "cache_in_ram": true,
+    "model": "Snowflake/snowflake-arctic-embed-l-v2.0",
+    "matryoshka_dim": 128,
+    "context_weight": 0.25,
+    "_note": "Phase 2C kNN ensemble. anti_relative on lane_top (not mean). Penalty disabled below pos_score 0.60.",
+    "bootstrap": {
+      "enabled": false,
+      "seed_dir": "data/seeds",
+      "auto_rebootstrap_on_seed_change": false,
+      "embedding_batch_size": 64,
+      "_note": "Idempotent upsert on startup using deterministic SHA1→uint64 IDs. No delete/recreate. Disabled by default."
+    }
+  },
+  "layer1_embedding": {
+    "dedicated_model": true,
+    "model": "Snowflake/snowflake-arctic-embed-l-v2.0",
+    "device": "auto",
+    "matryoshka_dim": 128,
+    "full_dim": 1024,
+    "prototype_collection": "routing_prototypes_v2",
+    "prototype_fallback": true,
+    "_note": "Legacy config kept for backward compat. layer1_knn takes precedence."
+  },
+  "layer2_semantic_scoring": {
+    "enabled": true,
+    "softmax_temperature": 0.45,
+    "min_discrimination_range": 0.15,
+    "baseline_raw_threshold": 0.45,
+    "global_bias": 0.0,
+    "_note": "T=0.45 for kNN (was 0.3 for centroids). If range<0.05 → skip norm → pre_route bypasses softmax → defer."
+  },
+  "l2_5_signals": {
+    "rag_boost_factor": 0.15,
+    "web_boost_factor": 0.15,
+    "rag_penalty": -0.12,
+    "web_penalty": -0.1,
+    "freshness_rag_dampening": 0.5,
+    "freshness_web_amplify": 0.3,
+    "freshness_threshold": 0.5,
+    "rag_freshness_exempt_above": 0.75,
+    "web_boost_cap": 0.2,
+    "_note": "WEBBIAS-FIX: equalized boost factors (was 0.20/0.15). Freshness modulates RAG/WEB dynamically."
+  },
+  "freshness_signal": {
+    "recent_days_threshold": 7,
+    "recent_high_count": 3,
+    "recent_high_boost": 0.4,
+    "recent_low_boost": 0.2,
+    "marker_multi_boost": 0.4,
+    "marker_single_boost": 0.25,
+    "gap_web_min": 0.5,
+    "gap_rag_max": 0.35,
+    "gap_factor": 0.5,
+    "temporal_markers_it": [
+      "oggi",
+      "adesso",
+      "attuale",
+      "attuali",
+      "ultimo",
+      "ultimi",
+      "recente",
+      "recenti",
+      "domani",
+      "stasera",
+      "stanotte",
+      "questa settimana",
+      "questo mese",
+      "quest'anno",
+      "in tempo reale",
+      "live",
+      "aggiornato",
+      "aggiornati",
+      "ora",
+      "orari",
+      "orario"
+    ],
+    "temporal_markers_en": [
+      "today",
+      "now",
+      "current",
+      "latest",
+      "recent",
+      "tomorrow",
+      "tonight",
+      "this week",
+      "this month",
+      "this year",
+      "real-time",
+      "live",
+      "updated",
+      "schedule"
+    ],
+    "year_markers": [
+      "2026",
+      "2025"
+    ],
+    "_note": "Freshness signal 0.0-1.0. Higher = query needs fresh data. Feeds L2.5 modulation + LLM Router."
+  },
+  "layer3_evidence_enrichment": {
+    "enabled": true,
+    "delta_threshold": 0.3,
+    "timeout_ms": 20,
+    "sources": {
+      "rag_preview": {
+        "enabled": true,
+        "timeout_ms": 10,
+        "boost_strong": 0.08,
+        "boost_weak": 0.04
+      },
+      "web_signal": {
+        "enabled": true
+      },
+      "context_memory": {
+        "enabled": true,
+        "lookback": 3,
+        "boost": 0.06
+      }
+    },
+    "_note": "Layer 3 activates on normalized scores when top-2 delta < 0.30."
+  },
+  "layer4_decision_engine": {
+    "high_confidence_threshold": 0.8,
+    "defer_to_llm_router_threshold": 0.55,
+    "entropy_uncertainty_threshold": 0.85,
+    "min_top2_delta": 0.15,
+    "uncertainty_discount": 0.15,
+    "uncertainty_delta_threshold": 0.2,
+    "_note": "Uncertainty discount only when uncertainty>0.40 AND delta<0.20"
+  },
+  "reinforcements": {
+    "r1_safe_mode": {
+      "enabled": true,
+      "timeout_ms": 500
+    },
+    "r2_rate_limiting": {
+      "enabled": false,
+      "dynamic_per_turn": 1,
+      "dynamic_per_session": 5
+    },
+    "r2_dynamic_interaction": {
+      "enabled": true,
+      "confidence_threshold": 0.7,
+      "delta_threshold": 0.15,
+      "max_per_session": 3,
+      "max_per_day": 10,
+      "min_lifetime_queries": 3,
+      "cooldown_after_choice_seconds": 300,
+      "excluded_routes": [
+        "FAST"
+      ],
+      "fast_exclusion_min_confidence": 0.6,
+      "vllm_enabled": false,
+      "vllm_timeout_s": 3.0,
+      "_note": "R2: AND gate (conf<0.70 AND delta<0.15). vLLM disabled: adds 350ms latency, returns empty in Phase 1."
+    },
+    "r3_stability_guard": {
+      "enabled": false,
+      "window_size": 5,
+      "flap_threshold": 3
+    },
+    "r4_cold_start": {
+      "enabled": false,
+      "lifetime_query_threshold": 10
+    },
+    "r5_prototype_drift": {
+      "enabled": false,
+      "penalty_weight_cap": 0.3
+    },
+    "r6_softmax_masking": {
+      "enabled": false,
+      "baseline_threshold": 0.45,
+      "global_bias": 0.0
+    },
+    "r7_severity": {
+      "enabled": true,
+      "base_threshold": 0.55,
+      "severity_penalties": {
+        "REPORT": 0.12,
+        "WEB": 0.08,
+        "RAG": 0.0,
+        "FAST": 0.0
+      }
+    }
+  },
+  "shadow_mode": {
+    "enabled": false,
+    "shadow_collection": "routing_prototypes_v2",
+    "timeout_ms": 40,
+    "sample_rate": 0.0,
+    "log_tag": "PREFILTER-SHADOW"
+  }
+}

@@ -1,0 +1,503 @@
+{
+    "name": "document_renderer",
+    "version": "1.0.0",
+    "description": "Multi-format document rendering with PDF, DOCX, PPTX support, charts, and tables",
+    "author": "UBP Team",
+    "module_type": "rendering",
+    "architecture": "3-file-pattern",
+    "requires_redis": false,
+    "requires_postgres": false,
+    "requires_event_bus": false,
+    "dependencies": {
+        "modules": [],
+        "optional_modules": [],
+        "python_packages": [
+            "reportlab>=4.0.0",
+            "python-docx>=0.8.11",
+            "python-pptx>=0.6.21",
+            "matplotlib>=3.7.0",
+            "Pillow>=10.0.0"
+        ],
+        "notes": "Install rendering libraries as needed: reportlab for PDF, python-docx for DOCX, python-pptx for PPTX"
+    },
+    "operations": [
+        {
+            "name": "render_auto",
+            "description": "Auto-select render format (pdf, docx, pptx, markdown)",
+            "parameters": {
+                "content": {
+                    "type": "object",
+                    "required": true,
+                    "description": "DocumentContent or dict"
+                },
+                "format": {
+                    "type": "string",
+                    "required": false,
+                    "default": "pdf",
+                    "description": "pdf|docx|pptx|markdown"
+                },
+                "options": {
+                    "type": "object",
+                    "required": false
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "format": "string",
+                "content": "bytes or string",
+                "filename": "string"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 1000,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "initialize",
+            "description": "Initialize document renderer with templates and styles",
+            "parameters": {
+                "templates_dir": {
+                    "type": "string",
+                    "required": false
+                },
+                "default_style": {
+                    "type": "object",
+                    "required": false
+                }
+            },
+            "returns": {
+                "status": "string",
+                "templates_loaded": "integer",
+                "supported_formats": "array"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "none",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "render_pdf",
+            "description": "Render document to PDF",
+            "parameters": {
+                "content": {
+                    "type": "object",
+                    "required": true,
+                    "description": "DocumentContent"
+                },
+                "options": {
+                    "type": "object",
+                    "required": false,
+                    "description": "PdfOptions"
+                },
+                "output_path": {
+                    "type": "string",
+                    "required": false
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "format": "string",
+                "pages": "integer",
+                "file_size": "integer",
+                "content": "bytes (if no output_path)"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 1500,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "render_docx",
+            "description": "Render document to DOCX",
+            "parameters": {
+                "content": {
+                    "type": "object",
+                    "required": true
+                },
+                "options": {
+                    "type": "object",
+                    "required": false
+                },
+                "template_id": {
+                    "type": "string",
+                    "required": false
+                },
+                "output_path": {
+                    "type": "string",
+                    "required": false
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "format": "string",
+                "pages": "integer",
+                "file_size": "integer"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 1000,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "render_pptx",
+            "description": "Render presentation to PPTX",
+            "parameters": {
+                "content": {
+                    "type": "object",
+                    "required": true,
+                    "description": "PresentationContent"
+                },
+                "options": {
+                    "type": "object",
+                    "required": false
+                },
+                "template_id": {
+                    "type": "string",
+                    "required": false
+                },
+                "output_path": {
+                    "type": "string",
+                    "required": false
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "format": "string",
+                "slides": "integer",
+                "file_size": "integer"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 1200,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "render_multi",
+            "description": "Render document to multiple formats in parallel",
+            "parameters": {
+                "content": {
+                    "type": "object",
+                    "required": true
+                },
+                "formats": {
+                    "type": "array",
+                    "required": true,
+                    "description": "['pdf', 'docx', 'pptx']"
+                },
+                "options": {
+                    "type": "object",
+                    "required": false,
+                    "description": "Format-specific options"
+                },
+                "output_dir": {
+                    "type": "string",
+                    "required": false
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "formats_rendered": "integer",
+                "results": "object"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 2000,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "render_markdown",
+            "description": "Render document to Markdown",
+            "parameters": {
+                "content": {
+                    "type": "object",
+                    "required": true
+                },
+                "output_path": {
+                    "type": "string",
+                    "required": false
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "content": "string"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 500,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "render_chart",
+            "description": "Generate a chart image",
+            "parameters": {
+                "chart_data": {
+                    "type": "object",
+                    "required": true,
+                    "description": "ChartData"
+                },
+                "output_format": {
+                    "type": "string",
+                    "required": false,
+                    "default": "png"
+                },
+                "output_path": {
+                    "type": "string",
+                    "required": false
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "format": "string",
+                "width": "integer",
+                "height": "integer",
+                "content": "bytes"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 800,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "render_charts_batch",
+            "description": "Generate multiple charts",
+            "parameters": {
+                "charts": {
+                    "type": "array",
+                    "required": true
+                },
+                "output_format": {
+                    "type": "string",
+                    "required": false,
+                    "default": "png"
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "charts": "array"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 1500,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "render_table",
+            "description": "Render table to HTML or Markdown",
+            "parameters": {
+                "table_data": {
+                    "type": "object",
+                    "required": true,
+                    "description": "TableData"
+                },
+                "output_format": {
+                    "type": "string",
+                    "required": false,
+                    "default": "html"
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "content": "string"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 300,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "list_templates",
+            "description": "List available templates",
+            "parameters": {
+                "format_filter": {
+                    "type": "string",
+                    "required": false
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "templates": "array",
+                "count": "integer"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "apply_template",
+            "description": "Render using a specific template",
+            "parameters": {
+                "template_id": {
+                    "type": "string",
+                    "required": true
+                },
+                "content": {
+                    "type": "object",
+                    "required": true
+                },
+                "output_path": {
+                    "type": "string",
+                    "required": false
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "format": "string"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 1000,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        }
+    ],
+    "output_formats": [
+        "pdf",
+        "docx",
+        "pptx",
+        "xlsx",
+        "md",
+        "html"
+    ],
+    "chart_types": [
+        "bar",
+        "bar_horizontal",
+        "bar_stacked",
+        "line",
+        "area",
+        "pie",
+        "donut",
+        "scatter",
+        "bubble",
+        "radar",
+        "waterfall",
+        "heatmap",
+        "treemap"
+    ],
+    "table_styles": [
+        "professional",
+        "minimal",
+        "bordered",
+        "striped",
+        "colorful"
+    ],
+    "page_sizes": [
+        "A4",
+        "A3",
+        "Letter",
+        "Legal",
+        "Tabloid"
+    ],
+    "config_file": "config.json",
+    "production_ready": true,
+    "tools": [
+        {
+            "name": "render_document",
+            "operation": "render_auto",
+            "tool_type": "tool",
+            "description": "Render final document from sections (markdown, HTML, PDF)",
+            "providers": [
+                "local"
+            ],
+            "input_schema": {
+                "content": {
+                    "type": "object",
+                    "required": true
+                },
+                "format": {
+                    "type": "string"
+                },
+                "options": {
+                    "type": "object"
+                }
+            },
+            "output_schema": {
+                "content": {
+                    "type": "string"
+                },
+                "filename": {
+                    "type": "string"
+                }
+            },
+            "timeout": 15.0,
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": true,
+                "estimated_latency_ms": 1500,
+                "requires_session": false,
+                "category": "operations"
+            }
+        }
+    ]
+}

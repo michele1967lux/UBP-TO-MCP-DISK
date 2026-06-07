@@ -1,0 +1,44 @@
+{
+  "name": "goal",
+  "version": "1.0.0",
+  "description": "Goal orchestration tools (parent-only). Lets a parent LLM pull the status of a long-horizon goal it delegated to a background Goal Agent (two-plane non-blocking model, Phase 19b-gamma). Execution happens in-process inside the MCP server via direct dispatcher handlers (see ubp_mcp_server.tools.subagent_orchestration_handlers); this manifest exists ONLY for tool discovery and pack/ACL filtering — there is intentionally no adapter.py / providers.py. The Goal Record (ubp:goal:*) is the single source of truth; these tools are a read-only access layer over it.",
+  "author": "UBP Team",
+  "module_type": "bridge",
+  "architecture": "manifest-only",
+  "execution": {
+    "kind": "mcp_direct_handler",
+    "registration_module": "ubp_mcp_server.tools.subagent_orchestration_handlers",
+    "registration_function": "register_subagent_orchestration",
+    "notes": "Tools are NOT routed through the backend HTTP /api/modules path. The MCP ToolDispatcher invokes the registered direct handlers in-process; this manifest is consumed only by manifest_converter.discover_all_tools() to surface the goal tools to the pack/ACL pipeline. The goal__pull_status handler is registered by the same register_subagent_orchestration entrypoint that wires the subagent orchestration handlers."
+  },
+  "requires_redis": true,
+  "requires_postgres": false,
+  "requires_event_bus": false,
+  "dependencies": {
+    "modules": [],
+    "optional_modules": [],
+    "python_packages": []
+  },
+  "operations": [
+    {
+      "name": "pull_status",
+      "description": "Pull the status of the long-horizon goal the caller delegated to a background Goal Agent in the current session (two-plane non-blocking). Reads the Goal Record (single source of truth) by session. Returns the active or most-recent goal for this session, or null if none was delegated. Parent-only, read-only. Use this when the user asks how a delegated/background task is progressing.",
+      "parameters": {},
+      "returns": {
+        "success": "boolean",
+        "goal": "object",
+        "has_active_goal": "boolean"
+      },
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 40,
+        "requires_session": true,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    }
+  ]
+}

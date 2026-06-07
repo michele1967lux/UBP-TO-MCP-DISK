@@ -1,0 +1,541 @@
+{
+    "name": "rag_conversation_memory",
+    "version": "2.1.0",
+    "description": "Redis-based conversation memory with structured context intelligence (v2.0: topic detection, compression, decay)",
+    "author": "UBP Team",
+    "module_type": "memory",
+    "architecture": "3-file-pattern",
+    "requires_redis": true,
+    "requires_postgres": false,
+    "requires_event_bus": true,
+    "operations": [
+        {
+            "name": "create_session",
+            "description": "Creates a new conversation session for the current user.",
+            "parameters": {
+                "metadata": {
+                    "type": "object",
+                    "required": false,
+                    "description": "Custom session metadata"
+                }
+            },
+            "returns": {
+                "session_id": "string (UUID)",
+                "user_id": "string (from security context)",
+                "status": "string (created)",
+                "request_id": "string (tracking ID)"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 150,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "get_history",
+            "description": "Retrieves the message history of a conversation session.",
+            "parameters": {
+                "limit": {
+                    "type": "integer",
+                    "required": false,
+                    "description": "Maximum number of messages to return"
+                }
+            },
+            "returns": {
+                "session_id": "string",
+                "messages": "array of message objects",
+                "count": "integer",
+                "request_id": "string (tracking ID)"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 75,
+                "requires_session": true,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "add_message",
+            "description": "Adds a message to a conversation session.",
+            "parameters": {
+                "role": {
+                    "type": "string",
+                    "required": true,
+                    "description": "Sender role. Values: user, assistant"
+                },
+                "content": {
+                    "type": "string",
+                    "required": true,
+                    "description": "Message content"
+                },
+                "metadata": {
+                    "type": "object",
+                    "required": false,
+                    "description": "Additional message metadata"
+                }
+            },
+            "returns": {
+                "message": "object (created message with message_id, timestamp)",
+                "status": "string (added)",
+                "request_id": "string (tracking ID)"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 150,
+                "requires_session": true,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "clear_session",
+            "description": "Clears all messages in a session while keeping metadata.",
+            "parameters": {},
+            "returns": {
+                "session_id": "string",
+                "status": "string (cleared)",
+                "request_id": "string (tracking ID)"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": true,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "delete_session",
+            "description": "Permanently deletes a conversation session and all its data.",
+            "parameters": {},
+            "returns": {
+                "session_id": "string",
+                "status": "string (deleted)",
+                "request_id": "string (tracking ID)"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": true,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "list_sessions",
+            "description": "Lists all conversation sessions for the current user.",
+            "parameters": {
+                "limit": {
+                    "type": "integer",
+                    "required": false,
+                    "description": "Maximum number of sessions to return (default 20)"
+                }
+            },
+            "returns": {
+                "sessions": "array of session metadata objects",
+                "count": "integer",
+                "request_id": "string (tracking ID)"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 75,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "get_context_for_llm",
+            "description": "Returns formatted conversation context for LLM prompts.",
+            "parameters": {
+                "max_turns": {
+                    "type": "integer",
+                    "required": false,
+                    "description": "Maximum number of turns to include (default 10)"
+                }
+            },
+            "returns": {
+                "session_id": "string",
+                "context": "string (formatted conversation history)",
+                "request_id": "string (tracking ID)"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": true,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "search_history",
+            "description": "Searches the user's past conversation history by topic or keyword.",
+            "parameters": {
+                "query": {
+                    "type": "string",
+                    "required": true,
+                    "description": "Natural language search query"
+                },
+                "top_k": {
+                    "type": "integer",
+                    "required": false,
+                    "description": "Maximum number of results (default 5, max 10)"
+                },
+                "time_range": {
+                    "type": "string",
+                    "required": false,
+                    "description": "Time filter. Values: YYYY-MM-DD, YYYY-MM-DD/YYYY-MM-DD, last_7d, last_30d"
+                }
+            },
+            "returns": {
+                "hits": "array of session hit objects (session_id, date, topics, summary, key_entities, relevance_score, match_reason, message_count)",
+                "total_sessions_searched": "integer",
+                "query_used": "string"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 200,
+                "requires_session": false,
+                "category": "knowledge"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "health_check",
+            "description": "Checks module and provider health status.",
+            "parameters": {},
+            "returns": {
+                "module": "string (module name)",
+                "status": "string (healthy/unhealthy)",
+                "init_status": "object (initialization details)",
+                "total_sessions_created": "integer",
+                "total_messages_added": "integer",
+                "provider": "object (provider health info)"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 75,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "none",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "get_structured_context",
+            "description": "Returns structured session context with topic detection, compression, and decay.",
+            "parameters": {},
+            "returns": {
+                "session_id": "string",
+                "has_structured_context": "boolean",
+                "narrative_summary": "string (compressed history summary)",
+                "structured_context": "object (current_topic, topic_status, intent, entities)",
+                "previous_topics": "array (topics with decay tracking)",
+                "topic_shifting": "boolean (true if topic recently changed)",
+                "raw_messages": "array (recent uncompressed messages)",
+                "request_id": "string (tracking ID)"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": true,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "get_suggested_lane",
+            "description": "Returns the suggested pipeline for the next query based on session context.",
+            "parameters": {},
+            "returns": {
+                "suggested_lane": "string or null (pipeline name for next query)",
+                "lane_reason": "string (brief reason for suggestion)",
+                "source": "string (pipeline or compression)"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 50,
+                "requires_session": true,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "set_lane_signal",
+            "description": "Writes a lane signal as an atomic micro-update from the executing pipeline.",
+            "parameters": {
+                "lane": {
+                    "type": "string",
+                    "required": true,
+                    "description": "Pipeline name. Values: rag_chat_v2, web_search_v2, hybrid_v2, etc."
+                },
+                "reason": {
+                    "type": "string",
+                    "required": false,
+                    "description": "Description of tools used"
+                }
+            },
+            "returns": {
+                "status": "string (updated, skipped, or error)",
+                "lane": "string (written lane value)"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": true,
+                "estimated_latency_ms": 75,
+                "requires_session": true,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "rewrite_query",
+            "description": "Rewrites a vague or continuation query using conversation context.",
+            "parameters": {
+                "query": {
+                    "type": "string",
+                    "required": true,
+                    "description": "Original user query to rewrite"
+                }
+            },
+            "returns": {
+                "query": "string (rewritten or original query)",
+                "original_query": "string (raw user query)",
+                "rewrite_type": "string (none, continuation, deepdive, referential, enriched, fallback, error)",
+                "hints_used": "boolean",
+                "metadata": "object (rewrite details)",
+                "request_id": "string (tracking ID)"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 1200,
+                "requires_session": true,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "record_turn_and_prepare_context",
+            "description": "Atomically records a user+assistant turn and prepares structured context (internal MCP memory bridge).",
+            "parameters": {
+                "user_query": {
+                    "type": "string",
+                    "required": true,
+                    "description": "User query in the turn"
+                },
+                "assistant_answer": {
+                    "type": "string",
+                    "required": true,
+                    "description": "Assistant response in the turn"
+                },
+                "tool_usage": {
+                    "type": "array",
+                    "required": false,
+                    "description": "Tool usage synopsis from the turn (max 5 entries)"
+                }
+            },
+            "returns": {
+                "status": "string (completed|queued)",
+                "session_id": "string",
+                "compression": "object (compression result if structured memory enabled)",
+                "tool_usage_persisted": "integer (count of tool synopsis entries persisted)",
+                "request_id": "string (tracking ID)"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 200,
+                "requires_session": true,
+                "category": "internal"
+            },
+            "security": "none",
+            "scope": "system",
+            "client_types": []
+        }
+    ],
+    "event_subscriptions": [
+        "rag.chat.completed",
+        "user.session.ended",
+        "memory.message_added"
+    ],
+    "event_publications": [
+        "memory.session_created",
+        "memory.message_added",
+        "memory.session_cleared",
+        "memory.session_deleted",
+        "memory.topic_shifted",
+        "memory.context_compressed"
+    ],
+    "config_file": "config.json",
+    "config_schema": {
+        "enabled": {
+            "type": "boolean",
+            "required": true
+        },
+        "session_ttl_seconds": {
+            "type": "integer",
+            "min": 3600
+        },
+        "max_messages_per_session": {
+            "type": "integer",
+            "min": 10,
+            "max": 1000
+        },
+        "auto_save_responses": {
+            "type": "boolean"
+        },
+        "context_max_turns": {
+            "type": "integer",
+            "min": 1,
+            "max": 50
+        },
+        "structured_memory": {
+            "type": "object",
+            "description": "v2.0 Structured Memory Configuration",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Enable v2.0 structured context"
+                },
+                "strategy": {
+                    "type": "string",
+                    "enum": [
+                        "token_budget",
+                        "message_count",
+                        "hybrid"
+                    ]
+                },
+                "raw_buffer_size": {
+                    "type": "integer",
+                    "min": 5,
+                    "max": 50
+                },
+                "max_context_tokens": {
+                    "type": "integer",
+                    "min": 1000,
+                    "max": 32000
+                },
+                "compression_threshold": {
+                    "type": "number",
+                    "min": 0.5,
+                    "max": 1.0
+                },
+                "topic_decay_turns": {
+                    "type": "integer",
+                    "min": 1,
+                    "max": 20
+                },
+                "max_previous_topics": {
+                    "type": "integer",
+                    "min": 1,
+                    "max": 10
+                }
+            }
+        }
+    },
+    "tools": [
+        {
+            "name": "get_conversation_context",
+            "operation": "get_structured_context",
+            "tool_type": "tool",
+            "description": "Get conversation memory context for current session (recent topics, entities, user intent)",
+            "providers": [
+                "redis"
+            ],
+            "input_schema": {
+                "session_id": {
+                    "type": "string",
+                    "required": true
+                }
+            },
+            "output_schema": {
+                "context": {
+                    "type": "object"
+                }
+            },
+            "timeout": 5.0,
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": true,
+                "category": "operations"
+            }
+        },
+        {
+            "name": "rewrite_query",
+            "operation": "rewrite_query",
+            "tool_type": "step",
+            "description": "Rewrite ambiguous query using conversation memory hints",
+            "providers": [
+                "redis"
+            ],
+            "input_schema": {
+                "session_id": {
+                    "type": "string",
+                    "required": true
+                },
+                "query": {
+                    "type": "string",
+                    "required": true
+                }
+            },
+            "output_schema": {
+                "query": {
+                    "type": "string"
+                },
+                "rewrite_type": {
+                    "type": "string"
+                }
+            },
+            "timeout": 5.0,
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 200,
+                "requires_session": true,
+                "category": "operations"
+            }
+        }
+    ]
+}

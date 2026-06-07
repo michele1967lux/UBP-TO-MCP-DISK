@@ -1,0 +1,361 @@
+{
+  "module_id": "citation_verification_orchestrator",
+  "version": "1.0.0",
+  "description": "Orchestrates citation verification, grounding check, hallucination detection, and trusted source filtering across RAG pipelines. Delegates to citations_verifier for verification logic and uses _call_llm via simple_chat for LLM calls.",
+  "author": "UBP Enterprise",
+  "created": "2026-02-16",
+  "category": "core",
+  "tags": [
+    "verification",
+    "citations",
+    "grounding",
+    "trust",
+    "hallucination"
+  ],
+  "operations": [
+    {
+      "name": "verify_response",
+      "description": "Full post-generate verification: claim extraction, grounding check, hallucination detection, trust scoring.",
+      "parameters": {
+        "answer": {
+          "type": "string",
+          "required": true,
+          "description": "Generated answer text to verify"
+        },
+        "chunks": {
+          "type": "array",
+          "required": true,
+          "description": "RAG chunks used for generation"
+        },
+        "query": {
+          "type": "string",
+          "required": true,
+          "description": "Original user query"
+        },
+        "min_tightness_trigger": {
+          "type": "float",
+          "required": false,
+          "default": 0.7
+        },
+        "auto_verify_web_sources": {
+          "type": "boolean",
+          "required": false,
+          "default": true
+        },
+        "hallucination_threshold": {
+          "type": "float",
+          "required": false,
+          "default": 0.3
+        },
+        "grounding_min_score": {
+          "type": "float",
+          "required": false,
+          "default": 0.5
+        },
+        "force_verification": {
+          "type": "boolean",
+          "required": false,
+          "default": false
+        }
+      },
+      "returns": {
+        "verified": "boolean",
+        "grounding_score": "float (0-1)",
+        "hallucination_rate": "float (0-1)",
+        "claims_total": "int",
+        "claims_verified": "int",
+        "claims_unverified": "int",
+        "web_sources_trust": "array of {domain, trust_score, trust_level}",
+        "disclaimer": "string or null"
+      },
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 2000,
+        "requires_session": false,
+        "category": "knowledge"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "filter_trusted_sources",
+      "description": "Pre-generate trust filter: removes chunks from untrusted web sources before prompt building.",
+      "parameters": {
+        "chunks": {
+          "type": "array",
+          "required": true,
+          "description": "Chunks to filter by trust"
+        },
+        "min_trust_score": {
+          "type": "float",
+          "required": false,
+          "default": 0.6
+        },
+        "internal_sources_trusted": {
+          "type": "boolean",
+          "required": false,
+          "default": true
+        }
+      },
+      "returns": {
+        "filtered_chunks": "array",
+        "removed_count": "int",
+        "total_count": "int",
+        "trust_summary": "array of {domain, trust_score, kept}"
+      },
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 300,
+        "requires_session": false,
+        "category": "knowledge"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "verify_web_sources",
+      "description": "Trust check on web sources: domain reputation + trust list lookup for each URL.",
+      "parameters": {
+        "urls": {
+          "type": "array",
+          "required": true,
+          "description": "URLs to verify"
+        },
+        "domain": {
+          "type": "string",
+          "required": false,
+          "default": "general"
+        }
+      },
+      "returns": {
+        "sources": "array of {url, domain, trust_score, trust_level, in_trust_list}",
+        "average_trust": "float (0-1)"
+      },
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 800,
+        "requires_session": false,
+        "category": "knowledge"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "update_trust_database",
+      "description": "Auto-update trust scores after verification.",
+      "parameters": {
+        "verification_results": {
+          "type": "object",
+          "required": true,
+          "description": "Results from verify_response"
+        },
+        "sources": {
+          "type": "array",
+          "required": true,
+          "description": "Sources with grounding scores"
+        }
+      },
+      "returns": {
+        "updated_domains": "int",
+        "updates": "array of {domain, old_score, new_score, direction}"
+      },
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 200,
+        "requires_session": false,
+        "category": "operations",
+        "side_effect_trigger": "When the admin explicitly asks to update the trust database (e.g. 'aggiorna il trust', 'update trust database').",
+        "proactive": false
+      },
+      "security": "client_admin",
+      "scope": "general",
+      "client_types": []
+    },
+    {
+      "name": "list_trust_entries",
+      "description": "List all trust database entries (admin).",
+      "parameters": {
+        "limit": {
+          "type": "int",
+          "required": false,
+          "default": 100
+        }
+      },
+      "returns": {
+        "entries": "array of trust entries",
+        "count": "int"
+      },
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "admin",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "set_trust_entry",
+      "description": "Force-set a domain trust score (admin override).",
+      "parameters": {
+        "domain": {
+          "type": "string",
+          "required": true
+        },
+        "trust_score": {
+          "type": "float",
+          "required": true
+        },
+        "category": {
+          "type": "string",
+          "required": false,
+          "default": "admin_override"
+        }
+      },
+      "returns": {
+        "success": "boolean",
+        "domain": "string",
+        "trust_score": "float"
+      },
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "admin",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "delete_trust_entry",
+      "description": "Delete a domain trust entry (admin).",
+      "parameters": {
+        "domain": {
+          "type": "string",
+          "required": true
+        }
+      },
+      "returns": {
+        "success": "boolean",
+        "domain": "string"
+      },
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 75,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "admin",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "get_trust_entry",
+      "description": "Get a single domain trust entry with decay applied.",
+      "parameters": {
+        "domain": {
+          "type": "string",
+          "required": true
+        }
+      },
+      "returns": {
+        "domain": "string",
+        "trust_score": "float or null",
+        "found": "boolean"
+      },
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 50,
+        "requires_session": false,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "bootstrap_trust_db",
+      "description": "Bootstrap trust DB from citations_verifier predefined lists (admin).",
+      "parameters": {},
+      "returns": {
+        "bootstrapped": "int",
+        "categories": "array of category names"
+      },
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": true,
+        "estimated_latency_ms": 500,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "admin",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "health_check",
+      "description": "Module health and dependency status.",
+      "parameters": {},
+      "returns": {
+        "status": "string (healthy|degraded|error)",
+        "dependencies": "object"
+      },
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "none",
+      "scope": "system",
+      "client_types": []
+    }
+  ],
+  "event_subscriptions": [
+    "rag.response_ready",
+    "citations.verification_completed"
+  ],
+  "event_publications": {
+    "citation_verification.completed": "After verify_response completes",
+    "citation_verification.trust_filtered": "After filter_trusted_sources removes sources",
+    "citation_verification.hallucination_detected": "When hallucination_rate > threshold"
+  },
+  "dependencies": {
+    "required": [
+      "citations_verifier"
+    ],
+    "optional": [
+      "pipeline_orchestrator",
+      "adaptive_budget_manager",
+      "redis"
+    ]
+  },
+  "pipeline_steps": {
+    "verify_citations": {
+      "position": "after:generate",
+      "conditional": true,
+      "operation": "verify_response"
+    },
+    "filter_trusted": {
+      "position": "after:rerank,before:deduplicate",
+      "conditional": true,
+      "operation": "filter_trusted_sources"
+    }
+  },
+  "name": "citation_verification_orchestrator",
+  "module_type": "rag"
+}

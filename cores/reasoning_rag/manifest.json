@@ -1,0 +1,772 @@
+{
+  "name": "reasoning_rag",
+  "version": "1.0.0",
+  "description": "Enterprise Reasoning-Aware RAG Engine with Self-Ask, Chain-of-Thought, Evidence Attribution, and Verification",
+  "architecture": "3-file-pattern",
+  "category": "core",
+  "production_ready": true,
+  "author": "UBP Team",
+  "license": "proprietary",
+  "repository": "internal",
+  "features": [
+    "Self-Ask iterative sub-question decomposition",
+    "Chain-of-Thought interleaved reasoning",
+    "Evidence attribution with inline citations",
+    "Multi-source fact verification",
+    "Contradiction detection",
+    "Automatic strategy selection",
+    "Query complexity analysis",
+    "Cross-lingual support (EN/IT)",
+    "Complete reasoning trace logging",
+    "Redis caching with semantic matching",
+    "Session management",
+    "Worker pool parallelism",
+    "Comprehensive metrics"
+  ],
+  "strategies": {
+    "self_ask": {
+      "description": "Iteratively decomposes complex queries into simpler sub-questions",
+      "best_for": [
+        "Multi-hop queries",
+        "Complex questions",
+        "Comparative queries"
+      ],
+      "max_iterations": 5,
+      "features": [
+        "Sub-question generation",
+        "Iterative retrieval",
+        "Answer integration"
+      ]
+    },
+    "chain_of_thought": {
+      "description": "Step-by-step reasoning with retrieval triggered when needed",
+      "best_for": [
+        "Explanatory queries",
+        "Causal questions",
+        "Procedural queries"
+      ],
+      "max_steps": 8,
+      "features": [
+        "Interleaved retrieval",
+        "Progressive context building",
+        "Thought verification"
+      ]
+    },
+    "evidence_attribution": {
+      "description": "Generates answers with inline citations and source tracking",
+      "best_for": [
+        "Factual queries",
+        "Research questions",
+        "Compliance-required contexts"
+      ],
+      "features": [
+        "Claim extraction",
+        "Source attribution",
+        "Citation formatting"
+      ]
+    },
+    "verification": {
+      "description": "Multi-source fact checking with contradiction detection",
+      "best_for": [
+        "Fact-checking",
+        "Claim verification",
+        "Critical information validation"
+      ],
+      "features": [
+        "Multi-source check",
+        "Contradiction detection",
+        "Grounding validation"
+      ]
+    },
+    "direct": {
+      "description": "Simple retrieval-augmented answer generation",
+      "best_for": [
+        "Simple factual queries",
+        "Definitional questions"
+      ],
+      "features": [
+        "Fast response",
+        "Single retrieval pass"
+      ]
+    }
+  },
+  "dependencies": {
+    "required": [],
+    "optional": [
+      {
+        "module": "retrieval_strategy",
+        "purpose": "Document retrieval for RAG"
+      },
+      {
+        "module": "inference_vllm",
+        "purpose": "vLLM inference backend"
+      },
+      {
+        "module": "inference_ollama_grok",
+        "purpose": "Ollama/Grok inference backend"
+      }
+    ]
+  },
+  "redis_keys": {
+    "patterns": [
+      "ubp:{env}:reasoning:cache:reasoning:{hash}",
+      "ubp:{env}:reasoning:cache:sub_questions:{hash}",
+      "ubp:{env}:reasoning:cache:retrievals:{hash}",
+      "ubp:{env}:reasoning:session:{session_id}",
+      "ubp:{env}:reasoning:stats:*"
+    ],
+    "description": "Environment-isolated keys with {env} = dev|test|prod"
+  },
+  "operations": [
+    {
+      "name": "initialize",
+      "description": "Initialize all Reasoning RAG components",
+      "parameters": {},
+      "returns": {
+        "status": "string",
+        "components": "object",
+        "strategies": "array"
+      },
+      "admin_only": false,
+      "idempotent": true,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": true,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "none",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "reason",
+      "description": "Full reasoning pipeline with automatic strategy selection",
+      "parameters": {
+        "query": {
+          "type": "string",
+          "required": true,
+          "description": "User's query",
+          "ui_type": "textarea",
+          "min_length": 3,
+          "max_length": 5000
+        },
+        "strategy": {
+          "type": "string",
+          "required": false,
+          "description": "Strategy override or 'auto' for automatic selection",
+          "ui_type": "select",
+          "options": [
+            "auto",
+            "self_ask",
+            "chain_of_thought",
+            "evidence_attribution",
+            "verification",
+            "direct"
+          ]
+        },
+        "language": {
+          "type": "string",
+          "required": false,
+          "default": "auto",
+          "description": "Language code or 'auto' for detection",
+          "ui_type": "select",
+          "options": [
+            "auto",
+            "en",
+            "it"
+          ]
+        },
+        "enable_verification": {
+          "type": "boolean",
+          "required": false,
+          "default": true,
+          "description": "Enable claim verification step",
+          "ui_type": "toggle"
+        },
+        "enable_evidence": {
+          "type": "boolean",
+          "required": false,
+          "default": true,
+          "description": "Enable evidence attribution step",
+          "ui_type": "toggle"
+        },
+        "claims_to_verify": {
+          "type": "array",
+          "required": false,
+          "description": "Specific claims to verify"
+        },
+        "session_id": {
+          "type": "string",
+          "required": false,
+          "description": "Existing session ID for continuity"
+        },
+        "pipeline_config": {
+          "type": "object",
+          "required": false,
+          "description": "Pipeline step configuration override"
+        }
+      },
+      "returns": {
+        "session_id": "string",
+        "query": "string",
+        "strategy_used": "string",
+        "answer": "string",
+        "confidence": "number",
+        "sub_questions": "array",
+        "reasoning_steps": "array",
+        "claims": "array",
+        "evidence": "array",
+        "citations": "array",
+        "verifications": "array",
+        "contradictions": "array",
+        "reasoning_trace": "object",
+        "time_ms": "number"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 3000,
+        "requires_session": false,
+        "category": "reasoning"
+      },
+      "security": "authenticated",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "self_ask",
+      "description": "Execute Self-Ask strategy - iterative sub-question decomposition",
+      "parameters": {
+        "query": {
+          "type": "string",
+          "required": true
+        },
+        "max_iterations": {
+          "type": "integer",
+          "required": false,
+          "default": 5,
+          "min": 1,
+          "max": 10
+        },
+        "language": {
+          "type": "string",
+          "required": false,
+          "default": "auto"
+        },
+        "session_id": {
+          "type": "string",
+          "required": false
+        }
+      },
+      "returns": {
+        "answer": "string",
+        "confidence": "number",
+        "sub_questions": "array",
+        "iteration_count": "integer",
+        "reasoning_trace": "object"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 4000,
+        "requires_session": false,
+        "category": "reasoning"
+      },
+      "security": "authenticated",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "chain_of_thought",
+      "description": "Execute Chain-of-Thought strategy - interleaved reasoning and retrieval",
+      "parameters": {
+        "query": {
+          "type": "string",
+          "required": true
+        },
+        "max_steps": {
+          "type": "integer",
+          "required": false,
+          "default": 8,
+          "min": 2,
+          "max": 15
+        },
+        "language": {
+          "type": "string",
+          "required": false,
+          "default": "auto"
+        },
+        "session_id": {
+          "type": "string",
+          "required": false
+        }
+      },
+      "returns": {
+        "answer": "string",
+        "confidence": "number",
+        "reasoning_steps": "array",
+        "step_count": "integer",
+        "reasoning_trace": "object"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 4000,
+        "requires_session": false,
+        "category": "reasoning"
+      },
+      "security": "authenticated",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "evidence_attribution",
+      "description": "Generate answer with inline citations and source tracking",
+      "parameters": {
+        "query": {
+          "type": "string",
+          "required": true
+        },
+        "language": {
+          "type": "string",
+          "required": false,
+          "default": "auto"
+        },
+        "session_id": {
+          "type": "string",
+          "required": false
+        }
+      },
+      "returns": {
+        "answer": "string",
+        "confidence": "number",
+        "claims": "array",
+        "evidence": "array",
+        "citations": "array",
+        "reasoning_trace": "object"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 3000,
+        "requires_session": false,
+        "category": "reasoning"
+      },
+      "security": "authenticated",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "verify_claims",
+      "description": "Multi-source fact checking and contradiction detection",
+      "parameters": {
+        "query": {
+          "type": "string",
+          "required": true,
+          "description": "Query or context for verification"
+        },
+        "claims": {
+          "type": "array",
+          "required": false,
+          "description": "Specific claims to verify (auto-extracted if not provided)"
+        },
+        "language": {
+          "type": "string",
+          "required": false,
+          "default": "auto"
+        },
+        "session_id": {
+          "type": "string",
+          "required": false
+        }
+      },
+      "returns": {
+        "answer": "string",
+        "claims": "array",
+        "verifications": "array",
+        "contradictions": "array",
+        "confidence": "number",
+        "reasoning_trace": "object"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 5000,
+        "requires_session": false,
+        "category": "reasoning"
+      },
+      "security": "authenticated",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "analyze_query",
+      "description": "Analyze query for complexity, intent, and recommended strategy",
+      "parameters": {
+        "query": {
+          "type": "string",
+          "required": true
+        }
+      },
+      "returns": {
+        "query": "string",
+        "complexity": "string",
+        "intent": "string",
+        "requires_multi_source": "boolean",
+        "requires_reasoning": "boolean",
+        "requires_verification": "boolean",
+        "recommended_strategy": "string",
+        "strategy_reason": "string",
+        "estimated_steps": "integer",
+        "key_entities": "array",
+        "language": "string",
+        "confidence": "number"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 2000,
+        "requires_session": false,
+        "category": "reasoning"
+      },
+      "security": "authenticated",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "extract_claims",
+      "description": "Extract factual claims from text for verification",
+      "parameters": {
+        "text": {
+          "type": "string",
+          "required": true,
+          "description": "Text to extract claims from"
+        },
+        "language": {
+          "type": "string",
+          "required": false,
+          "default": "auto"
+        }
+      },
+      "returns": {
+        "claims": "array",
+        "total_claims": "integer"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 2000,
+        "requires_session": false,
+        "category": "reasoning"
+      },
+      "security": "authenticated",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "get_session",
+      "description": "Retrieve session state with reasoning history",
+      "parameters": {
+        "session_id": {
+          "type": "string",
+          "required": true
+        }
+      },
+      "returns": {
+        "session_id": "string",
+        "created_at": "string",
+        "updated_at": "string",
+        "history_count": "integer",
+        "trace_count": "integer",
+        "history": "array",
+        "metadata": "object"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "delete_session",
+      "description": "Delete a reasoning session",
+      "parameters": {
+        "session_id": {
+          "type": "string",
+          "required": true
+        }
+      },
+      "returns": {
+        "deleted": "boolean",
+        "session_id": "string"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": true,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "get_stats",
+      "description": "Get metrics and statistics",
+      "parameters": {
+        "period": {
+          "type": "string",
+          "required": false,
+          "default": "24h"
+        }
+      },
+      "returns": {
+        "period": "string",
+        "metrics": "object",
+        "cache": "object",
+        "worker_pool": "object"
+      },
+      "admin_only": true,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "admin",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "get_pipeline_config",
+      "description": "Get current pipeline configuration",
+      "parameters": {},
+      "returns": {
+        "default_timeout_seconds": "integer",
+        "fail_fast": "boolean",
+        "steps": "object",
+        "available_steps": "array",
+        "available_strategies": "array"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "admin",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "set_pipeline_config",
+      "description": "Update pipeline step configuration",
+      "parameters": {
+        "steps": {
+          "type": "array",
+          "required": true
+        }
+      },
+      "returns": {
+        "updated_config": "object"
+      },
+      "admin_only": true,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "admin",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "reload_config",
+      "description": "Hot-reload configuration from config.json",
+      "parameters": {},
+      "returns": {
+        "status": "string",
+        "timestamp": "string"
+      },
+      "admin_only": true,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": true,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "admin",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "shutdown",
+      "description": "Graceful shutdown of all components",
+      "parameters": {},
+      "returns": {
+        "status": "string"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": true,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "none",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "health_check",
+      "description": "Check health status of all components",
+      "parameters": {},
+      "returns": {
+        "module": "string",
+        "status": "string",
+        "initialized": "boolean",
+        "llm_delegation": "object",
+        "worker_pool": "object",
+        "cache": "object",
+        "strategies": "object"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "none",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "get_available_strategies",
+      "description": "Get list of available reasoning strategies with descriptions",
+      "parameters": {},
+      "returns": {
+        "strategies": "array",
+        "auto_selection": "boolean"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    }
+  ],
+  "events": {
+    "publishes": [
+      {
+        "event": "reasoning.initialized",
+        "description": "Module initialized successfully"
+      },
+      {
+        "event": "reasoning.completed",
+        "description": "Reasoning pipeline completed",
+        "payload": {
+          "session_id": "string",
+          "strategy": "string",
+          "confidence": "number",
+          "time_ms": "number"
+        }
+      },
+      {
+        "event": "reasoning.self_ask.completed",
+        "description": "Self-Ask strategy completed"
+      },
+      {
+        "event": "reasoning.cot.completed",
+        "description": "Chain-of-Thought strategy completed"
+      },
+      {
+        "event": "reasoning.evidence.completed",
+        "description": "Evidence attribution completed"
+      },
+      {
+        "event": "reasoning.verification.completed",
+        "description": "Verification completed"
+      },
+      {
+        "event": "reasoning.contradiction.detected",
+        "description": "Contradiction detected between sources"
+      },
+      {
+        "event": "reasoning.shutdown",
+        "description": "Module shutdown completed"
+      }
+    ]
+  },
+  "query_complexity": {
+    "levels": {
+      "simple": {
+        "threshold": 0.3,
+        "description": "Single-fact queries, definitions",
+        "default_strategy": "direct"
+      },
+      "moderate": {
+        "threshold": 0.6,
+        "description": "Queries requiring some reasoning",
+        "default_strategy": "chain_of_thought"
+      },
+      "complex": {
+        "threshold": 0.8,
+        "description": "Multi-step reasoning required",
+        "default_strategy": "chain_of_thought"
+      },
+      "multi_hop": {
+        "threshold": 1.0,
+        "description": "Multiple information sources needed",
+        "default_strategy": "self_ask"
+      }
+    }
+  },
+  "query_intents": {
+    "factual": "What, who, when, where questions",
+    "explanatory": "How and why questions",
+    "comparative": "Comparison between entities",
+    "procedural": "Step-by-step instructions",
+    "causal": "Cause and effect relationships",
+    "definitional": "Definition requests",
+    "evaluative": "Opinion or recommendation requests"
+  },
+  "verification_statuses": {
+    "verified": "Claim confirmed by multiple sources",
+    "partially_verified": "Claim partially supported",
+    "unverified": "Insufficient sources to verify",
+    "contradicted": "Sources contradict the claim"
+  },
+  "module_type": "rag"
+}

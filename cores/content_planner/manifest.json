@@ -1,0 +1,633 @@
+{
+    "name": "content_planner",
+    "version": "1.0.0",
+    "description": "Document structure planning with templates, microprompts, and validation",
+    "author": "UBP Team",
+    "module_type": "planning",
+    "architecture": "3-file-pattern",
+    "requires_redis": false,
+    "requires_postgres": false,
+    "requires_event_bus": false,
+    "dependencies": {
+        "modules": [],
+        "optional_modules": [],
+        "python_packages": [
+            "PyYAML>=6.0"
+        ],
+        "notes": "LLM resolved dynamically via centralized provider resolver (role=enrichment). Falls back to template-only planning if no provider is available."
+    },
+    "operations": [
+        {
+            "name": "initialize",
+            "description": "Initialize content planner with templates and configuration",
+            "parameters": {
+                "templates_dir": {
+                    "type": "string",
+                    "required": false
+                },
+                "default_language": {
+                    "type": "string",
+                    "required": false,
+                    "default": "it"
+                },
+                "default_formality": {
+                    "type": "string",
+                    "required": false,
+                    "default": "professional"
+                },
+                "planning_model": {
+                    "type": "string",
+                    "required": false
+                }
+            },
+            "returns": {
+                "status": "string",
+                "templates_loaded": "integer",
+                "llm_available": "boolean"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "none",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "plan_structure",
+            "description": "Generate structured plan for a document",
+            "parameters": {
+                "query": {
+                    "type": "string",
+                    "required": true,
+                    "description": "Document request"
+                },
+                "constraints": {
+                    "type": "object",
+                    "required": false,
+                    "description": "Planning constraints"
+                },
+                "template_id": {
+                    "type": "string",
+                    "required": false,
+                    "description": "Specific template to use"
+                },
+                "template_hints": {
+                    "type": "object",
+                    "required": false
+                },
+                "collections": {
+                    "type": "array",
+                    "required": false,
+                    "description": "Collections for research"
+                },
+                "auto_validate": {
+                    "type": "boolean",
+                    "required": false,
+                    "default": true
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "plan": "StructuredPlan object",
+                "validation": "ValidationResult (if auto_validate)",
+                "estimated_tokens": "integer"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 2000,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "plan_presentation",
+            "description": "Generate plan specifically for presentations",
+            "parameters": {
+                "query": {
+                    "type": "string",
+                    "required": true
+                },
+                "max_slides": {
+                    "type": "integer",
+                    "required": false,
+                    "default": 20
+                },
+                "style": {
+                    "type": "string",
+                    "required": false,
+                    "default": "professional"
+                },
+                "constraints": {
+                    "type": "object",
+                    "required": false
+                },
+                "collections": {
+                    "type": "array",
+                    "required": false
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "plan": "StructuredPlan"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 2000,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "design_section",
+            "description": "Design a single section with microprompt",
+            "parameters": {
+                "section_type": {
+                    "type": "string",
+                    "required": true
+                },
+                "title": {
+                    "type": "string",
+                    "required": true
+                },
+                "description": {
+                    "type": "string",
+                    "required": false
+                },
+                "context": {
+                    "type": "object",
+                    "required": false
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "section": "SectionPlan"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 1000,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "add_section",
+            "description": "Add a section to an existing plan",
+            "parameters": {
+                "plan": {
+                    "type": "object",
+                    "required": true
+                },
+                "section": {
+                    "type": "object",
+                    "required": true
+                },
+                "position": {
+                    "type": "integer",
+                    "required": false
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "plan": "StructuredPlan",
+                "added_section_id": "string"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "remove_section",
+            "description": "Remove a section from a plan",
+            "parameters": {
+                "plan": {
+                    "type": "object",
+                    "required": true
+                },
+                "section_id": {
+                    "type": "string",
+                    "required": true
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "plan": "StructuredPlan"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "modify_section",
+            "description": "Modify a section in a plan",
+            "parameters": {
+                "plan": {
+                    "type": "object",
+                    "required": true
+                },
+                "section_id": {
+                    "type": "string",
+                    "required": true
+                },
+                "changes": {
+                    "type": "object",
+                    "required": true
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "plan": "StructuredPlan"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "reorder_sections",
+            "description": "Reorder sections in a plan",
+            "parameters": {
+                "plan": {
+                    "type": "object",
+                    "required": true
+                },
+                "new_order": {
+                    "type": "array",
+                    "required": true,
+                    "description": "Section IDs in new order"
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "plan": "StructuredPlan"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "generate_microprompt",
+            "description": "Generate microprompt for a section",
+            "parameters": {
+                "section": {
+                    "type": "object",
+                    "required": true
+                },
+                "context": {
+                    "type": "object",
+                    "required": false
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "microprompt": "Microprompt object",
+                "system_prompt": "string",
+                "generation_prompt": "string"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 1500,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "generate_microprompts_batch",
+            "description": "Generate microprompts for multiple sections",
+            "parameters": {
+                "sections": {
+                    "type": "array",
+                    "required": true
+                },
+                "context": {
+                    "type": "object",
+                    "required": false
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "microprompts": "object (section_id -> Microprompt)"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 2500,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "list_templates",
+            "description": "List available templates",
+            "parameters": {
+                "category": {
+                    "type": "string",
+                    "required": false
+                },
+                "document_type": {
+                    "type": "string",
+                    "required": false
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "templates": "array",
+                "count": "integer",
+                "categories": "array"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "get_template",
+            "description": "Get a specific template",
+            "parameters": {
+                "template_id": {
+                    "type": "string",
+                    "required": true
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "template": "DocumentTemplate",
+                "sections": "array"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "match_template",
+            "description": "Find best matching template for a query",
+            "parameters": {
+                "query": {
+                    "type": "string",
+                    "required": true
+                },
+                "available_templates": {
+                    "type": "array",
+                    "required": false
+                },
+                "min_confidence": {
+                    "type": "number",
+                    "required": false,
+                    "default": 0.3
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "matched": "boolean",
+                "match": "TemplateMatch (if matched)"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 500,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "validate_plan",
+            "description": "Validate a plan",
+            "parameters": {
+                "plan": {
+                    "type": "object",
+                    "required": true
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "validation": "ValidationResult",
+                "is_valid": "boolean"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 300,
+                "requires_session": false,
+                "category": "knowledge"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "estimate_tokens",
+            "description": "Estimate token usage for a plan",
+            "parameters": {
+                "plan": {
+                    "type": "object",
+                    "required": true
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "total_tokens": "integer",
+                "tokens_by_section": "object",
+                "within_budget": "boolean"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 200,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "estimate_resources",
+            "description": "Estimate resources needed for plan execution",
+            "parameters": {
+                "plan": {
+                    "type": "object",
+                    "required": true
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "estimated_time_minutes": "integer",
+                "estimated_api_calls": "integer",
+                "parallel_batches": "integer"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 300,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        }
+    ],
+    "section_types": [
+        "title",
+        "executive_summary",
+        "introduction",
+        "background",
+        "methodology",
+        "analysis",
+        "findings",
+        "data",
+        "discussion",
+        "recommendations",
+        "conclusion",
+        "appendix",
+        "references",
+        "custom"
+    ],
+    "content_types": [
+        "prose",
+        "table",
+        "chart",
+        "list",
+        "mixed",
+        "data_driven"
+    ],
+    "document_types": [
+        "report",
+        "analysis",
+        "research",
+        "presentation",
+        "brief",
+        "proposal",
+        "technical",
+        "executive",
+        "custom"
+    ],
+    "formality_levels": [
+        "casual",
+        "professional",
+        "academic",
+        "technical",
+        "legal"
+    ],
+    "source_preferences": [
+        "rag_only",
+        "web_only",
+        "rag_first",
+        "web_first",
+        "mixed",
+        "llm_reasoning",
+        "adaptive"
+    ],
+    "default_templates": [
+        "academic_paper",
+        "technical_analysis",
+        "computo_metrico",
+        "executive_brief"
+    ],
+    "config_file": "config.json",
+    "production_ready": true,
+    "tools": [
+        {
+            "name": "plan_report",
+            "operation": "plan_structure",
+            "tool_type": "tool",
+            "description": "Create structured outline for a report from chunks and topic",
+            "providers": [
+                "grok"
+            ],
+            "input_schema": {
+                "query": {
+                    "type": "string",
+                    "required": true
+                },
+                "constraints": {
+                    "type": "object"
+                },
+                "template_id": {
+                    "type": "string"
+                }
+            },
+            "output_schema": {
+                "plan": {
+                    "type": "object"
+                },
+                "sections": {
+                    "type": "array"
+                }
+            },
+            "timeout": 30.0,
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 3000,
+                "requires_session": false,
+                "category": "reasoning"
+            }
+        }
+    ]
+}

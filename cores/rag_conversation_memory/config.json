@@ -1,0 +1,8 @@
+{
+  "enabled": true,
+  "session_ttl_seconds": 7776000,
+  "max_messages_per_session": 100,
+  "max_sessions_per_user": 150,
+  "auto_save_responses": true,
+  "context_max_turns": 10
+}

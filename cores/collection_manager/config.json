@@ -1,0 +1,36 @@
+{
+  "storage": {
+    "backend": "postgres",
+    "table_prefix": "collections_",
+    "auto_create_tables": true
+  },
+  "defaults": {
+    "max_items_per_collection": 100000,
+    "max_collection_size_mb": 1024,
+    "default_page_size": 50
+  },
+  "validation": {
+    "enforce_schema": true,
+    "allow_additional_properties": true,
+    "validate_on_insert": true
+  },
+  "caching": {
+    "enabled": true,
+    "cache_collections": true,
+    "cache_ttl_seconds": 300
+  },
+  "indexing": {
+    "auto_index": true,
+    "index_metadata": true,
+    "full_text_search": true
+  },
+  "versioning": {
+    "enabled": false,
+    "max_versions": 10,
+    "auto_cleanup": true
+  },
+  "permissions": {
+    "enable_access_control": true,
+    "default_public": false
+  }
+}

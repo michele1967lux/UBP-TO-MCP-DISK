@@ -1,0 +1,35 @@
+# RAG Qdrant Module - Dependencies
+# Enterprise-grade requirements for production deployment
+
+# Core Vector Database
+qdrant-client>=1.7.0,<2.0.0
+
+# Embedding Providers
+sentence-transformers>=2.2.0,<3.0.0
+torch>=2.0.0  # Required by sentence-transformers
+
+# Optional: OpenAI embeddings
+openai>=1.0.0,<2.0.0
+
+# Async Support
+asyncio-throttle>=1.0.0
+
+# Data Processing
+numpy>=1.24.0,<2.0.0
+
+# Type Hints (for Python < 3.10)
+typing-extensions>=4.0.0
+
+# Logging and Monitoring
+structlog>=23.0.0  # Optional: structured logging
+
+# Testing
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.0.0
+
+# Development
+black>=23.0.0
+isort>=5.12.0
+mypy>=1.0.0
+ruff>=0.1.0

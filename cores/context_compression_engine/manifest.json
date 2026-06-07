@@ -1,0 +1,234 @@
+{
+    "name": "context_compression_engine",
+    "version": "1.0.0",
+    "description": "Multi-layer evolved context compression: Layer 0 (short-term sub-layers), Layer 1 (medium-term compressed), Layer 2 (long-term deep compressed)",
+    "author": "UBP Team",
+    "module_type": "memory",
+    "architecture": "3-file-pattern",
+    "requires_redis": false,
+    "requires_postgres": false,
+    "requires_event_bus": false,
+    "operations": [
+        {
+            "name": "process_turn",
+            "description": "Process a complete interaction turn: create sub-layer, auto-compress if threshold reached, return updated context",
+            "parameters": {
+                "session_id": {"type": "string", "required": true, "description": "Session identifier"},
+                "turn_number": {"type": "integer", "required": true, "description": "Interaction turn number (0-based)"},
+                "query": {"type": "string", "required": true, "description": "User query text"},
+                "response": {"type": "string", "required": true, "description": "Assistant response text"},
+                "profile": {"type": "string", "required": false, "description": "Compression profile: chat or agent_loop (default: chat)"},
+                "auto_compress": {"type": "boolean", "required": false, "description": "Auto-trigger compression (default: true)"}
+            },
+            "returns": {
+                "sub_layer": "object (created SubLayer0)",
+                "compression_result": "object or null (CompressionResult if triggered)",
+                "context": "object (current compressed context)"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 2000,
+                "requires_session": true,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "system"
+        },
+        {
+            "name": "create_sub_layer",
+            "description": "Create a Layer 0 sub-layer for a single turn without triggering compression",
+            "parameters": {
+                "session_id": {"type": "string", "required": true},
+                "turn_number": {"type": "integer", "required": true},
+                "query": {"type": "string", "required": true},
+                "response": {"type": "string", "required": true},
+                "profile": {"type": "string", "required": false},
+                "manual_sub_layer": {"type": "object", "required": false, "description": "Provide fields directly instead of LLM extraction"}
+            },
+            "returns": {
+                "sub_layer_id": "string",
+                "turn_number": "integer",
+                "focus": "string",
+                "query_summary": "string"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 1500,
+                "requires_session": true,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "system"
+        },
+        {
+            "name": "compress",
+            "description": "Trigger multi-layer compression (Layer 0 → Layer 1 + Layer 2)",
+            "parameters": {
+                "session_id": {"type": "string", "required": true},
+                "profile": {"type": "string", "required": false},
+                "mode": {"type": "string", "required": false, "description": "Compression trigger mode: threshold, manual, emergency"},
+                "force": {"type": "boolean", "required": false, "description": "Bypass threshold check (default: false)"}
+            },
+            "returns": {
+                "success": "boolean",
+                "layer_1": "object or null",
+                "layer_2": "object or null",
+                "sub_layers_consumed": "integer",
+                "compression_mode": "string",
+                "latency_ms": "float"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 3000,
+                "requires_session": true,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "system"
+        },
+        {
+            "name": "get_compressed_context",
+            "description": "Get assembled compressed context for LLM injection",
+            "parameters": {
+                "session_id": {"type": "string", "required": true},
+                "include_layer0_recent": {"type": "integer", "required": false, "description": "Number of recent sub-layers (default: 3)"},
+                "include_layer1": {"type": "boolean", "required": false},
+                "include_layer2": {"type": "boolean", "required": false}
+            },
+            "returns": {
+                "session_id": "string",
+                "available": "boolean",
+                "layer_0_recent": "array (recent sub-layers)",
+                "layer_1": "object or null",
+                "layer_2": "object or null"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 50,
+                "requires_session": true,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "system"
+        },
+        {
+            "name": "get_session_state",
+            "description": "Get full session compression state for debugging",
+            "parameters": {
+                "session_id": {"type": "string", "required": true}
+            },
+            "returns": {
+                "session_id": "string",
+                "found": "boolean",
+                "layer_0": "object",
+                "layer_1": "object or null",
+                "layer_2": "object or null",
+                "total_compressions": "integer"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 50,
+                "requires_session": true,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "system"
+        },
+        {
+            "name": "should_compress",
+            "description": "Check if compression threshold is reached for a session",
+            "parameters": {
+                "session_id": {"type": "string", "required": true},
+                "profile": {"type": "string", "required": false}
+            },
+            "returns": {
+                "session_id": "string",
+                "needs_compression": "boolean"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 10,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "system"
+        },
+        {
+            "name": "delete_session",
+            "description": "Delete session compression state",
+            "parameters": {
+                "session_id": {"type": "string", "required": true}
+            },
+            "returns": {
+                "session_id": "string",
+                "deleted": "boolean"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": true,
+                "estimated_latency_ms": 10,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "system"
+        },
+        {
+            "name": "get_config",
+            "description": "Return current compression engine configuration",
+            "parameters": {},
+            "returns": {
+                "enabled": "boolean",
+                "chat_profile": "object",
+                "agent_loop_profile": "object"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 5,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system"
+        },
+        {
+            "name": "import_state",
+            "description": "Import session compression state from dict (for migration/restore)",
+            "parameters": {
+                "state_data": {"type": "object", "required": true, "description": "Full CompressionState dict"}
+            },
+            "returns": {
+                "session_id": "string",
+                "imported": "boolean"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 50,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system"
+        }
+    ],
+    "event_subscriptions": [],
+    "event_publications": [
+        "context_compression.sub_layer_created",
+        "context_compression.compression_triggered",
+        "context_compression.compression_completed",
+        "context_compression.session_deleted"
+    ],
+    "config_file": "config.json",
+    "config_schema": {
+        "enabled": {"type": "boolean", "required": true, "default": true}
+    }
+}

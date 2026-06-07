@@ -1,0 +1,7 @@
+{
+  "enabled": true,
+  "stats_ttl_seconds": 7776000,
+  "feedback_ttl_seconds": 31536000,
+  "max_feedback_per_user": 1000,
+  "allow_anonymous_feedback": false
+}

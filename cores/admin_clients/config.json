@@ -1,0 +1,140 @@
+{
+  "redis": {
+    "keys": {
+      "clients_index": "ubp:admin:clients",
+      "client_prefix": "ubp:admin:client:",
+      "client_name_index_prefix": "ubp:admin:client_name_index:"
+    }
+  },
+  "security": {
+    "secret_generation": {
+      "length": 32,
+      "charset": "alphanumeric"
+    },
+    "secret_hashing": {
+      "algorithm": "pbkdf2_sha256",
+      "rounds": 12
+    }
+  },
+  "defaults": {
+    "scopes": [],
+    "is_active": true,
+    "client_type": "api_key",
+    "kb_config": {
+      "universal_kbs_assigned": [],
+      "can_create_universal_kb": false,
+      "max_universal_kbs": 5,
+      "user_kb_assignment_mode": "default",
+      "default_user_kb_config": {
+        "inherit_all_universal_kbs": true,
+        "universal_kb_access_level": "read",
+        "personal_kb_enabled": true,
+        "personal_kb_max_size_mb": 100,
+        "personal_kb_max_documents": 50
+      },
+      "custom_user_kb_assignments": {}
+    },
+    "ingestion_config": {
+      "enabled": true,
+      "max_documents_per_day": 100,
+      "max_document_size_mb": 10,
+      "allowed_formats": ["pdf", "docx", "txt", "md"],
+      "chunk_size": 512,
+      "chunk_overlap": 50,
+      "embedding_model": "default"
+    },
+    "model_config": {
+      "allowed_models": ["grok/*", "vllm/*"],
+      "default_model": "grok/${UBP_PROVIDER_GROK__DEFAULT_MODEL:-grok-3-mini}",
+      "max_tokens_per_request": "${UBP_CLIENT__DEFAULT_MAX_TOKENS:-4096}",
+      "temperature_range": {"min": 0.0, "max": 1.0},
+      "rate_limit_requests_per_minute": "${UBP_CLIENT__DEFAULT_RATE_LIMIT:-60}"
+    },
+    "user_limits": {
+      "max_users": 100,
+      "current_users": 0,
+      "user_roles_allowed": ["user", "viewer"],
+      "max_concurrent_sessions_per_user": 3
+    },
+    "rag_config": {
+      "pipeline": "standard",
+      "top_k": 5,
+      "similarity_threshold": 0.7,
+      "reranking_enabled": false,
+      "conversation_memory_enabled": true,
+      "web_search_enabled": false
+    },
+    "prompt_config": {
+      "identity": null,
+      "system_prompt": "",
+      "context_template": "Use the following context to answer the question:\n{context}",
+      "can_modify_system_prompt": false,
+      "can_modify_context_template": false,
+      "language": "it",
+      "response_style": "professional"
+    },
+    "authorization": {
+      "allowed_endpoints": ["*"],
+      "denied_endpoints": []
+    },
+    "settings_permissions": {
+      "can_modify_ingestion_settings": false,
+      "can_modify_model_settings": false,
+      "can_modify_rag_settings": false,
+      "can_modify": [],
+      "cannot_modify": [
+        "pipeline_config.*",
+        "model_config.allowed_models",
+        "feature_flags.*",
+        "rate_limits.*",
+        "authorization.*"
+      ]
+    },
+    "pipeline_config": {
+      "allowed_pipelines": ["*"],
+      "default_pipeline": "rag_chat_standard",
+      "pipeline_overrides": {},
+      "step_overrides": {}
+    },
+    "feature_flags": {
+      "web_search_enabled": true,
+      "report_generation_enabled": true,
+      "investigation_enabled": true,
+      "agent_pipeline_enabled": true,
+      "hyde_enabled": true,
+      "conversation_memory_enabled": true,
+      "streaming_enabled": true,
+      "file_upload_enabled": true,
+      "presentation_enabled": true,
+      "cross_lingual_enabled": true,
+      "llm_router_enabled": true
+    },
+    "rate_limits": {
+      "max_requests_per_minute": -1,
+      "max_requests_per_hour": -1,
+      "max_requests_per_day": -1,
+      "max_concurrent_sessions": -1,
+      "max_tokens_per_day": -1,
+      "max_file_upload_size_mb": -1,
+      "max_files_per_day": -1,
+      "max_collections": -1
+    }
+  },
+  "validation": {
+    "client_name": {
+      "min_length": 3,
+      "max_length": 100,
+      "pattern": "^[a-zA-Z0-9_-]+$"
+    },
+    "description": {
+      "max_length": 500
+    },
+    "client_type": {
+      "allowed_values": ["oauth2", "api_key", "service_account"]
+    },
+    "user_limits": {
+      "max_users_min": 1,
+      "max_users_max": 10000
+    }
+  }
+}

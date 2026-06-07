@@ -1,0 +1,241 @@
+{
+  "reasoning_rag": {
+    "enabled": "${UBP_REASONING__ENABLED:-true}",
+    "default_strategy": "${UBP_REASONING__DEFAULT_STRATEGY:-auto}",
+    "max_reasoning_depth": "${UBP_REASONING__MAX_DEPTH:-5}",
+    "temperature": "${UBP_REASONING__TEMPERATURE:-0.3}",
+    "max_tokens": "${UBP_REASONING__MAX_TOKENS:-800}",
+    "timeout_seconds": "${UBP_REASONING__TIMEOUT_SECONDS:-60}",
+    "retry_enabled": "${UBP_REASONING__RETRY_ENABLED:-true}",
+    "max_retries": "${UBP_REASONING__MAX_RETRIES:-2}"
+  },
+
+  "self_ask": {
+    "enabled": "${UBP_REASONING__SELF_ASK_ENABLED:-true}",
+    "max_iterations": "${UBP_REASONING__SELF_ASK_MAX_ITER:-5}",
+    "min_iterations": "${UBP_REASONING__SELF_ASK_MIN_ITER:-1}",
+    "convergence_threshold": "${UBP_REASONING__SELF_ASK_CONVERGENCE:-0.85}",
+    "sub_question_temperature": "${UBP_REASONING__SELF_ASK_TEMP:-0.4}",
+    "integration_temperature": "${UBP_REASONING__SELF_ASK_INTEGRATION_TEMP:-0.2}",
+    "max_sub_questions_per_iteration": "${UBP_REASONING__SELF_ASK_MAX_SUB_Q:-3}",
+    "retrieval_top_k": "${UBP_REASONING__SELF_ASK_TOP_K:-5}",
+    "early_stop_on_confidence": "${UBP_REASONING__SELF_ASK_EARLY_STOP:-true}",
+    "confidence_threshold": "${UBP_REASONING__SELF_ASK_CONFIDENCE:-0.8}",
+    "decomposition_strategies": {
+      "aspect_based": "${UBP_REASONING__SELF_ASK_ASPECT_ENABLED:-true}",
+      "prerequisite_based": "${UBP_REASONING__SELF_ASK_PREREQ_ENABLED:-true}",
+      "comparative": "${UBP_REASONING__SELF_ASK_COMPARATIVE_ENABLED:-true}",
+      "temporal": "${UBP_REASONING__SELF_ASK_TEMPORAL_ENABLED:-true}"
+    }
+  },
+
+  "chain_of_thought": {
+    "enabled": "${UBP_REASONING__COT_ENABLED:-true}",
+    "max_reasoning_steps": "${UBP_REASONING__COT_MAX_STEPS:-8}",
+    "min_reasoning_steps": "${UBP_REASONING__COT_MIN_STEPS:-2}",
+    "retrieval_trigger_keywords": ["need to know", "requires", "depends on", "related to", "what is", "how does"],
+    "auto_retrieval_threshold": "${UBP_REASONING__COT_AUTO_RETRIEVAL_THRESHOLD:-0.6}",
+    "reasoning_temperature": "${UBP_REASONING__COT_REASONING_TEMP:-0.3}",
+    "synthesis_temperature": "${UBP_REASONING__COT_SYNTHESIS_TEMP:-0.2}",
+    "retrieval_top_k": "${UBP_REASONING__COT_TOP_K:-3}",
+    "interleave_mode": "${UBP_REASONING__COT_INTERLEAVE_MODE:-adaptive}",
+    "thought_verification": "${UBP_REASONING__COT_THOUGHT_VERIFY:-true}",
+    "step_by_step_logging": "${UBP_REASONING__COT_STEP_LOGGING:-true}"
+  },
+
+  "evidence_attribution": {
+    "enabled": "${UBP_REASONING__EVIDENCE_ENABLED:-true}",
+    "min_confidence": "${UBP_REASONING__EVIDENCE_MIN_CONFIDENCE:-0.5}",
+    "citation_format": "${UBP_REASONING__EVIDENCE_CITATION_FORMAT:-inline}",
+    "track_spans": "${UBP_REASONING__EVIDENCE_TRACK_SPANS:-true}",
+    "source_deduplication": "${UBP_REASONING__EVIDENCE_DEDUP_SOURCES:-true}",
+    "claim_extraction_enabled": "${UBP_REASONING__EVIDENCE_CLAIM_EXTRACTION:-true}",
+    "verification_level": "${UBP_REASONING__EVIDENCE_VERIFICATION_LEVEL:-standard}",
+    "attribution_modes": {
+      "inline_citation": "${UBP_REASONING__EVIDENCE_INLINE_ENABLED:-true}",
+      "footnote": "${UBP_REASONING__EVIDENCE_FOOTNOTE_ENABLED:-true}",
+      "structured": "${UBP_REASONING__EVIDENCE_STRUCTURED_ENABLED:-true}"
+    },
+    "confidence_scoring": {
+      "source_quality_weight": "${UBP_REASONING__EVIDENCE_SOURCE_WEIGHT:-0.3}",
+      "relevance_weight": "${UBP_REASONING__EVIDENCE_RELEVANCE_WEIGHT:-0.4}",
+      "consistency_weight": "${UBP_REASONING__EVIDENCE_CONSISTENCY_WEIGHT:-0.3}"
+    }
+  },
+
+  "verification": {
+    "enabled": "${UBP_REASONING__VERIFICATION_ENABLED:-true}",
+    "multi_source_check": "${UBP_REASONING__VERIFICATION_MULTI_SOURCE:-true}",
+    "min_sources_for_verification": "${UBP_REASONING__VERIFICATION_MIN_SOURCES:-2}",
+    "contradiction_detection": "${UBP_REASONING__VERIFICATION_CONTRADICTION:-true}",
+    "contradiction_threshold": "${UBP_REASONING__VERIFICATION_CONTRADICTION_THRESHOLD:-0.7}",
+    "confidence_aggregation": "${UBP_REASONING__VERIFICATION_CONFIDENCE_AGG:-weighted_average}",
+    "grounding_validation": "${UBP_REASONING__VERIFICATION_GROUNDING:-true}",
+    "hallucination_check": "${UBP_REASONING__VERIFICATION_HALLUCINATION:-true}",
+    "fact_check_temperature": "${UBP_REASONING__VERIFICATION_TEMP:-0.1}"
+  },
+
+  "query_analysis": {
+    "enabled": "${UBP_REASONING__QUERY_ANALYSIS_ENABLED:-true}",
+    "complexity_detection": "${UBP_REASONING__QUERY_COMPLEXITY_DETECTION:-true}",
+    "complexity_thresholds": {
+      "simple": "${UBP_REASONING__QUERY_SIMPLE_THRESHOLD:-0.3}",
+      "moderate": "${UBP_REASONING__QUERY_MODERATE_THRESHOLD:-0.6}",
+      "complex": "${UBP_REASONING__QUERY_COMPLEX_THRESHOLD:-0.8}"
+    },
+    "intent_classification": "${UBP_REASONING__QUERY_INTENT_ENABLED:-true}",
+    "entity_extraction": "${UBP_REASONING__QUERY_ENTITY_EXTRACTION:-true}",
+    "language_detection": "${UBP_REASONING__QUERY_LANG_DETECTION:-true}",
+    "supported_languages": ["en", "it"]
+  },
+
+  "strategy_selection": {
+    "auto_select_enabled": "${UBP_REASONING__STRATEGY_AUTO_SELECT:-true}",
+    "selection_model": "${UBP_REASONING__STRATEGY_SELECTION_MODEL:-rule_based}",
+    "rules": {
+      "multi_part_query": "self_ask",
+      "comparison_query": "self_ask",
+      "how_why_query": "chain_of_thought",
+      "step_by_step_query": "chain_of_thought",
+      "factual_query": "evidence_attribution",
+      "verification_query": "verification",
+      "simple_query": "direct"
+    },
+    "fallback_strategy": "${UBP_REASONING__STRATEGY_FALLBACK:-chain_of_thought}",
+    "hybrid_enabled": "${UBP_REASONING__STRATEGY_HYBRID:-true}",
+    "hybrid_combinations": {
+      "self_ask_with_evidence": "${UBP_REASONING__HYBRID_SA_EVIDENCE:-true}",
+      "cot_with_verification": "${UBP_REASONING__HYBRID_COT_VERIFY:-true}"
+    }
+  },
+
+  "retrieval": {
+    "module": "${UBP_REASONING__RETRIEVAL_MODULE:-retrieval_strategy}",
+    "operation": "${UBP_REASONING__RETRIEVAL_OPERATION:-retrieve}",
+    "default_top_k": "${UBP_REASONING__RETRIEVAL_TOP_K:-5}",
+    "rerank_enabled": "${UBP_REASONING__RETRIEVAL_RERANK:-true}",
+    "rerank_top_k": "${UBP_REASONING__RETRIEVAL_RERANK_TOP_K:-3}",
+    "min_relevance_score": "${UBP_REASONING__RETRIEVAL_MIN_SCORE:-0.5}",
+    "hybrid_search": "${UBP_REASONING__RETRIEVAL_HYBRID:-true}",
+    "timeout_seconds": "${UBP_REASONING__RETRIEVAL_TIMEOUT:-10}",
+    "fallback_to_llm": "${UBP_REASONING__RETRIEVAL_FALLBACK_LLM:-true}"
+  },
+
+  "reasoning_trace": {
+    "enabled": "${UBP_REASONING__TRACE_ENABLED:-true}",
+    "log_level": "${UBP_REASONING__TRACE_LOG_LEVEL:-detailed}",
+    "include_prompts": "${UBP_REASONING__TRACE_INCLUDE_PROMPTS:-false}",
+    "include_responses": "${UBP_REASONING__TRACE_INCLUDE_RESPONSES:-true}",
+    "include_retrievals": "${UBP_REASONING__TRACE_INCLUDE_RETRIEVALS:-true}",
+    "include_scores": "${UBP_REASONING__TRACE_INCLUDE_SCORES:-true}",
+    "persistence": "${UBP_REASONING__TRACE_PERSISTENCE:-session}",
+    "max_trace_entries": "${UBP_REASONING__TRACE_MAX_ENTRIES:-100}"
+  },
+
+  "cache": {
+    "enabled": "${UBP_REASONING__CACHE_ENABLED:-true}",
+    "ttl_seconds": "${UBP_REASONING__CACHE_TTL:-3600}",
+    "cache_sub_questions": "${UBP_REASONING__CACHE_SUB_QUESTIONS:-true}",
+    "cache_retrievals": "${UBP_REASONING__CACHE_RETRIEVALS:-true}",
+    "cache_reasoning_steps": "${UBP_REASONING__CACHE_REASONING:-false}",
+    "cache_final_answers": "${UBP_REASONING__CACHE_ANSWERS:-true}",
+    "semantic_matching": "${UBP_REASONING__CACHE_SEMANTIC:-true}",
+    "semantic_threshold": "${UBP_REASONING__CACHE_SEMANTIC_THRESHOLD:-0.92}"
+  },
+
+  "session_management": {
+    "enabled": "${UBP_REASONING__SESSION_ENABLED:-true}",
+    "ttl_seconds": "${UBP_REASONING__SESSION_TTL:-3600}",
+    "max_history_size": "${UBP_REASONING__SESSION_MAX_HISTORY:-50}",
+    "persist_reasoning_trace": "${UBP_REASONING__SESSION_PERSIST_TRACE:-true}",
+    "persist_retrievals": "${UBP_REASONING__SESSION_PERSIST_RETRIEVALS:-true}",
+    "auto_cleanup": "${UBP_REASONING__SESSION_AUTO_CLEANUP:-true}"
+  },
+
+  "worker_pool": {
+    "enabled": "${UBP_REASONING__WORKERS_ENABLED:-true}",
+    "pool_size": "${UBP_REASONING__WORKER_POOL_SIZE:-4}",
+    "max_pool_size": "${UBP_REASONING__WORKER_MAX_POOL_SIZE:-8}",
+    "task_timeout_seconds": "${UBP_REASONING__WORKER_TASK_TIMEOUT:-30}",
+    "queue_max_size": "${UBP_REASONING__WORKER_QUEUE_SIZE:-100}",
+    "retry_on_failure": "${UBP_REASONING__WORKER_RETRY:-true}",
+    "max_task_retries": "${UBP_REASONING__WORKER_MAX_RETRIES:-2}",
+    "backoff_multiplier": "${UBP_REASONING__WORKER_BACKOFF:-1.5}"
+  },
+
+  "metrics": {
+    "enabled": "${UBP_REASONING__METRICS_ENABLED:-true}",
+    "collect_timings": "${UBP_REASONING__METRICS_TIMINGS:-true}",
+    "collect_strategy_distribution": "${UBP_REASONING__METRICS_STRATEGY_DIST:-true}",
+    "collect_iteration_counts": "${UBP_REASONING__METRICS_ITERATIONS:-true}",
+    "collect_retrieval_stats": "${UBP_REASONING__METRICS_RETRIEVALS:-true}",
+    "collect_confidence_scores": "${UBP_REASONING__METRICS_CONFIDENCE:-true}",
+    "collect_verification_stats": "${UBP_REASONING__METRICS_VERIFICATION:-true}",
+    "retention_hours": "${UBP_REASONING__METRICS_RETENTION:-24}"
+  },
+
+  "debug": {
+    "enabled": "${UBP_REASONING__DEBUG_ENABLED:-false}",
+    "log_prompts": "${UBP_REASONING__DEBUG_LOG_PROMPTS:-false}",
+    "log_responses": "${UBP_REASONING__DEBUG_LOG_RESPONSES:-false}",
+    "log_sub_questions": "${UBP_REASONING__DEBUG_LOG_SUB_Q:-true}",
+    "log_reasoning_steps": "${UBP_REASONING__DEBUG_LOG_STEPS:-true}",
+    "log_retrievals": "${UBP_REASONING__DEBUG_LOG_RETRIEVALS:-true}",
+    "log_evidence": "${UBP_REASONING__DEBUG_LOG_EVIDENCE:-true}",
+    "log_verification": "${UBP_REASONING__DEBUG_LOG_VERIFICATION:-true}",
+    "trace_execution": "${UBP_REASONING__DEBUG_TRACE:-false}"
+  },
+
+  "delegation": {
+    "llm_module": "${UBP_REASONING__LLM_MODULE:-inference_ollama_grok}",
+    "llm_operation": "${UBP_REASONING__LLM_OPERATION:-generate}",
+    "timeout_seconds": "${UBP_REASONING__LLM_TIMEOUT:-30}",
+    "max_retries": "${UBP_REASONING__LLM_MAX_RETRIES:-2}",
+    "fallback_enabled": "${UBP_REASONING__FALLBACK_ENABLED:-true}",
+    "fallback_chain": ["chain_of_thought", "self_ask", "direct"]
+  },
+
+  "pipeline": {
+    "default_timeout_seconds": "${UBP_REASONING__PIPELINE_TIMEOUT:-120}",
+    "fail_fast": "${UBP_REASONING__PIPELINE_FAIL_FAST:-false}",
+    "steps": {
+      "analyze_query": {
+        "enabled": "${UBP_REASONING__STEP_ANALYZE_ENABLED:-true}",
+        "timeout": "${UBP_REASONING__STEP_ANALYZE_TIMEOUT:-5}"
+      },
+      "select_strategy": {
+        "enabled": "${UBP_REASONING__STEP_SELECT_ENABLED:-true}",
+        "timeout": "${UBP_REASONING__STEP_SELECT_TIMEOUT:-3}"
+      },
+      "execute_reasoning": {
+        "enabled": "${UBP_REASONING__STEP_EXECUTE_ENABLED:-true}",
+        "timeout": "${UBP_REASONING__STEP_EXECUTE_TIMEOUT:-180}"
+      },
+      "gather_evidence": {
+        "enabled": "${UBP_REASONING__STEP_EVIDENCE_ENABLED:-true}",
+        "timeout": "${UBP_REASONING__STEP_EVIDENCE_TIMEOUT:-15}"
+      },
+      "verify_claims": {
+        "enabled": "${UBP_REASONING__STEP_VERIFY_ENABLED:-true}",
+        "timeout": "${UBP_REASONING__STEP_VERIFY_TIMEOUT:-20}"
+      },
+      "synthesize_answer": {
+        "enabled": "${UBP_REASONING__STEP_SYNTHESIZE_ENABLED:-true}",
+        "timeout": "${UBP_REASONING__STEP_SYNTHESIZE_TIMEOUT:-15}"
+      },
+      "format_output": {
+        "enabled": "${UBP_REASONING__STEP_OUTPUT_ENABLED:-true}",
+        "timeout": "${UBP_REASONING__STEP_OUTPUT_TIMEOUT:-5}"
+      }
+    }
+  },
+
+  "output_format": {
+    "include_reasoning_trace": "${UBP_REASONING__OUTPUT_INCLUDE_TRACE:-true}",
+    "include_sources": "${UBP_REASONING__OUTPUT_INCLUDE_SOURCES:-true}",
+    "include_confidence": "${UBP_REASONING__OUTPUT_INCLUDE_CONFIDENCE:-true}",
+    "include_sub_answers": "${UBP_REASONING__OUTPUT_INCLUDE_SUB_ANSWERS:-true}",
+    "citation_style": "${UBP_REASONING__OUTPUT_CITATION_STYLE:-numbered}",
+    "max_sources_displayed": "${UBP_REASONING__OUTPUT_MAX_SOURCES:-10}"
+  }
+}

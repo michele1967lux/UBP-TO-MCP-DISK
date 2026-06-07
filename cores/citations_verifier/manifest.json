@@ -1,0 +1,360 @@
+{
+  "_module": "citations_verifier",
+  "name": "citations_verifier",
+  "version": "1.0.0",
+  "_description": "Citation verification, trust list management, and trusted source filtering for web search and RAG validation",
+  "_architecture": "UBP 3-file pattern",
+  "_created": "2026-02-15",
+  "operations": [
+    {
+      "name": "health_check",
+      "description": "Module health: web_search reachable, trust lists loaded, Redis connected",
+      "parameters": {},
+      "returns": {
+        "status": "healthy|degraded|unhealthy",
+        "web_search_available": "bool",
+        "redis_connected": "bool",
+        "trust_lists_loaded": "int",
+        "total_trusted_domains": "int",
+        "llm_available": "bool"
+      },
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 75,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "none",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "verify_document",
+      "description": "Full verification pipeline: extract claims from generated text, verify each against RAG chunks and/or web sources, produce verification report with trust score.",
+      "parameters": {
+        "text": {
+          "type": "string",
+          "required": true,
+          "description": "Generated document text to verify"
+        },
+        "rag_chunks": {
+          "type": "array",
+          "required": false,
+          "description": "Source RAG chunks used to generate the text (if available)"
+        },
+        "domain": {
+          "type": "string",
+          "required": false,
+          "description": "Domain hint for trust list selection (medical, legal, technical, etc.)"
+        },
+        "verification_depth": {
+          "type": "string",
+          "required": false,
+          "description": "quick (RAG only) | standard (RAG + trusted web) | deep (RAG + full web)",
+          "default": "standard"
+        },
+        "language": {
+          "type": "string",
+          "required": false,
+          "default": "it"
+        },
+        "max_claims": {
+          "type": "integer",
+          "required": false,
+          "description": "Max claims to verify (0=all)",
+          "default": 0
+        }
+      },
+      "returns": {
+        "claims_total": "int",
+        "claims_verified": "int",
+        "claims_partial": "int",
+        "claims_unverified": "int",
+        "claims_contradicted": "int",
+        "trust_score": "float (0-1)",
+        "claims": "list[ClaimVerification]",
+        "verification_time_ms": "float",
+        "sources_used": "list[str]"
+      },
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 1500,
+        "requires_session": false,
+        "category": "knowledge"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "verify_claim",
+      "description": "Verify a single claim/statement against RAG and/or web sources.",
+      "parameters": {
+        "claim": {
+          "type": "string",
+          "required": true
+        },
+        "rag_chunks": {
+          "type": "array",
+          "required": false
+        },
+        "domain": {
+          "type": "string",
+          "required": false
+        },
+        "web_verify": {
+          "type": "boolean",
+          "required": false,
+          "default": true
+        }
+      },
+      "returns": {
+        "status": "supported|partial|unsupported|contradicted",
+        "confidence": "float (0-1)",
+        "evidence": "list[Evidence]",
+        "sources": "list[str]"
+      },
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 1000,
+        "requires_session": false,
+        "category": "knowledge"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "get_trusted_sources",
+      "description": "Get the trust list for a domain. Used by other modules to filter or prioritize search results.",
+      "parameters": {
+        "domain": {
+          "type": "string",
+          "required": true,
+          "description": "Domain category: medical|legal_it|legal_eu|technical|financial|academic|news_it|news_intl|government_it|government_eu|custom"
+        },
+        "min_trust_score": {
+          "type": "float",
+          "required": false,
+          "default": 0.7
+        },
+        "format": {
+          "type": "string",
+          "required": false,
+          "description": "domains | full | searxng",
+          "default": "domains"
+        },
+        "exclusive": {
+          "type": "boolean",
+          "required": false,
+          "default": false
+        }
+      },
+      "returns": {
+        "domain": "string",
+        "sources": "list[TrustedSource]",
+        "count": "int",
+        "exclusive": "bool",
+        "search_filter": "string"
+      },
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 300,
+        "requires_session": false,
+        "category": "knowledge"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "manage_trust_list",
+      "description": "CRUD operations on trust lists: add/remove/update domains, create custom lists.",
+      "parameters": {
+        "action": {
+          "type": "string",
+          "required": true,
+          "description": "add|remove|update|create_list|delete_list|list_all"
+        },
+        "domain": {
+          "type": "string",
+          "required": false
+        },
+        "entries": {
+          "type": "array",
+          "required": false
+        },
+        "target_url": {
+          "type": "string",
+          "required": false
+        }
+      },
+      "returns": {
+        "action": "string",
+        "success": "bool",
+        "affected_count": "int",
+        "domain": "string",
+        "current_count": "int"
+      },
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 150,
+        "requires_session": false,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "discover_trusted_sources",
+      "description": "Automatically discover and score new trusted sources for a domain.",
+      "parameters": {
+        "domain": {
+          "type": "string",
+          "required": true
+        },
+        "seed_queries": {
+          "type": "array",
+          "required": false
+        },
+        "min_score_to_add": {
+          "type": "float",
+          "required": false,
+          "default": 0.8
+        },
+        "max_discoveries": {
+          "type": "integer",
+          "required": false,
+          "default": 20
+        },
+        "auto_add": {
+          "type": "boolean",
+          "required": false,
+          "default": false
+        }
+      },
+      "returns": {
+        "discovered": "list[DiscoveredSource]",
+        "auto_added": "int",
+        "proposed": "int",
+        "already_known": "int",
+        "search_queries_used": "list[str]"
+      },
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 2000,
+        "requires_session": false,
+        "category": "knowledge"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "get_search_filter",
+      "description": "Quick method: returns a search filter string for web_search module.",
+      "parameters": {
+        "domain": {
+          "type": "string",
+          "required": true
+        },
+        "exclusive": {
+          "type": "boolean",
+          "required": false,
+          "default": false
+        },
+        "max_sites": {
+          "type": "integer",
+          "required": false,
+          "default": 10
+        }
+      },
+      "returns": {
+        "filter_query": "string",
+        "sites": "list[str]",
+        "exclusive": "bool"
+      },
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 50,
+        "requires_session": false,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    }
+  ],
+  "event_subscriptions": [
+    "report.generated",
+    "rag.response_ready"
+  ],
+  "event_publications": {
+    "citations.verification_completed": "After verify_document with full report",
+    "citations.claim_contradicted": "When a claim is found contradicted by sources",
+    "citations.trust_list_updated": "When a trust list is modified",
+    "citations.sources_discovered": "After discover_trusted_sources completes"
+  },
+  "dependencies": {
+    "required": [
+      "web_search"
+    ],
+    "optional": [
+      "adaptive_budget_manager",
+      "inference_vllm",
+      "rag_orchestrator"
+    ]
+  },
+  "tools": [
+    {
+      "name": "verify_citations",
+      "operation": "verify_document",
+      "tool_type": "step",
+      "description": "Verify citations in generated text against RAG chunks and web sources",
+      "providers": [
+        "grok"
+      ],
+      "input_schema": {
+        "text": {
+          "type": "string",
+          "required": true
+        },
+        "rag_chunks": {
+          "type": "array"
+        },
+        "domain": {
+          "type": "string"
+        },
+        "verification_depth": {
+          "type": "string"
+        }
+      },
+      "output_schema": {
+        "trust_score": {
+          "type": "number"
+        },
+        "claims_total": {
+          "type": "integer"
+        }
+      },
+      "timeout": 120.0,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 5000,
+        "requires_session": false,
+        "category": "reasoning"
+      }
+    }
+  ],
+  "name": "citations_verifier",
+  "module_type": "rag"
+}

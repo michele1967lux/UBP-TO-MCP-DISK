@@ -1,0 +1,664 @@
+{
+    "name": "citation_manager",
+    "version": "1.0.0",
+    "description": "Academic citation management with multi-style formatting and bibliography generation",
+    "author": "UBP Team",
+    "module_type": "utility",
+    "architecture": "3-file-pattern",
+    "requires_redis": false,
+    "requires_postgres": false,
+    "requires_event_bus": false,
+    "dependencies": {
+        "modules": [],
+        "optional_modules": [],
+        "python_packages": [],
+        "notes": "Pure Python implementation with no external dependencies"
+    },
+    "operations": [
+        {
+            "name": "initialize",
+            "description": "Initialize citation manager",
+            "parameters": {
+                "default_style": {
+                    "type": "string",
+                    "required": false,
+                    "default": "apa",
+                    "options": [
+                        "apa",
+                        "mla",
+                        "chicago",
+                        "ieee",
+                        "harvard",
+                        "vancouver"
+                    ]
+                },
+                "persist_path": {
+                    "type": "string",
+                    "required": false
+                },
+                "strict_validation": {
+                    "type": "boolean",
+                    "required": false,
+                    "default": false
+                }
+            },
+            "returns": {
+                "status": "string",
+                "module": "string",
+                "version": "string",
+                "default_style": "string",
+                "citations_loaded": "integer"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "none",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "add_citation",
+            "description": "Add a new citation",
+            "parameters": {
+                "title": {
+                    "type": "string",
+                    "required": true
+                },
+                "authors": {
+                    "type": "array",
+                    "required": false,
+                    "description": "List of {last_name, first_name}"
+                },
+                "year": {
+                    "type": "string",
+                    "required": false
+                },
+                "source_type": {
+                    "type": "string",
+                    "required": false,
+                    "default": "other"
+                },
+                "journal": {
+                    "type": "string",
+                    "required": false
+                },
+                "volume": {
+                    "type": "string",
+                    "required": false
+                },
+                "issue": {
+                    "type": "string",
+                    "required": false
+                },
+                "pages": {
+                    "type": "string",
+                    "required": false
+                },
+                "publisher": {
+                    "type": "string",
+                    "required": false
+                },
+                "doi": {
+                    "type": "string",
+                    "required": false
+                },
+                "url": {
+                    "type": "string",
+                    "required": false
+                },
+                "isbn": {
+                    "type": "string",
+                    "required": false
+                },
+                "collection": {
+                    "type": "string",
+                    "required": false
+                },
+                "document_id": {
+                    "type": "string",
+                    "required": false
+                },
+                "chunk_id": {
+                    "type": "string",
+                    "required": false
+                },
+                "relevance_score": {
+                    "type": "number",
+                    "required": false,
+                    "default": 0.0
+                },
+                "excerpt": {
+                    "type": "string",
+                    "required": false
+                },
+                "tags": {
+                    "type": "array",
+                    "required": false
+                },
+                "section_id": {
+                    "type": "string",
+                    "required": false
+                },
+                "validate": {
+                    "type": "boolean",
+                    "required": false,
+                    "default": true
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "citation_id": "string",
+                "is_duplicate": "boolean",
+                "validation": "object"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 150,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "add_from_document",
+            "description": "Add citation from a retrieved document",
+            "parameters": {
+                "document": {
+                    "type": "object",
+                    "required": true,
+                    "description": "Document with metadata"
+                },
+                "section_id": {
+                    "type": "string",
+                    "required": false
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "citation_id": "string",
+                "is_duplicate": "boolean"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 150,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "get_citation",
+            "description": "Get a citation by ID",
+            "parameters": {
+                "citation_id": {
+                    "type": "string",
+                    "required": true
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "citation": "object"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 50,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "update_citation",
+            "description": "Update a citation",
+            "parameters": {
+                "citation_id": {
+                    "type": "string",
+                    "required": true
+                },
+                "updates": {
+                    "type": "object",
+                    "required": true
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "citation_id": "string"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "delete_citation",
+            "description": "Delete a citation",
+            "parameters": {
+                "citation_id": {
+                    "type": "string",
+                    "required": true
+                }
+            },
+            "returns": {
+                "success": "boolean"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 75,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "list_citations",
+            "description": "List citations with filtering",
+            "parameters": {
+                "source_type": {
+                    "type": "string",
+                    "required": false
+                },
+                "tags": {
+                    "type": "array",
+                    "required": false
+                },
+                "section_id": {
+                    "type": "string",
+                    "required": false
+                },
+                "document_id": {
+                    "type": "string",
+                    "required": false
+                },
+                "query": {
+                    "type": "string",
+                    "required": false
+                },
+                "limit": {
+                    "type": "integer",
+                    "required": false,
+                    "default": 100
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "citations": "array",
+                "count": "integer"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "format_citation",
+            "description": "Format a citation in specified style",
+            "parameters": {
+                "citation_id": {
+                    "type": "string",
+                    "required": true
+                },
+                "style": {
+                    "type": "string",
+                    "required": false
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "formatted": "string",
+                "style": "string"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "format_inline",
+            "description": "Format inline citation reference",
+            "parameters": {
+                "citation_id": {
+                    "type": "string",
+                    "required": true
+                },
+                "number": {
+                    "type": "integer",
+                    "required": false,
+                    "default": 1
+                },
+                "page": {
+                    "type": "string",
+                    "required": false
+                },
+                "style": {
+                    "type": "string",
+                    "required": false
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "inline": "string",
+                "style": "string"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "generate_bibliography",
+            "description": "Generate formatted bibliography",
+            "parameters": {
+                "citation_ids": {
+                    "type": "array",
+                    "required": false
+                },
+                "section_id": {
+                    "type": "string",
+                    "required": false
+                },
+                "document_id": {
+                    "type": "string",
+                    "required": false
+                },
+                "style": {
+                    "type": "string",
+                    "required": false
+                },
+                "title": {
+                    "type": "string",
+                    "required": false,
+                    "default": "Bibliografia"
+                },
+                "numbered": {
+                    "type": "boolean",
+                    "required": false,
+                    "default": true
+                },
+                "sort_by": {
+                    "type": "string",
+                    "required": false,
+                    "default": "author",
+                    "options": [
+                        "author",
+                        "year",
+                        "order"
+                    ]
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "bibliography": "string",
+                "style": "string",
+                "count": "integer"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 150,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "validate_citation",
+            "description": "Validate a citation",
+            "parameters": {
+                "citation_id": {
+                    "type": "string",
+                    "required": true
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "validation": "object"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "knowledge"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "validate_all",
+            "description": "Validate all citations",
+            "parameters": {},
+            "returns": {
+                "success": "boolean",
+                "total": "integer",
+                "valid": "integer",
+                "invalid": "integer",
+                "details": "object"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 500,
+                "requires_session": false,
+                "category": "knowledge"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "find_duplicates",
+            "description": "Find duplicate citations",
+            "parameters": {},
+            "returns": {
+                "success": "boolean",
+                "duplicates": "array",
+                "count": "integer"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 200,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "export_bibtex",
+            "description": "Export citations as BibTeX",
+            "parameters": {
+                "citation_ids": {
+                    "type": "array",
+                    "required": false
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "format": "string",
+                "content": "string",
+                "count": "integer"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 150,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "export_json",
+            "description": "Export citations as JSON",
+            "parameters": {
+                "citation_ids": {
+                    "type": "array",
+                    "required": false
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "format": "string",
+                "citations": "array",
+                "count": "integer"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 150,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "get_stats",
+            "description": "Get citation statistics",
+            "parameters": {},
+            "returns": {
+                "success": "boolean",
+                "stats": "object"
+            },
+            "admin_only": true,
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 75,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "clear_all",
+            "description": "Clear all citations",
+            "parameters": {},
+            "returns": {
+                "success": "boolean",
+                "deleted_count": "integer"
+            },
+            "admin_only": true,
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 200,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "health_check",
+            "description": "Check module health",
+            "parameters": {},
+            "returns": {
+                "module": "string",
+                "version": "string",
+                "status": "string",
+                "citations_count": "integer"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 50,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "none",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "shutdown",
+            "description": "Graceful shutdown",
+            "parameters": {},
+            "returns": {
+                "status": "string"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "none",
+            "scope": "system",
+            "client_types": []
+        }
+    ],
+    "citation_styles": [
+        "apa",
+        "mla",
+        "chicago",
+        "ieee",
+        "harvard",
+        "vancouver",
+        "bibtex"
+    ],
+    "source_types": [
+        "article",
+        "book",
+        "book_chapter",
+        "conference",
+        "website",
+        "rag_document",
+        "web_search",
+        "other"
+    ],
+    "config_file": "config.json",
+    "production_ready": true
+}

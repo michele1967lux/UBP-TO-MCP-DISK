@@ -1,0 +1,53 @@
+{
+  "_fix_note": "FIX-PORT-002 v1.8.2: Aligned ENV var names with .env file (UBP_QDRANT__ prefix)",
+  "qdrant": {
+    "host": "${UBP_QDRANT__HOST:-localhost}",
+    "port": "${UBP_QDRANT__PORT:-6333}",
+    "grpc_port": "${UBP_QDRANT__GRPC_PORT:-6334}",
+    "prefer_grpc": "${UBP_QDRANT__PREFER_GRPC:-false}",
+    "timeout": "${UBP_QDRANT__TIMEOUT:-30}",
+    "api_key": "${UBP_QDRANT__API_KEY:-}"
+  },
+  "collection": {
+    "default_name": "${UBP_RAG_QDRANT__DEFAULT_COLLECTION:-documents}",
+    "vector_size": "${UBP_RAG_QDRANT__VECTOR_SIZE:-1024}",
+    "distance": "${UBP_RAG_QDRANT__DISTANCE:-Cosine}",
+    "on_disk_payload": true
+  },
+  "embedding": {
+    "_note_v411": "BAAI/bge-m3 - multilingual (100+ langs), 1024 dims, state-of-the-art",
+    "_note_v414_prefix": "BGE-m3/E5 models require query:/passage: prefixes for cross-lingual retrieval",
+    "_note_v429_device": "GPU priority with CPU fallback - auto/cuda/cpu",
+    "provider": "${UBP_RAG_QDRANT__EMBEDDING_PROVIDER:-sentence-transformers}",
+    "model": "${UBP_RAG_QDRANT__EMBEDDING_MODEL:-BAAI/bge-m3}",
+    "dimension": "${UBP_RAG_QDRANT__EMBEDDING_DIM:-1024}",
+    "batch_size": "${UBP_RAG_QDRANT__EMBEDDING_BATCH:-16}",
+    "device": "${UBP_RAG_QDRANT__EMBEDDING_DEVICE:-auto}",
+    "prefix_enabled": "${UBP_RAG_QDRANT__EMBEDDING_PREFIX_ENABLED:-true}",
+    "query_prefix": "${UBP_RAG_QDRANT__EMBEDDING_QUERY_PREFIX:-}",
+    "passage_prefix": "${UBP_RAG_QDRANT__EMBEDDING_PASSAGE_PREFIX:-}"
+  },
+  "chunking": {
+    "_note": "These are MODULE DEFAULTS. Collection-specific settings (from Redis metadata) take priority.",
+    "enabled": "${UBP_RAG_QDRANT__CHUNKING_ENABLED:-true}",
+    "chunk_size": "${UBP_RAG_QDRANT__CHUNK_SIZE:-500}",
+    "chunk_overlap": "${UBP_RAG_QDRANT__CHUNK_OVERLAP:-50}",
+    "split_by": "${UBP_RAG_QDRANT__SPLIT_BY:-sentence}",
+    "min_chunk_size": "${UBP_RAG_QDRANT__MIN_CHUNK_SIZE:-50}",
+    "max_chunk_size": "${UBP_RAG_QDRANT__MAX_CHUNK_SIZE:-2000}"
+  },
+  "retrieval": {
+    "default_top_k": 5,
+    "score_threshold": 0.1,
+    "with_payload": true,
+    "with_vectors": true
+  },
+  "reliability": {
+    "max_retries": 3,
+    "retry_delay_seconds": 1,
+    "retry_backoff_multiplier": 2,
+    "max_retry_delay_seconds": 30,
+    "circuit_breaker_threshold": 5,
+    "circuit_breaker_timeout": 60
+  }
+}

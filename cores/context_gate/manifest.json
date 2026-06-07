@@ -1,0 +1,67 @@
+{
+    "name": "context_gate",
+    "version": "1.0.0",
+    "description": "Security gate: resolves client/user settings, ACL, feature flags, and injects resolved context into pipeline. Deny-by-default on auth failure.",
+    "module_type": "security",
+    "requires_redis": false,
+    "requires_postgres": false,
+    "requires_event_bus": false,
+    "operations": [
+        {
+            "name": "initialize",
+            "description": "Initialize gate (resolve admin_clients module reference)",
+            "security": "none",
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "resolve",
+            "description": "Resolve client/user context: settings, allowed_pipelines, feature_flags, domain. Raises GateError on auth failure (deny-by-default).",
+            "security": "authenticated",
+            "parameters": {
+                "ctx": "UBPContext",
+                "pipeline_name": "Optional[str]"
+            },
+            "returns": "Dict with settings, allowed_pipelines, feature_flags, client_id, user_id, domain_preset, pipeline_overrides",
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "health_check",
+            "description": "Health status of the context gate",
+            "security": "none",
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 50,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "scope": "system",
+            "client_types": []
+        }
+    ],
+    "dependencies": {
+        "modules": [],
+        "optional_modules": [
+            "admin_clients",
+            "user_profile_memory"
+        ]
+    },
+    "config_file": null,
+    "settings_prefix": "UBP_CONTEXT_GATE__"
+}

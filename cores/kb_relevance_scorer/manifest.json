@@ -1,0 +1,63 @@
+{
+  "name": "kb_relevance_scorer",
+  "version": "1.0.0",
+  "description": "Composite KB relevance scoring with multi-feature analysis. Replaces naive avg_score threshold with strength/separation/support/coverage/dispersion features.",
+  "module_type": "routing",
+  "architecture": "3-file-pattern",
+  "requires_redis": false,
+  "requires_postgres": false,
+  "requires_event_bus": false,
+  "operations": [
+    {
+      "name": "score",
+      "description": "Score KB relevance from pre-fetched search results",
+      "security": "authenticated",
+      "parameters": {
+        "search_results": "list[dict]",
+        "query": "str",
+        "query_type": "Optional[str]"
+      },
+      "returns": "dict",
+      "mcp_hints": {
+        "category": "knowledge",
+        "read_only": true,
+        "idempotent": true,
+        "requires_session": false,
+        "estimated_latency_ms": 50
+      },
+      "scope": "tenant"
+    },
+    {
+      "name": "score_from_qdrant",
+      "description": "Score KB relevance by querying Qdrant directly (self-contained)",
+      "security": "authenticated",
+      "parameters": {
+        "query": "str",
+        "collection": "str",
+        "top_k": "Optional[int]"
+      },
+      "returns": "dict",
+      "mcp_hints": {
+        "category": "knowledge",
+        "read_only": true,
+        "idempotent": true,
+        "requires_session": false,
+        "estimated_latency_ms": 200
+      },
+      "scope": "tenant"
+    },
+    {
+      "name": "health_check",
+      "description": "Health check for the module",
+      "security": "none",
+      "scope": "system"
+    }
+  ],
+  "dependencies": {
+    "modules": [],
+    "optional_modules": [
+      "rag_qdrant"
+    ]
+  },
+  "config_file": "config.json"
+}

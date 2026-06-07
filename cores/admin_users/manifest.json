@@ -1,0 +1,448 @@
+{
+  "name": "admin_users",
+  "version": "1.0.0",
+  "description": "User management module for UBP Enterprise Hybrid Edition with enterprise-grade security",
+  "author": "UBP Team",
+  "module_type": "admin",
+  "architecture": "3-file-pattern",
+  "requires_redis": true,
+  "requires_postgres": false,
+  "requires_event_bus": true,
+  "operations": [
+    {
+      "name": "initialize",
+      "description": "Initialize user management module with Redis and password hashing",
+      "parameters": {},
+      "returns": {
+        "status": "string (initialized status)",
+        "module": "string (module name)",
+        "storage": "string (storage backend)",
+        "security": "object (security features)",
+        "features": "object (module features)"
+      },
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": true,
+        "estimated_latency_ms": 200,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "none",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "register",
+      "description": "Public self-registration endpoint for new users. Requires valid client_id.",
+      "public": true,
+      "rate_limit": {
+        "requests": 5,
+        "window_seconds": 60,
+        "key_by": "ip"
+      },
+      "parameters": {
+        "username": {
+          "type": "string",
+          "required": true,
+          "ui_type": "text",
+          "label": "Username",
+          "description": "Nome utente univoco (3-50 caratteri)",
+          "validation": {
+            "minLength": 3,
+            "maxLength": 50
+          }
+        },
+        "password": {
+          "type": "string",
+          "required": true,
+          "ui_type": "password",
+          "label": "Password",
+          "description": "Password sicura (min 6 caratteri)",
+          "validation": {
+            "minLength": 6
+          }
+        },
+        "email": {
+          "type": "string",
+          "required": true,
+          "ui_type": "email",
+          "label": "Email",
+          "description": "Indirizzo email dell'utente",
+          "validation": {
+            "maxLength": 100
+          }
+        },
+        "client_id": {
+          "type": "string",
+          "required": true,
+          "ui_type": "text",
+          "label": "Client ID",
+          "description": "ID del client autorizzato a registrare utenti"
+        },
+        "full_name": {
+          "type": "string",
+          "required": false,
+          "ui_type": "text",
+          "label": "Full Name",
+          "description": "Nome completo dell'utente",
+          "validation": {
+            "maxLength": 100
+          }
+        }
+      },
+      "returns": {
+        "success": "boolean",
+        "user_id": "string (UUID)",
+        "username": "string",
+        "message": "string"
+      },
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 300,
+        "requires_session": false,
+        "category": "user"
+      },
+      "security": "admin",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "create_user",
+      "description": "Create a new user account. SECURITY: client_id is automatically assigned from caller's context. Only admin can assign admin role.",
+      "parameters": {
+        "username": {
+          "type": "string",
+          "required": true,
+          "description": "Nome utente univoco"
+        },
+        "password": {
+          "type": "string",
+          "required": true,
+          "description": "Password sicura (min 6 caratteri)"
+        },
+        "email": {
+          "type": "string",
+          "required": false,
+          "description": "Indirizzo email dell'utente"
+        },
+        "full_name": {
+          "type": "string",
+          "required": false,
+          "description": "Nome completo dell'utente"
+        },
+        "roles": {
+          "type": "array",
+          "required": false,
+          "description": "Ruoli assegnati all'utente (solo admin puo' assegnare 'admin')",
+          "security_note": "Role 'admin' can only be assigned by admin users"
+        },
+        "tenant_id": {
+          "type": "string",
+          "required": false,
+          "description": "ID tenant per multi-tenancy"
+        },
+        "is_active": {
+          "type": "boolean",
+          "required": false,
+          "description": "Se l'utente e' attivo",
+          "default": true
+        },
+        "target_client_id": {
+          "type": "string",
+          "required": false,
+          "description": "Client di destinazione (SOLO ADMIN - per creare utenti in client specifici)",
+          "security_note": "Only admin users can specify target_client_id. Non-admin requests attempting cross-client creation are rejected."
+        },
+        "request_id": {
+          "type": "string",
+          "required": false,
+          "description": "ID richiesta (auto-generato se non fornito)"
+        }
+      },
+      "security": "client_admin",
+      "returns": {
+        "user_id": "string (UUID)",
+        "username": "string",
+        "email": "string",
+        "full_name": "string",
+        "roles": "array of strings",
+        "tenant_id": "string",
+        "is_active": "boolean",
+        "mfa_enabled": "boolean",
+        "client_id": "string (automatically assigned from caller's context)",
+        "registered_via_client": "string (client UUID)",
+        "created_at": "string (ISO datetime)",
+        "updated_at": "string (ISO datetime)",
+        "request_id": "string (tracking ID)"
+      },
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 300,
+        "requires_session": true,
+        "category": "operations",
+        "side_effect_trigger": "When the admin explicitly asks to create a new user (e.g. 'crea un utente', 'create a new user', 'aggiungi un utente').",
+        "proactive": false
+      },
+      "scope": "general",
+      "client_types": []
+    },
+    {
+      "name": "list_users",
+      "description": "List users with optional filtering and pagination. SECURITY: Non-admin users see only users from their own client.",
+      "parameters": {
+        "filter": "object (optional, {is_active: bool, roles: [str], tenant_id: str})",
+        "limit": "integer (optional, max results to return)",
+        "offset": "integer (optional, number of results to skip)"
+      },
+      "security": "client_admin",
+      "returns": {
+        "users": "array of user objects (filtered by caller's client_id for non-admin)"
+      },
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 100,
+        "requires_session": true,
+        "category": "operations"
+      },
+      "scope": "general",
+      "client_types": []
+    },
+    {
+      "name": "get_user",
+      "description": "Get user details by ID. SECURITY: Non-admin users can only access users from their own client.",
+      "parameters": {
+        "user_id": "string (required, UUID)"
+      },
+      "security": "client_admin",
+      "returns": {
+        "user object": "(same as create_user response, without password_hash)"
+      },
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 50,
+        "requires_session": true,
+        "category": "operations"
+      },
+      "scope": "general",
+      "client_types": []
+    },
+    {
+      "name": "update_user",
+      "description": "Update user information. SECURITY: Non-admin can only update users in their own client. Only admin can assign admin role.",
+      "parameters": {
+        "user_id": "string (required, UUID)",
+        "username": "string (optional, 3-50 chars, must be unique)",
+        "email": "string (optional, max 100 chars)",
+        "full_name": "string (optional, max 100 chars)",
+        "roles": "array of strings (optional, 'admin' requires admin caller)",
+        "tenant_id": "string (optional)",
+        "is_active": "boolean (optional)",
+        "mfa_enabled": "boolean (optional, enable/disable MFA)",
+        "request_id": "string (optional, auto-generated UUID if not provided)"
+      },
+      "security": "client_admin",
+      "returns": {
+        "user object": "(same as create_user response)",
+        "request_id": "string (tracking ID)"
+      },
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 200,
+        "requires_session": true,
+        "category": "operations",
+        "side_effect_trigger": "When the admin explicitly asks to modify user data (e.g. 'cambia il ruolo', 'update user', 'modifica l'utente').",
+        "proactive": false
+      },
+      "scope": "general",
+      "client_types": []
+    },
+    {
+      "name": "delete_user",
+      "description": "Delete a user account permanently. SECURITY: Non-admin can only delete users from their own client.",
+      "parameters": {
+        "user_id": "string (required, UUID)",
+        "request_id": "string (optional, auto-generated UUID if not provided)"
+      },
+      "security": "client_admin",
+      "returns": {
+        "message": "string (success message)",
+        "user_id": "string (deleted user ID)",
+        "username": "string (deleted username)",
+        "request_id": "string (tracking ID)"
+      },
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": true,
+        "estimated_latency_ms": 200,
+        "requires_session": true,
+        "category": "operations",
+        "side_effect_trigger": "When the admin explicitly asks to delete a user (e.g. 'elimina l'utente', 'delete user', 'rimuovi utente').",
+        "proactive": false
+      },
+      "scope": "general",
+      "client_types": []
+    },
+    {
+      "name": "change_password",
+      "description": "Change user password with old password verification",
+      "parameters": {
+        "user_id": "string (required, UUID)",
+        "old_password": "string (required, current password for verification)",
+        "new_password": "string (required, min 6 chars)",
+        "request_id": "string (optional, auto-generated UUID if not provided)"
+      },
+      "returns": {
+        "message": "string (success message)",
+        "user_id": "string",
+        "request_id": "string (tracking ID)"
+      },
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 200,
+        "requires_session": true,
+        "category": "user"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "admin_reset_password",
+      "description": "Admin password reset — bypasses old password verification. Requires admin or client_admin (scoped to own client).",
+      "parameters": {
+        "user_id": "string (required, UUID of target user)",
+        "new_password": "string (required, min 6 chars)",
+        "request_id": "string (optional, auto-generated UUID if not provided)"
+      },
+      "returns": {
+        "message": "string (success message)",
+        "user_id": "string",
+        "request_id": "string (tracking ID)"
+      },
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 200,
+        "requires_session": true,
+        "category": "admin"
+      },
+      "security": "admin",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "get_stats",
+      "description": "Get user management statistics and metrics",
+      "parameters": {},
+      "returns": {
+        "module": "string (module name)",
+        "total_users": "integer (total user count)",
+        "active_users": "integer (active user count)",
+        "inactive_users": "integer (inactive user count)",
+        "users_by_role": "object (role name -> user count)",
+        "users_by_tenant": "object (tenant ID -> user count)",
+        "storage": "string (storage backend)",
+        "security": "object (security features)"
+      },
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 100,
+        "requires_session": true,
+        "category": "admin"
+      },
+      "security": "admin",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "health_check",
+      "description": "Health check for user management module",
+      "parameters": {},
+      "returns": {
+        "module": "string (module name)",
+        "status": "string (healthy/degraded/unhealthy)",
+        "initialized": "boolean",
+        "redis": "object (connection status and health)"
+      },
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 50,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "none",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "ingest_to_personal_kb",
+      "description": "Ingest document to user's Personal KB - Fixes GAP-INGEST-002",
+      "security": "authenticated",
+      "parameters": {
+        "user_id": {
+          "type": "string",
+          "required": true,
+          "ui_type": "text",
+          "label": "User ID",
+          "description": "User ID performing the ingestion (must match authenticated user)"
+        },
+        "text": {
+          "type": "string",
+          "required": true,
+          "ui_type": "textarea",
+          "label": "Document Text",
+          "description": "Text content to ingest"
+        },
+        "metadata": {
+          "type": "object",
+          "required": false,
+          "ui_type": "json",
+          "label": "Metadata",
+          "description": "Optional document metadata"
+        },
+        "request_id": {
+          "type": "string",
+          "required": false,
+          "ui_type": "text",
+          "label": "Request ID",
+          "description": "Optional request tracking ID"
+        }
+      },
+      "returns": {
+        "document_id": "string (generated document ID)",
+        "chunks_count": "integer (number of chunks created)",
+        "status": "string (success/error)",
+        "message": "string (status message)",
+        "request_id": "string (tracking ID)"
+      },
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 500,
+        "requires_session": true,
+        "category": "knowledge"
+      },
+      "scope": "free",
+      "client_types": []
+    }
+  ],
+  "event_subscriptions": [],
+  "event_publications": [
+    "admin.user.created",
+    "admin.user.updated",
+    "admin.user.deleted",
+    "admin.user.password_changed",
+    "admin.user.registered"
+  ],
+  "config_file": "config.json",
+  "test_suite": "test_admin_users.py",
+  "production_ready": true
+}

@@ -1,0 +1,988 @@
+{
+    "name": "enrichment_pipeline",
+    "version": "1.0.0",
+    "description": "Advanced RAG enrichment pipeline with reranking, query expansion, HyDE, compression, and chunk fusion",
+    "author": "UBP Team",
+    "module_type": "enrichment",
+    "architecture": "3-file-pattern",
+    "requires_redis": true,
+    "requires_postgres": false,
+    "requires_event_bus": true,
+    "dependencies": {
+        "modules": [],
+        "optional_modules": [
+            "inference_vllm",
+            "inference_ollama_grok",
+            "inference_openai_anthropic"
+        ],
+        "python_packages": [
+            "sentence-transformers>=2.2.0",
+            "torch>=2.0.0",
+            "FlagEmbedding>=1.2.0"
+        ],
+        "redis_keys": [
+            "ubp:enrichment:cache:*",
+            "ubp:enrichment:stats:*"
+        ],
+        "notes": "Requires at least one inference module for query_expansion, HyDE, and abstractive compression. Configure via UBP_ENRICHMENT_LLM_MODULE. Reranking works without LLM."
+    },
+    "operations": [
+        {
+            "name": "initialize",
+            "description": "Initialize enrichment pipeline and load models",
+            "parameters": {
+                "preload_models": {
+                    "type": "boolean",
+                    "required": false,
+                    "ui_type": "checkbox",
+                    "label": "Preload Models",
+                    "description": "Load reranker model immediately",
+                    "default": true
+                }
+            },
+            "returns": {
+                "status": "string",
+                "module": "string",
+                "reranker_loaded": "boolean",
+                "reranker_model": "string",
+                "device": "string",
+                "pipeline_steps_available": "array"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 100,
+                "requires_session": true,
+                "category": "admin"
+            },
+            "security": "none",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "enrich_context",
+            "description": "Full enrichment pipeline: query expansion, HyDE, rerank, fusion, compression, metadata",
+            "parameters": {
+                "query": {
+                    "type": "string",
+                    "required": true,
+                    "ui_type": "textarea",
+                    "label": "Query",
+                    "description": "Original search query"
+                },
+                "chunks": {
+                    "type": "array",
+                    "required": true,
+                    "ui_type": "json",
+                    "label": "Chunks",
+                    "description": "Retrieved chunks to enrich"
+                },
+                "pipeline_config": {
+                    "type": "object",
+                    "required": false,
+                    "ui_type": "json",
+                    "label": "Pipeline Config",
+                    "description": "Override default pipeline steps",
+                    "default": null
+                },
+                "chat_history": {
+                    "type": "array",
+                    "required": false,
+                    "ui_type": "json",
+                    "label": "Chat History",
+                    "description": "Previous messages for context-aware enrichment"
+                },
+                "top_k": {
+                    "type": "integer",
+                    "required": false,
+                    "ui_type": "number",
+                    "label": "Top K",
+                    "description": "Number of chunks to return after reranking",
+                    "default": 5
+                }
+            },
+            "returns": {
+                "enriched_query": "string (if query expansion applied)",
+                "enriched_chunks": "array of enriched chunks",
+                "metadata_added": "object",
+                "enrichment_applied": "array of step names",
+                "stats": "{total_time_ms, step_times, chunks_before, chunks_after}"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 1000,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "rerank",
+            "description": "Rerank chunks using cross-encoder model",
+            "parameters": {
+                "query": {
+                    "type": "string",
+                    "required": true,
+                    "ui_type": "textarea",
+                    "label": "Query"
+                },
+                "chunks": {
+                    "type": "array",
+                    "required": true,
+                    "ui_type": "json",
+                    "label": "Chunks"
+                },
+                "top_k": {
+                    "type": "integer",
+                    "required": false,
+                    "ui_type": "number",
+                    "label": "Top K",
+                    "default": 10
+                },
+                "return_scores": {
+                    "type": "boolean",
+                    "required": false,
+                    "ui_type": "checkbox",
+                    "label": "Return Scores",
+                    "default": true
+                }
+            },
+            "returns": {
+                "reranked_chunks": "array with rerank_score added",
+                "model_used": "string",
+                "time_ms": "number"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 500,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "expand_query",
+            "description": "Generate query variations using LLM",
+            "parameters": {
+                "query": {
+                    "type": "string",
+                    "required": true,
+                    "ui_type": "textarea",
+                    "label": "Query"
+                },
+                "num_variants": {
+                    "type": "integer",
+                    "required": false,
+                    "ui_type": "number",
+                    "label": "Number of Variants",
+                    "default": 3,
+                    "validation": {
+                        "min": 1,
+                        "max": 10
+                    }
+                },
+                "chat_history": {
+                    "type": "array",
+                    "required": false,
+                    "ui_type": "json",
+                    "label": "Chat History"
+                },
+                "expansion_type": {
+                    "type": "string",
+                    "required": false,
+                    "ui_type": "select",
+                    "label": "Expansion Type",
+                    "options": [
+                        {
+                            "label": "Semantic Variants",
+                            "value": "semantic"
+                        },
+                        {
+                            "label": "Keyword Extraction",
+                            "value": "keywords"
+                        },
+                        {
+                            "label": "Question Reformulation",
+                            "value": "reformulate"
+                        },
+                        {
+                            "label": "All Types",
+                            "value": "all"
+                        }
+                    ],
+                    "default": "semantic"
+                }
+            },
+            "returns": {
+                "original_query": "string",
+                "expanded_queries": "array of variant queries",
+                "combined_query": "string (merged for retrieval)",
+                "time_ms": "number"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 800,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "generate_hyde",
+            "description": "Generate Hypothetical Document Embedding (HyDE)",
+            "parameters": {
+                "query": {
+                    "type": "string",
+                    "required": true,
+                    "ui_type": "textarea",
+                    "label": "Query"
+                },
+                "document_type": {
+                    "type": "string",
+                    "required": false,
+                    "ui_type": "select",
+                    "label": "Document Type",
+                    "options": [
+                        {
+                            "label": "Generic Answer",
+                            "value": "answer"
+                        },
+                        {
+                            "label": "Technical Documentation",
+                            "value": "technical"
+                        },
+                        {
+                            "label": "FAQ Entry",
+                            "value": "faq"
+                        },
+                        {
+                            "label": "Article Excerpt",
+                            "value": "article"
+                        }
+                    ],
+                    "default": "answer"
+                },
+                "format_type": {
+                    "type": "string",
+                    "required": false,
+                    "ui_type": "select",
+                    "label": "Format Type",
+                    "description": "Alias for document_type (hyde_pipeline convention)",
+                    "options": [
+                        {
+                            "label": "Generic Answer",
+                            "value": "answer"
+                        },
+                        {
+                            "label": "Technical Documentation",
+                            "value": "technical"
+                        },
+                        {
+                            "label": "FAQ Entry",
+                            "value": "faq"
+                        },
+                        {
+                            "label": "Article Excerpt",
+                            "value": "article"
+                        }
+                    ]
+                },
+                "max_length": {
+                    "type": "integer",
+                    "required": false,
+                    "ui_type": "number",
+                    "label": "Max Length",
+                    "default": 200
+                }
+            },
+            "returns": {
+                "hypothetical_document": "string",
+                "query": "string",
+                "document_type": "string",
+                "format_type": "string",
+                "time_ms": "number"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 1500,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "generate_investigative",
+            "description": "Generate investigative search questions (v2.2.2 - FEAT-INVEST-001). Instead of generating a hypothetical answer (HyDE), generates specific search questions that would lead to finding the answer. Avoids hallucination on unknown terms.",
+            "parameters": {
+                "query": {
+                    "type": "string",
+                    "required": true,
+                    "ui_type": "textarea",
+                    "label": "Query",
+                    "description": "Original user query to decompose"
+                },
+                "num_questions": {
+                    "type": "integer",
+                    "required": false,
+                    "ui_type": "number",
+                    "label": "Number of Questions",
+                    "description": "Number of investigative questions to generate",
+                    "default": 5,
+                    "validation": {
+                        "min": 1,
+                        "max": 10
+                    }
+                },
+                "investigation_type": {
+                    "type": "string",
+                    "required": false,
+                    "ui_type": "select",
+                    "label": "Investigation Type",
+                    "description": "Type of investigation approach",
+                    "options": [
+                        {
+                            "label": "Auto-detect",
+                            "value": "auto"
+                        },
+                        {
+                            "label": "Default",
+                            "value": "default"
+                        },
+                        {
+                            "label": "AI/ML Systems",
+                            "value": "ai_ml"
+                        },
+                        {
+                            "label": "System Administration",
+                            "value": "system_admin"
+                        },
+                        {
+                            "label": "API Integration",
+                            "value": "api_integration"
+                        },
+                        {
+                            "label": "Technical",
+                            "value": "technical"
+                        },
+                        {
+                            "label": "Conceptual",
+                            "value": "conceptual"
+                        },
+                        {
+                            "label": "Troubleshooting",
+                            "value": "troubleshooting"
+                        }
+                    ],
+                    "default": "auto"
+                }
+            },
+            "returns": {
+                "investigative_questions": "array of generated search questions",
+                "original_query": "string",
+                "time_ms": "number"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 2000,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "optimize_query",
+            "description": "FEAT-ARCH-2.2: Optimize query for retrieval using HyDE, Query Expansion, and/or Investigative Decomposition. Returns a list of optimized search queries for multi-retrieval.",
+            "parameters": {
+                "query": {
+                    "type": "string",
+                    "required": true,
+                    "ui_type": "textarea",
+                    "label": "Query",
+                    "description": "Original user query to optimize"
+                },
+                "hyde_enabled": {
+                    "type": "boolean",
+                    "required": false,
+                    "ui_type": "checkbox",
+                    "label": "Enable HyDE",
+                    "description": "Generate hypothetical document embedding",
+                    "default": true
+                },
+                "expansion_enabled": {
+                    "type": "boolean",
+                    "required": false,
+                    "ui_type": "checkbox",
+                    "label": "Enable Expansion",
+                    "description": "Generate query variants",
+                    "default": true
+                },
+                "num_variants": {
+                    "type": "integer",
+                    "required": false,
+                    "ui_type": "number",
+                    "label": "Number of Variants",
+                    "description": "Number of expansion variants to generate",
+                    "default": 3,
+                    "validation": {
+                        "min": 1,
+                        "max": 5
+                    }
+                },
+                "hyde_document_type": {
+                    "type": "string",
+                    "required": false,
+                    "ui_type": "select",
+                    "label": "HyDE Document Type",
+                    "options": [
+                        {
+                            "label": "Generic Answer",
+                            "value": "answer"
+                        },
+                        {
+                            "label": "Technical Documentation",
+                            "value": "technical"
+                        },
+                        {
+                            "label": "FAQ Entry",
+                            "value": "faq"
+                        },
+                        {
+                            "label": "Troubleshooting Guide",
+                            "value": "troubleshooting"
+                        }
+                    ],
+                    "default": "answer"
+                },
+                "investigative_enabled": {
+                    "type": "boolean",
+                    "required": false,
+                    "ui_type": "checkbox",
+                    "label": "Enable Investigative",
+                    "description": "Generate investigative search questions (v2.2.2 - alternative to HyDE)",
+                    "default": false
+                },
+                "num_questions": {
+                    "type": "integer",
+                    "required": false,
+                    "ui_type": "number",
+                    "label": "Number of Questions",
+                    "description": "Number of investigative questions to generate",
+                    "default": 5,
+                    "validation": {
+                        "min": 1,
+                        "max": 10
+                    }
+                }
+            },
+            "returns": {
+                "search_queries": "array of optimized search queries",
+                "original_query": "string",
+                "hyde_document": "string or null",
+                "expanded_queries": "array of expansion variants",
+                "investigative_questions": "array of investigative questions (v2.2.2)",
+                "optimization_applied": "array of applied optimization types",
+                "queries_count": "integer",
+                "time_ms": "number"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 600,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "extract_filters",
+            "description": "Extract metadata filters from natural language query (Query-to-Filter). Converts user intent into Qdrant-compatible filter conditions.",
+            "parameters": {
+                "query": {
+                    "type": "string",
+                    "required": true,
+                    "ui_type": "textarea",
+                    "label": "Query",
+                    "description": "Natural language query with filter intent (e.g., 'only from document X')"
+                }
+            },
+            "returns": {
+                "filters": "object (Qdrant-compatible filter dict) or null",
+                "entities": "object with extracted entity values",
+                "applied_fields": "array of metadata fields used",
+                "confidence": "number (0-1) confidence score",
+                "raw_response": "string (raw LLM response for debug)"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 300,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "compress_context",
+            "description": "Compress chunks to reduce token count while preserving information",
+            "parameters": {
+                "query": {
+                    "type": "string",
+                    "required": true,
+                    "ui_type": "textarea",
+                    "label": "Query"
+                },
+                "chunks": {
+                    "type": "array",
+                    "required": true,
+                    "ui_type": "json",
+                    "label": "Chunks"
+                },
+                "compression_ratio": {
+                    "type": "number",
+                    "required": false,
+                    "ui_type": "number",
+                    "label": "Compression Ratio",
+                    "description": "Target ratio (0.3 = 30% of original)",
+                    "default": 0.5,
+                    "validation": {
+                        "min": 0.1,
+                        "max": 0.9
+                    }
+                },
+                "method": {
+                    "type": "string",
+                    "required": false,
+                    "ui_type": "select",
+                    "label": "Method",
+                    "options": [
+                        {
+                            "label": "Extractive (fast)",
+                            "value": "extractive"
+                        },
+                        {
+                            "label": "Abstractive (LLM)",
+                            "value": "abstractive"
+                        },
+                        {
+                            "label": "Hybrid",
+                            "value": "hybrid"
+                        }
+                    ],
+                    "default": "extractive"
+                }
+            },
+            "returns": {
+                "compressed_chunks": "array",
+                "original_tokens": "integer",
+                "compressed_tokens": "integer",
+                "actual_ratio": "number",
+                "method_used": "string",
+                "time_ms": "number"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 400,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "fuse_chunks",
+            "description": "Merge overlapping or semantically similar chunks",
+            "parameters": {
+                "chunks": {
+                    "type": "array",
+                    "required": true,
+                    "ui_type": "json",
+                    "label": "Chunks"
+                },
+                "strategy": {
+                    "type": "string",
+                    "required": false,
+                    "ui_type": "select",
+                    "label": "Fusion Strategy",
+                    "options": [
+                        {
+                            "label": "Overlap Detection",
+                            "value": "overlap"
+                        },
+                        {
+                            "label": "Semantic Similarity",
+                            "value": "semantic"
+                        },
+                        {
+                            "label": "Adjacent (same doc)",
+                            "value": "adjacent"
+                        },
+                        {
+                            "label": "All Strategies",
+                            "value": "all"
+                        }
+                    ],
+                    "default": "all"
+                },
+                "overlap_threshold": {
+                    "type": "number",
+                    "required": false,
+                    "ui_type": "number",
+                    "label": "Overlap Threshold",
+                    "default": 0.3
+                },
+                "semantic_threshold": {
+                    "type": "number",
+                    "required": false,
+                    "ui_type": "number",
+                    "label": "Semantic Threshold",
+                    "default": 0.93
+                }
+            },
+            "returns": {
+                "fused_chunks": "array",
+                "chunks_before": "integer",
+                "chunks_after": "integer",
+                "fusions_applied": "array of {type, merged_ids}"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 700,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "deduplicate",
+            "description": "Remove duplicate or near-duplicate chunks",
+            "parameters": {
+                "chunks": {
+                    "type": "array",
+                    "required": true,
+                    "ui_type": "json",
+                    "label": "Chunks"
+                },
+                "similarity_threshold": {
+                    "type": "number",
+                    "required": false,
+                    "ui_type": "number",
+                    "label": "Similarity Threshold",
+                    "default": 0.95
+                },
+                "method": {
+                    "type": "string",
+                    "required": false,
+                    "ui_type": "select",
+                    "label": "Method",
+                    "options": [
+                        {
+                            "label": "Exact Hash",
+                            "value": "hash"
+                        },
+                        {
+                            "label": "Semantic",
+                            "value": "semantic"
+                        },
+                        {
+                            "label": "Fuzzy Match",
+                            "value": "fuzzy"
+                        }
+                    ],
+                    "default": "semantic"
+                }
+            },
+            "returns": {
+                "unique_chunks": "array",
+                "duplicates_removed": "integer",
+                "duplicate_groups": "array"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 300,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "inject_metadata",
+            "description": "Add enrichment metadata to chunks",
+            "parameters": {
+                "chunks": {
+                    "type": "array",
+                    "required": true,
+                    "ui_type": "json",
+                    "label": "Chunks"
+                },
+                "metadata_types": {
+                    "type": "array",
+                    "required": false,
+                    "ui_type": "tags",
+                    "label": "Metadata Types",
+                    "options": [
+                        {
+                            "label": "Source Info",
+                            "value": "source"
+                        },
+                        {
+                            "label": "Relevance Score",
+                            "value": "relevance"
+                        },
+                        {
+                            "label": "Timestamp",
+                            "value": "timestamp"
+                        },
+                        {
+                            "label": "Position Index",
+                            "value": "position"
+                        },
+                        {
+                            "label": "Token Count",
+                            "value": "tokens"
+                        }
+                    ],
+                    "default": [
+                        "source",
+                        "relevance",
+                        "position",
+                        "tokens"
+                    ]
+                }
+            },
+            "returns": {
+                "enriched_chunks": "array",
+                "metadata_added": "array of types"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 200,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "get_pipeline_config",
+            "description": "Get current pipeline configuration",
+            "parameters": {},
+            "returns": {
+                "default_pipeline": "array of step configs",
+                "available_steps": "array",
+                "reranker_model": "string",
+                "device": "string"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 50,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "set_pipeline_config",
+            "description": "Update pipeline configuration",
+            "admin_only": true,
+            "parameters": {
+                "pipeline_steps": {
+                    "type": "array",
+                    "required": true,
+                    "ui_type": "json",
+                    "label": "Pipeline Steps",
+                    "description": "Array of {step, enabled, config}"
+                }
+            },
+            "returns": {
+                "updated": "boolean",
+                "new_config": "object"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "reload_pipeline_config",
+            "description": "Hot-reload pipeline configuration from config.json without restart - ADMIN ONLY",
+            "admin_only": true,
+            "parameters": {
+                "clear_cache": {
+                    "type": "boolean",
+                    "required": false,
+                    "ui_type": "checkbox",
+                    "label": "Clear Cache",
+                    "description": "Clear enrichment cache after reload",
+                    "default": true
+                }
+            },
+            "returns": {
+                "status": "string (success/partial/error)",
+                "config_reloaded": "boolean (config.json reloaded)",
+                "cache_cleared": "boolean (cache was cleared)",
+                "cache_entries_cleared": "integer (number of entries cleared)",
+                "components_updated": "array (list of updated component configs)",
+                "current_pipeline_config": "object (current pipeline configuration)",
+                "reranker_model": "string (current reranker model)",
+                "device": "string (current device)",
+                "reranker_model_changed": "object (if model changed, before/after values)",
+                "errors": "array (any errors during reload)"
+            },
+            "notes": "Reloads config.json with environment variable resolution. Reranker model change requires shutdown() + initialize() to load new model. Other config changes take effect immediately.",
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 200,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "health_check",
+            "description": "Health check for enrichment module",
+            "parameters": {},
+            "returns": {
+                "module": "string",
+                "status": "string (healthy/degraded/unhealthy)",
+                "reranker": "{status, model, device, latency_ms}",
+                "llm_delegation": "{status, module}",
+                "cache": "{status, hit_rate}"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 50,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "none",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "get_stats",
+            "description": "Get enrichment statistics",
+            "admin_only": true,
+            "parameters": {
+                "period": {
+                    "type": "string",
+                    "required": false,
+                    "ui_type": "select",
+                    "label": "Period",
+                    "options": [
+                        {
+                            "label": "Last Hour",
+                            "value": "1h"
+                        },
+                        {
+                            "label": "Last 24 Hours",
+                            "value": "24h"
+                        },
+                        {
+                            "label": "Last 7 Days",
+                            "value": "7d"
+                        }
+                    ],
+                    "default": "24h"
+                }
+            },
+            "returns": {
+                "module": "string",
+                "period": "string",
+                "requests": "{total, by_operation}",
+                "latency": "{avg_ms, p50_ms, p95_ms}",
+                "rerank_stats": "{total, avg_chunks, avg_time_ms}",
+                "cache_stats": "{hits, misses, hit_rate}"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 50,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "shutdown",
+            "description": "Graceful shutdown and model unload",
+            "parameters": {},
+            "returns": {
+                "status": "string",
+                "resources_released": "array"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 100,
+                "requires_session": true,
+                "category": "admin"
+            },
+            "security": "none",
+            "scope": "system",
+            "client_types": []
+        }
+    ],
+    "event_subscriptions": [],
+    "event_publications": [
+        "enrichment.pipeline.started",
+        "enrichment.pipeline.completed",
+        "enrichment.pipeline.failed",
+        "enrichment.rerank.completed",
+        "enrichment.query_expansion.completed",
+        "enrichment.hyde.generated",
+        "enrichment.investigative.completed",
+        "enrichment.filters.extracted",
+        "enrichment.compression.completed",
+        "enrichment.fusion.completed",
+        "enrichment.model.loaded",
+        "enrichment.model.unloaded",
+        "enrichment.health.degraded"
+    ],
+    "config_file": "config.json",
+    "test_suite": "test_enrichment_pipeline.py",
+    "production_ready": true
+}

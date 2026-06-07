@@ -1,0 +1,141 @@
+{
+    "name": "rag_simple_memory",
+    "version": "2.0.0",
+    "description": "Simple in-memory Retrieval-Augmented Generation (RAG) system (3-file architecture)",
+    "author": "UBP Team",
+    "module_type": "rag",
+    "architecture": "3-file-pattern",
+    "requires_redis": false,
+    "requires_postgres": false,
+    "requires_event_bus": true,
+    "operations": [
+        {
+            "name": "initialize",
+            "description": "Initialize the vector store (auto-initialization happens on first use if not called explicitly)",
+            "parameters": {},
+            "returns": {
+                "status": "string (initialized)",
+                "module": "string (module name)",
+                "config": "object (initialization configuration)"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "none",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "add_document",
+            "description": "Add a document to the in-memory store (auto-initializes if needed)",
+            "parameters": {
+                "doc_id": "string (required)",
+                "text": "string (required)",
+                "metadata": "object (optional)",
+                "request_id": "string (optional, auto-generated UUID if not provided)"
+            },
+            "returns": {
+                "doc_id": "string",
+                "status": "string (indexed)",
+                "chunks": "integer (optional, if chunking enabled)",
+                "request_id": "string (tracking ID)"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 150,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "query",
+            "description": "Query documents and retrieve relevant context",
+            "parameters": {
+                "query_text": "string (required)",
+                "top_k": "integer (optional, default 5)",
+                "threshold": "float (optional, minimum similarity score)",
+                "request_id": "string (optional, auto-generated UUID if not provided)"
+            },
+            "returns": {
+                "query": "string",
+                "results": "array of matched documents",
+                "count": "integer",
+                "request_id": "string (tracking ID)"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "delete_document",
+            "description": "Delete a document from the store",
+            "parameters": {
+                "doc_id": "string"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": true,
+                "estimated_latency_ms": 75,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "clear",
+            "description": "Clear all documents from the store",
+            "parameters": {},
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "get_stats",
+            "description": "Get statistics about the document store",
+            "parameters": {},
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 50,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        }
+    ],
+    "event_subscriptions": [
+        "document.added",
+        "rag.query"
+    ],
+    "event_publications": [
+        "rag.query.completed",
+        "document.indexed"
+    ],
+    "config_file": "config.json"
+}

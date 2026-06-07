@@ -1,0 +1,631 @@
+{
+  "name": "streaming_rag",
+  "version": "1.0.0",
+  "description": "Streaming Response Generation Engine for RAG pipelines",
+  "architecture": "3-file-pattern",
+  "category": "core",
+  "production_ready": true,
+  "features": [
+    "Token-by-token streaming",
+    "Multiple output formats (SSE, WebSocket, JSONL, Text)",
+    "Server-Sent Events with keepalive",
+    "WebSocket bidirectional communication",
+    "Token buffering with configurable flush",
+    "Backpressure handling",
+    "Progress events",
+    "Source document streaming",
+    "Timing metrics (TTFT, TPS)",
+    "Graceful cancellation",
+    "Error recovery with partial results",
+    "Connection management",
+    "Rate limiting",
+    "Cross-module integration"
+  ],
+  "output_formats": [
+    {
+      "format": "sse",
+      "content_type": "text/event-stream",
+      "description": "Server-Sent Events for HTTP streaming"
+    },
+    {
+      "format": "websocket",
+      "content_type": "application/json",
+      "description": "WebSocket bidirectional streaming"
+    },
+    {
+      "format": "jsonl",
+      "content_type": "application/x-ndjson",
+      "description": "JSON Lines newline-delimited format"
+    },
+    {
+      "format": "text",
+      "content_type": "text/plain",
+      "description": "Plain text token stream"
+    },
+    {
+      "format": "generator",
+      "content_type": "application/octet-stream",
+      "description": "Python async generator"
+    }
+  ],
+  "event_types": [
+    {
+      "type": "stream_start",
+      "description": "Stream started"
+    },
+    {
+      "type": "stream_end",
+      "description": "Stream ended"
+    },
+    {
+      "type": "stream_error",
+      "description": "Stream error occurred"
+    },
+    {
+      "type": "retrieval_start",
+      "description": "Retrieval phase started"
+    },
+    {
+      "type": "retrieval_progress",
+      "description": "Retrieval progress update"
+    },
+    {
+      "type": "retrieval_complete",
+      "description": "Retrieval completed"
+    },
+    {
+      "type": "source_found",
+      "description": "Source document found"
+    },
+    {
+      "type": "generation_start",
+      "description": "Generation phase started"
+    },
+    {
+      "type": "token",
+      "description": "Single token generated"
+    },
+    {
+      "type": "chunk",
+      "description": "Multiple tokens as chunk"
+    },
+    {
+      "type": "generation_progress",
+      "description": "Generation progress update"
+    },
+    {
+      "type": "generation_complete",
+      "description": "Generation completed"
+    },
+    {
+      "type": "metadata",
+      "description": "Metadata event"
+    },
+    {
+      "type": "timing",
+      "description": "Timing information"
+    },
+    {
+      "type": "heartbeat",
+      "description": "Keepalive heartbeat"
+    },
+    {
+      "type": "done",
+      "description": "Stream completed successfully"
+    }
+  ],
+  "operations": [
+    {
+      "name": "initialize",
+      "description": "Initialize streaming RAG components",
+      "parameters": {},
+      "returns": {
+        "status": "string",
+        "formats": "array"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": true,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "none",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "stream_query",
+      "description": "Stream a RAG query with retrieval and generation",
+      "parameters": {
+        "query": {
+          "type": "string",
+          "required": true
+        },
+        "format": {
+          "type": "string",
+          "required": false,
+          "default": "sse",
+          "options": [
+            "sse",
+            "websocket",
+            "jsonl",
+            "text",
+            "generator"
+          ]
+        },
+        "emit_sources": {
+          "type": "boolean",
+          "required": false,
+          "default": true
+        },
+        "emit_progress": {
+          "type": "boolean",
+          "required": false,
+          "default": true
+        }
+      },
+      "returns": "AsyncGenerator of events",
+      "streaming": true,
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 100,
+        "requires_session": true,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "stream_sse",
+      "description": "Stream as Server-Sent Events",
+      "parameters": {
+        "query": {
+          "type": "string",
+          "required": true
+        },
+        "emit_sources": {
+          "type": "boolean",
+          "required": false,
+          "default": true
+        }
+      },
+      "returns": "AsyncGenerator of SSE strings",
+      "streaming": true,
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 100,
+        "requires_session": true,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "stream_websocket",
+      "description": "Stream to WebSocket connection",
+      "parameters": {
+        "query": {
+          "type": "string",
+          "required": true
+        },
+        "websocket": {
+          "type": "object",
+          "required": true
+        },
+        "emit_sources": {
+          "type": "boolean",
+          "required": false,
+          "default": true
+        }
+      },
+      "returns": "void",
+      "streaming": true,
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 100,
+        "requires_session": true,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "stream_jsonl",
+      "description": "Stream as JSON Lines",
+      "parameters": {
+        "query": {
+          "type": "string",
+          "required": true
+        },
+        "emit_sources": {
+          "type": "boolean",
+          "required": false,
+          "default": true
+        }
+      },
+      "returns": "AsyncGenerator of JSON lines",
+      "streaming": true,
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 100,
+        "requires_session": true,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "stream_text",
+      "description": "Stream as plain text (tokens only)",
+      "parameters": {
+        "query": {
+          "type": "string",
+          "required": true
+        }
+      },
+      "returns": "AsyncGenerator of text",
+      "streaming": true,
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 100,
+        "requires_session": true,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "prepare_stream",
+      "description": "Prepare streaming configuration for a query",
+      "parameters": {
+        "query": {
+          "type": "string",
+          "required": true
+        },
+        "mode": {
+          "type": "string",
+          "required": false,
+          "default": "token",
+          "options": [
+            "token",
+            "chunk",
+            "full"
+          ]
+        },
+        "include_sources": {
+          "type": "boolean",
+          "required": false,
+          "default": true
+        }
+      },
+      "returns": {
+        "stream_id": "string",
+        "session_id": "string",
+        "query": "string",
+        "mode": "string",
+        "format": "string",
+        "include_sources": "boolean",
+        "buffer_size": "integer",
+        "emit_progress": "boolean",
+        "status": "string"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "create_stream",
+      "description": "Create a stream manually for custom use",
+      "parameters": {
+        "session_id": {
+          "type": "string",
+          "required": true
+        },
+        "query": {
+          "type": "string",
+          "required": true
+        },
+        "format": {
+          "type": "string",
+          "required": false,
+          "default": "generator"
+        }
+      },
+      "returns": {
+        "stream_id": "string",
+        "status": "string"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 100,
+        "requires_session": true,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "emit_token",
+      "description": "Emit a token to an existing stream",
+      "parameters": {
+        "stream_id": {
+          "type": "string",
+          "required": true
+        },
+        "token": {
+          "type": "string",
+          "required": true
+        },
+        "index": {
+          "type": "integer",
+          "required": false,
+          "default": 0
+        },
+        "is_final": {
+          "type": "boolean",
+          "required": false,
+          "default": false
+        }
+      },
+      "returns": {
+        "token_emitted": "boolean"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 50,
+        "requires_session": true,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "emit_event",
+      "description": "Emit a custom event to a stream",
+      "parameters": {
+        "stream_id": {
+          "type": "string",
+          "required": true
+        },
+        "event_type": {
+          "type": "string",
+          "required": true
+        },
+        "data": {
+          "type": "object",
+          "required": true
+        }
+      },
+      "returns": {
+        "event_emitted": "boolean"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 50,
+        "requires_session": true,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "cancel_stream",
+      "description": "Cancel an active stream",
+      "parameters": {
+        "stream_id": {
+          "type": "string",
+          "required": true
+        }
+      },
+      "returns": {
+        "cancelled": "boolean"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": true,
+        "estimated_latency_ms": 50,
+        "requires_session": true,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "get_stream_state",
+      "description": "Get state of a stream",
+      "parameters": {
+        "stream_id": {
+          "type": "string",
+          "required": true
+        }
+      },
+      "returns": {
+        "stream_id": "string",
+        "status": "string",
+        "tokens_generated": "integer"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 50,
+        "requires_session": false,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "list_streams",
+      "description": "List all active streams",
+      "parameters": {},
+      "returns": {
+        "streams": "array",
+        "count": "integer"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 50,
+        "requires_session": false,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "get_stats",
+      "description": "Get streaming metrics",
+      "parameters": {},
+      "returns": {
+        "metrics": "object",
+        "active_streams": "integer"
+      },
+      "admin_only": true,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "admin",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "reload_config",
+      "description": "Hot-reload configuration",
+      "parameters": {},
+      "returns": {
+        "status": "string"
+      },
+      "admin_only": true,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": true,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "admin",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "health_check",
+      "description": "Check component health",
+      "parameters": {},
+      "returns": {
+        "module": "string",
+        "status": "string"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "none",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "shutdown",
+      "description": "Graceful shutdown",
+      "parameters": {},
+      "returns": {
+        "status": "string"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": true,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "none",
+      "scope": "system",
+      "client_types": []
+    }
+  ],
+  "events": {
+    "publishes": [
+      {
+        "event": "streaming.initialized",
+        "description": "Module initialized"
+      },
+      {
+        "event": "streaming.stream.started",
+        "description": "Stream started"
+      },
+      {
+        "event": "streaming.stream.completed",
+        "description": "Stream completed"
+      },
+      {
+        "event": "streaming.stream.error",
+        "description": "Stream error"
+      },
+      {
+        "event": "streaming.shutdown",
+        "description": "Module shutdown"
+      }
+    ]
+  },
+  "dependencies": {
+    "optional": [
+      {
+        "module": "inference_ollama_grok",
+        "purpose": "LLM token streaming"
+      },
+      {
+        "module": "retrieval_strategy",
+        "purpose": "Document retrieval"
+      }
+    ]
+  },
+  "module_type": "rag"
+}

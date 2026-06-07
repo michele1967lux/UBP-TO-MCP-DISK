@@ -1,0 +1,649 @@
+{
+    "name": "investigation_pipeline",
+    "version": "1.0.0",
+    "description": "Enterprise RAG Investigation Engine with multi-strategy question generation, parallel workers, quality assurance, and comprehensive observability",
+    "author": "UBP Team",
+    "module_type": "investigation",
+    "architecture": "3-file-pattern",
+    "requires_redis": true,
+    "requires_postgres": false,
+    "requires_event_bus": true,
+    "dependencies": {
+        "modules": [],
+        "optional_modules": [
+            "inference_vllm",
+            "inference_ollama_grok",
+            "inference_openai_anthropic"
+        ],
+        "python_packages": [],
+        "redis_keys": [
+            "ubp:investigation:cache:*",
+            "ubp:investigation:session:*",
+            "ubp:investigation:stats:*"
+        ],
+        "notes": "Requires at least one inference module for question generation. Configure via UBP_INVESTIGATION__LLM_MODULE. Supports fallback chains for robustness."
+    },
+    "operations": [
+        {
+            "name": "initialize",
+            "description": "Initialize investigation pipeline and components",
+            "parameters": {},
+            "returns": {
+                "status": "string",
+                "module": "string",
+                "env": "string",
+                "default_strategy": "string",
+                "pipeline_steps_available": "array",
+                "strategies_available": "array",
+                "llm_delegation_available": "boolean",
+                "worker_pool_enabled": "boolean",
+                "cache_enabled": "boolean",
+                "elapsed_ms": "number"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "none",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "investigate",
+            "description": "Full investigation pipeline: classify, generate, QA, deduplicate, rank",
+            "parameters": {
+                "query": {
+                    "type": "string",
+                    "required": true,
+                    "ui_type": "textarea",
+                    "label": "Query",
+                    "description": "User's original query to investigate"
+                },
+                "num_questions": {
+                    "type": "integer",
+                    "required": false,
+                    "ui_type": "number",
+                    "label": "Number of Questions",
+                    "description": "Number of investigation questions to generate",
+                    "default": 5,
+                    "validation": {
+                        "min": 1,
+                        "max": 10
+                    }
+                },
+                "strategy": {
+                    "type": "string",
+                    "required": false,
+                    "ui_type": "select",
+                    "label": "Strategy",
+                    "description": "Investigation strategy to use",
+                    "options": [
+                        {
+                            "label": "Adaptive (auto-select)",
+                            "value": "adaptive"
+                        },
+                        {
+                            "label": "Decomposition",
+                            "value": "decomposition"
+                        },
+                        {
+                            "label": "Chain of Thought",
+                            "value": "chain_of_thought"
+                        },
+                        {
+                            "label": "Semantic Expansion",
+                            "value": "semantic_expansion"
+                        },
+                        {
+                            "label": "Cross Reference",
+                            "value": "cross_reference"
+                        }
+                    ],
+                    "default": "adaptive"
+                },
+                "session_id": {
+                    "type": "string",
+                    "required": false,
+                    "ui_type": "text",
+                    "label": "Session ID",
+                    "description": "Optional session ID for continuity"
+                },
+                "pipeline_config": {
+                    "type": "object",
+                    "required": false,
+                    "ui_type": "json",
+                    "label": "Pipeline Config",
+                    "description": "Override default pipeline steps"
+                }
+            },
+            "returns": {
+                "session_id": "string",
+                "original_query": "string",
+                "questions": "array of InvestigationQuestion",
+                "strategy_used": "string",
+                "category_detected": "string",
+                "classification": "QueryClassification object",
+                "quality_assessment": "QualityAssessment object",
+                "deduplication_stats": "object",
+                "pipeline_stats": "{total_time_ms, step_times, steps_executed}",
+                "time_ms": "number"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 15000,
+                "requires_session": true,
+                "category": "agent"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "generate_questions",
+            "description": "Direct question generation without full pipeline",
+            "parameters": {
+                "query": {
+                    "type": "string",
+                    "required": true,
+                    "ui_type": "textarea",
+                    "label": "Query"
+                },
+                "num_questions": {
+                    "type": "integer",
+                    "required": false,
+                    "ui_type": "number",
+                    "label": "Number of Questions",
+                    "default": 5
+                },
+                "strategy": {
+                    "type": "string",
+                    "required": false,
+                    "ui_type": "select",
+                    "label": "Strategy",
+                    "options": [
+                        {
+                            "label": "Adaptive",
+                            "value": "adaptive"
+                        },
+                        {
+                            "label": "Decomposition",
+                            "value": "decomposition"
+                        },
+                        {
+                            "label": "Chain of Thought",
+                            "value": "chain_of_thought"
+                        },
+                        {
+                            "label": "Semantic Expansion",
+                            "value": "semantic_expansion"
+                        },
+                        {
+                            "label": "Cross Reference",
+                            "value": "cross_reference"
+                        }
+                    ],
+                    "default": "adaptive"
+                },
+                "category": {
+                    "type": "string",
+                    "required": false,
+                    "ui_type": "select",
+                    "label": "Category",
+                    "description": "Pre-classified category (optional)",
+                    "options": [
+                        {
+                            "label": "Auto-detect",
+                            "value": null
+                        },
+                        {
+                            "label": "AI/ML",
+                            "value": "ai_ml"
+                        },
+                        {
+                            "label": "Troubleshooting",
+                            "value": "troubleshooting"
+                        },
+                        {
+                            "label": "API Integration",
+                            "value": "api_integration"
+                        },
+                        {
+                            "label": "System Admin",
+                            "value": "system_admin"
+                        },
+                        {
+                            "label": "Technical",
+                            "value": "technical"
+                        },
+                        {
+                            "label": "Conceptual",
+                            "value": "conceptual"
+                        }
+                    ]
+                }
+            },
+            "returns": {
+                "questions": "array of strings",
+                "strategy_used": "string",
+                "raw_response": "string",
+                "time_ms": "number",
+                "used_fallback": "boolean",
+                "fallback_reason": "string or null"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 3000,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "generate_multi_strategy",
+            "description": "Generate questions using multiple strategies in parallel",
+            "parameters": {
+                "query": {
+                    "type": "string",
+                    "required": true,
+                    "ui_type": "textarea",
+                    "label": "Query"
+                },
+                "num_questions": {
+                    "type": "integer",
+                    "required": false,
+                    "ui_type": "number",
+                    "label": "Questions per Strategy",
+                    "default": 5
+                },
+                "strategies": {
+                    "type": "array",
+                    "required": false,
+                    "ui_type": "tags",
+                    "label": "Strategies",
+                    "description": "List of strategies to use (defaults to all)",
+                    "options": [
+                        {
+                            "label": "Decomposition",
+                            "value": "decomposition"
+                        },
+                        {
+                            "label": "Chain of Thought",
+                            "value": "chain_of_thought"
+                        },
+                        {
+                            "label": "Semantic Expansion",
+                            "value": "semantic_expansion"
+                        }
+                    ]
+                }
+            },
+            "returns": {
+                "decomposition": "GenerationResult",
+                "chain_of_thought": "GenerationResult",
+                "semantic_expansion": "GenerationResult"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 5000,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "classify_query",
+            "description": "Classify query to detect category and optimal strategy",
+            "parameters": {
+                "query": {
+                    "type": "string",
+                    "required": true,
+                    "ui_type": "textarea",
+                    "label": "Query"
+                }
+            },
+            "returns": {
+                "category": "string",
+                "confidence": "number",
+                "keywords_matched": "array",
+                "preferred_strategy": "string",
+                "secondary_strategy": "string or null",
+                "all_matches": "object",
+                "language": "string"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 200,
+                "requires_session": false,
+                "category": "routing"
+            },
+            "security": "authenticated",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "assess_quality",
+            "description": "Assess quality of investigation questions",
+            "parameters": {
+                "questions": {
+                    "type": "array",
+                    "required": true,
+                    "ui_type": "json",
+                    "label": "Questions",
+                    "description": "List of question texts to assess"
+                },
+                "original_query": {
+                    "type": "string",
+                    "required": true,
+                    "ui_type": "textarea",
+                    "label": "Original Query"
+                },
+                "strategy": {
+                    "type": "string",
+                    "required": false,
+                    "ui_type": "text",
+                    "label": "Strategy Used",
+                    "default": "unknown"
+                }
+            },
+            "returns": {
+                "questions": "array of assessed InvestigationQuestion",
+                "overall_assessment": "QualityAssessment object"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 2000,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "deduplicate_questions",
+            "description": "Remove duplicate or near-duplicate questions",
+            "parameters": {
+                "questions": {
+                    "type": "array",
+                    "required": true,
+                    "ui_type": "json",
+                    "label": "Questions",
+                    "description": "List of InvestigationQuestion objects"
+                }
+            },
+            "returns": {
+                "unique_questions": "array",
+                "stats": "{enabled, method, threshold, original_count, unique_count, removed}"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 500,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "get_session",
+            "description": "Get session state",
+            "parameters": {
+                "session_id": {
+                    "type": "string",
+                    "required": true,
+                    "ui_type": "text",
+                    "label": "Session ID"
+                }
+            },
+            "returns": {
+                "session_id": "string",
+                "user_id": "string or null",
+                "created_at": "string",
+                "updated_at": "string",
+                "queries": "array",
+                "questions_generated": "array",
+                "strategies_used": "array",
+                "categories_detected": "array",
+                "total_investigations": "integer"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "delete_session",
+            "description": "Delete session",
+            "parameters": {
+                "session_id": {
+                    "type": "string",
+                    "required": true,
+                    "ui_type": "text",
+                    "label": "Session ID"
+                }
+            },
+            "returns": {
+                "deleted": "boolean",
+                "session_id": "string"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "get_stats",
+            "description": "Get investigation statistics",
+            "admin_only": true,
+            "parameters": {
+                "period": {
+                    "type": "string",
+                    "required": false,
+                    "ui_type": "select",
+                    "label": "Period",
+                    "options": [
+                        {
+                            "label": "Last Hour",
+                            "value": "1h"
+                        },
+                        {
+                            "label": "Last 24 Hours",
+                            "value": "24h"
+                        },
+                        {
+                            "label": "Last 7 Days",
+                            "value": "7d"
+                        }
+                    ],
+                    "default": "24h"
+                }
+            },
+            "returns": {
+                "module": "string",
+                "period": "string",
+                "metrics": "{total_investigations, questions_generated, strategies_used, qa_scores, execution_times}",
+                "worker_pool": "{total_tasks, completed_tasks, failed_tasks, avg_execution_time_ms}",
+                "cache": "{hits, misses, hit_rate}"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 500,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "get_pipeline_config",
+            "description": "Get current pipeline configuration",
+            "parameters": {},
+            "returns": {
+                "default_pipeline": "array of step configs",
+                "available_steps": "array",
+                "timeout_seconds": "integer",
+                "fail_fast": "boolean"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "set_pipeline_config",
+            "description": "Update pipeline configuration",
+            "admin_only": true,
+            "parameters": {
+                "pipeline_steps": {
+                    "type": "array",
+                    "required": true,
+                    "ui_type": "json",
+                    "label": "Pipeline Steps",
+                    "description": "Array of {step, enabled, config}"
+                }
+            },
+            "returns": {
+                "updated": "boolean",
+                "new_config": "object"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 500,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "reload_config",
+            "description": "Hot-reload configuration from config.json without restart - ADMIN ONLY",
+            "admin_only": true,
+            "parameters": {
+                "clear_cache": {
+                    "type": "boolean",
+                    "required": false,
+                    "ui_type": "checkbox",
+                    "label": "Clear Cache",
+                    "description": "Clear investigation cache after reload",
+                    "default": true
+                }
+            },
+            "returns": {
+                "status": "string (success/partial/error)",
+                "config_reloaded": "boolean",
+                "cache_cleared": "boolean",
+                "cache_entries_cleared": "integer",
+                "components_updated": "array",
+                "current_pipeline_config": "object",
+                "default_strategy": "string",
+                "errors": "array"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 500,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "health_check",
+            "description": "Health check for investigation module",
+            "parameters": {},
+            "returns": {
+                "module": "string",
+                "status": "string (healthy/degraded/unhealthy)",
+                "env": "string",
+                "llm_delegation": "{status, module}",
+                "worker_pool": "{total_tasks, active_workers}",
+                "cache": "{hits, misses, hit_rate}"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "none",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "shutdown",
+            "description": "Graceful shutdown",
+            "parameters": {},
+            "returns": {
+                "status": "string",
+                "resources_released": "array"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "none",
+            "scope": "system",
+            "client_types": []
+        }
+    ],
+    "event_subscriptions": [],
+    "event_publications": [
+        "investigation.pipeline.started",
+        "investigation.pipeline.completed",
+        "investigation.pipeline.failed",
+        "investigation.generation.completed",
+        "investigation.generation.failed",
+        "investigation.fallback.succeeded",
+        "investigation.fallback.exhausted",
+        "investigation.qa.completed",
+        "investigation.session.created",
+        "investigation.session.updated",
+        "investigation.health.degraded"
+    ],
+    "config_file": "config.json",
+    "test_suite": "test_investigation_pipeline.py",
+    "production_ready": true
+}

@@ -1,0 +1,272 @@
+{
+    "name": "rag_web_crawler",
+    "version": "1.0.0",
+    "description": "Web crawler for URL and sitemap ingestion into RAG knowledge bases",
+    "author": "UBP Team",
+    "module_type": "ingestion",
+    "architecture": "3-file-pattern",
+    "requires_redis": false,
+    "requires_postgres": false,
+    "requires_event_bus": false,
+    "requires_network": true,
+    "operations": [
+        {
+            "name": "crawl_url",
+            "description": "Crawl a single URL and optionally ingest content to collection",
+            "method": "POST",
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 10000,
+                "requires_session": true,
+                "category": "knowledge",
+                "side_effect_trigger": "When the admin explicitly asks to crawl a URL (e.g. 'crawla questo URL', 'crawl this page', 'indicizza questa pagina').",
+                "proactive": false
+            },
+            "parameters": {
+                "url": {
+                    "type": "string",
+                    "required": true,
+                    "description": "URL to crawl (must start with http:// or https://)"
+                },
+                "target_collection": {
+                    "type": "string",
+                    "required": true,
+                    "description": "Collection name for ingestion"
+                },
+                "auto_ingest": {
+                    "type": "boolean",
+                    "required": false,
+                    "default": true,
+                    "description": "Whether to automatically ingest content"
+                },
+                "extract_links": {
+                    "type": "boolean",
+                    "required": false,
+                    "default": false,
+                    "description": "Whether to extract links from page"
+                }
+            },
+            "returns": {
+                "job_id": "string (UUID)",
+                "status": "string (completed|failed)",
+                "url": "string (final URL after redirects)",
+                "title": "string (page title)",
+                "content_length": "integer (chars)",
+                "content_preview": "string (first 500 chars)",
+                "ingested": "boolean",
+                "ingest_result": "object or null",
+                "request_id": "string"
+            },
+            "security": "client_admin",
+            "scope": "general",
+            "client_types": []
+        },
+        {
+            "name": "crawl_sitemap",
+            "description": "Parse sitemap.xml and crawl all URLs in background",
+            "method": "POST",
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 5000,
+                "requires_session": true,
+                "category": "knowledge",
+                "side_effect_trigger": "When the admin explicitly asks to crawl a sitemap (e.g. 'crawla la sitemap', 'crawl sitemap', 'indicizza il sito').",
+                "proactive": false
+            },
+            "parameters": {
+                "sitemap_url": {
+                    "type": "string",
+                    "required": true,
+                    "description": "URL to sitemap.xml"
+                },
+                "target_collection": {
+                    "type": "string",
+                    "required": true,
+                    "description": "Collection name for ingestion"
+                },
+                "max_pages": {
+                    "type": "integer",
+                    "required": false,
+                    "default": 100,
+                    "description": "Maximum pages to crawl (max 500)"
+                },
+                "auto_ingest": {
+                    "type": "boolean",
+                    "required": false,
+                    "default": true,
+                    "description": "Whether to automatically ingest content"
+                }
+            },
+            "returns": {
+                "job_id": "string (UUID)",
+                "status": "string (started)",
+                "sitemap_url": "string",
+                "total_urls": "integer",
+                "target_collection": "string",
+                "request_id": "string"
+            },
+            "security": "client_admin",
+            "scope": "general",
+            "client_types": []
+        },
+        {
+            "name": "get_crawl_status",
+            "description": "Get status of a crawl job",
+            "method": "POST",
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "parameters": {
+                "job_id": {
+                    "type": "string",
+                    "required": true,
+                    "description": "UUID of the crawl job"
+                }
+            },
+            "returns": {
+                "job_id": "string",
+                "status": "string (pending|running|completed|failed|cancelled)",
+                "url": "string",
+                "job_type": "string (single|sitemap)",
+                "total_pages": "integer",
+                "processed_pages": "integer",
+                "failed_pages": "integer",
+                "progress_percent": "float",
+                "created_at": "string (ISO 8601)",
+                "started_at": "string or null",
+                "completed_at": "string or null",
+                "error_message": "string or null",
+                "request_id": "string"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "list_crawl_jobs",
+            "description": "List crawl jobs (users see own, admins see all)",
+            "method": "POST",
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 150,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "parameters": {
+                "limit": {
+                    "type": "integer",
+                    "required": false,
+                    "default": 20,
+                    "description": "Maximum jobs to return (max 100)"
+                },
+                "status": {
+                    "type": "string",
+                    "required": false,
+                    "description": "Filter by status (pending|running|completed|failed|cancelled)"
+                }
+            },
+            "returns": {
+                "jobs": "array of job objects",
+                "count": "integer",
+                "request_id": "string"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "cancel_crawl_job",
+            "description": "Cancel a running or pending crawl job",
+            "method": "POST",
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 200,
+                "requires_session": true,
+                "category": "operations",
+                "side_effect_trigger": "When the admin explicitly asks to cancel a crawl job (e.g. 'annulla il crawl', 'cancel crawl', 'ferma l'indicizzazione').",
+                "proactive": false
+            },
+            "parameters": {
+                "job_id": {
+                    "type": "string",
+                    "required": true,
+                    "description": "UUID of the job to cancel"
+                }
+            },
+            "returns": {
+                "job_id": "string",
+                "cancelled": "boolean",
+                "status": "string",
+                "message": "string",
+                "request_id": "string"
+            },
+            "security": "client_admin",
+            "scope": "general",
+            "client_types": []
+        },
+        {
+            "name": "health_check",
+            "description": "Health check with crawl statistics",
+            "method": "POST",
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 75,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "parameters": {},
+            "returns": {
+                "module": "string",
+                "version": "string",
+                "status": "string (healthy|unhealthy)",
+                "active_background_tasks": "integer",
+                "total_pages_crawled": "integer",
+                "total_pages_ingested": "integer",
+                "provider": "object"
+            },
+            "security": "none",
+            "scope": "system",
+            "client_types": []
+        }
+    ],
+    "event_publications": [
+        "crawler.url_crawled",
+        "crawler.progress",
+        "crawler.job_completed",
+        "crawler.job_failed"
+    ],
+    "event_subscriptions": [],
+    "dependencies": {
+        "modules": [
+            "rag_qdrant"
+        ],
+        "python_packages": [
+            "aiohttp",
+            "beautifulsoup4",
+            "lxml"
+        ]
+    },
+    "config_file": "config.json",
+    "ui_integration": {
+        "admin_tab": "documents",
+        "admin_section": "web_crawler",
+        "requires_js": true
+    },
+    "production_ready": true,
+    "security": {
+        "requires_auth": true,
+        "user_id_from_ctx": true,
+        "admin_operations": [
+            "list_crawl_jobs (all users)"
+        ]
+    }
+}

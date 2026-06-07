@@ -1,0 +1,470 @@
+# ============================================================================
+# ARCHITECTURE v2.3: Interactive Analyst - Report Templates
+# ============================================================================
+# Enterprise-grade report template definitions for structured document generation.
+#
+# Source Preferences:
+#   - rag_only:     Search internal knowledge bases only
+#   - web_only:     Search external web sources only
+#   - rag_first:    Try RAG, fallback to web if insufficient results
+#   - web_first:    Try web, fallback to RAG if insufficient results
+#   - mixed:        Combine RAG + web results with LLM synthesis
+#   - llm_reasoning: Pure LLM generation without retrieval
+#
+# Threshold Values:
+#   - min_docs: Minimum documents needed to skip fallback (default: 2)
+#   - min_score: Minimum score to consider result sufficient (default: 0.5)
+# ============================================================================
+
+version: "2.3"
+description: "UBP Enterprise Report Templates"
+
+# Default settings applied to all templates
+defaults:
+  language: "auto"              # auto-detect from query
+  min_docs_for_confidence: 2    # minimum docs before falling back
+  min_score_threshold: 0.5      # minimum relevance score
+  max_sections: 10              # maximum sections per report
+  allow_user_modification: true # user can add/remove sections
+
+# ============================================================================
+# REPORT TEMPLATES
+# ============================================================================
+
+templates:
+
+  # --------------------------------------------------------------------------
+  # Technical System Audit
+  # --------------------------------------------------------------------------
+  - id: "technical_audit"
+    name: "Technical System Audit"
+    description: "Analisi tecnica approfondita di un sistema o componente software."
+    category: "technical"
+    keywords:
+      - "audit"
+      - "sicurezza"
+      - "security"
+      - "sistema"
+      - "analisi tecnica"
+      - "vulnerabilità"
+      - "architettura"
+    sections:
+      - title: "Executive Summary"
+        description: "Sintesi esecutiva per decisori non tecnici"
+        source_preference: "mixed"
+        required: true
+        max_tokens: 500
+
+      - title: "Architecture Overview"
+        description: "Panoramica dell'architettura del sistema"
+        source_preference: "rag_only"
+        required: true
+        max_tokens: 1000
+        suggested_queries:
+          - "architettura {subject}"
+          - "componenti {subject}"
+          - "struttura sistema {subject}"
+
+      - title: "Security Analysis"
+        description: "Analisi delle vulnerabilità e misure di sicurezza"
+        source_preference: "rag_first"
+        required: true
+        max_tokens: 1500
+        fallback_threshold:
+          min_docs: 1
+          min_score: 0.4
+        suggested_queries:
+          - "sicurezza {subject}"
+          - "vulnerabilità {subject}"
+          - "best practices sicurezza"
+
+      - title: "Performance Assessment"
+        description: "Valutazione delle prestazioni e scalabilità"
+        source_preference: "rag_first"
+        required: false
+        max_tokens: 800
+
+      - title: "Recommendations"
+        description: "Raccomandazioni operative e next steps"
+        source_preference: "llm_reasoning"
+        required: true
+        max_tokens: 600
+        depends_on:
+          - "Architecture Overview"
+          - "Security Analysis"
+
+  # --------------------------------------------------------------------------
+  # Market Research Analysis
+  # --------------------------------------------------------------------------
+  - id: "market_analysis"
+    name: "Market Research"
+    description: "Analisi di mercato, trend, competitor e posizionamento."
+    category: "business"
+    keywords:
+      - "mercato"
+      - "market"
+      - "competitor"
+      - "trend"
+      - "analisi"
+      - "prezzi"
+      - "posizionamento"
+    sections:
+      - title: "Market Overview"
+        description: "Panoramica del mercato di riferimento"
+        source_preference: "web_only"
+        required: true
+        max_tokens: 1000
+        suggested_queries:
+          - "{subject} market trends"
+          - "{subject} industry analysis"
+
+      - title: "Competitor Analysis"
+        description: "Analisi dei principali competitor"
+        source_preference: "web_only"
+        required: true
+        max_tokens: 1200
+        suggested_queries:
+          - "{subject} competitors"
+          - "{subject} market share"
+          - "top companies {subject}"
+
+      - title: "Internal Positioning"
+        description: "Posizionamento interno rispetto al mercato"
+        source_preference: "rag_only"
+        required: true
+        max_tokens: 800
+
+      - title: "SWOT Analysis"
+        description: "Strengths, Weaknesses, Opportunities, Threats"
+        source_preference: "mixed"
+        required: false
+        max_tokens: 1000
+        depends_on:
+          - "Market Overview"
+          - "Internal Positioning"
+
+      - title: "Strategic Recommendations"
+        description: "Raccomandazioni strategiche basate sull'analisi"
+        source_preference: "llm_reasoning"
+        required: true
+        max_tokens: 600
+        depends_on:
+          - "Market Overview"
+          - "Competitor Analysis"
+
+  # --------------------------------------------------------------------------
+  # Knowledge Base Summary
+  # --------------------------------------------------------------------------
+  - id: "kb_summary"
+    name: "Knowledge Base Summary"
+    description: "Sintesi completa di una knowledge base interna."
+    category: "documentation"
+    keywords:
+      - "riassunto"
+      - "sintesi"
+      - "knowledge base"
+      - "documentazione"
+      - "summary"
+    sections:
+      - title: "Overview"
+        description: "Panoramica generale dei contenuti"
+        source_preference: "rag_only"
+        required: true
+        max_tokens: 600
+
+      - title: "Key Topics"
+        description: "Principali argomenti trattati"
+        source_preference: "rag_only"
+        required: true
+        max_tokens: 1000
+
+      - title: "Notable Insights"
+        description: "Informazioni chiave e insights rilevanti"
+        source_preference: "rag_only"
+        required: true
+        max_tokens: 1200
+
+      - title: "Gaps and Recommendations"
+        description: "Lacune identificate e suggerimenti"
+        source_preference: "llm_reasoning"
+        required: false
+        max_tokens: 500
+
+  # --------------------------------------------------------------------------
+  # Comparison Report
+  # --------------------------------------------------------------------------
+  - id: "comparison"
+    name: "Comparison Report"
+    description: "Confronto strutturato tra due o più entità/sistemi."
+    category: "analysis"
+    keywords:
+      - "confronto"
+      - "comparison"
+      - "versus"
+      - "vs"
+      - "differenze"
+      - "paragone"
+    sections:
+      - title: "Introduction"
+        description: "Contesto e obiettivi del confronto"
+        source_preference: "llm_reasoning"
+        required: true
+        max_tokens: 300
+
+      - title: "Entity A Analysis"
+        description: "Analisi dettagliata della prima entità"
+        source_preference: "mixed"
+        required: true
+        max_tokens: 800
+
+      - title: "Entity B Analysis"
+        description: "Analisi dettagliata della seconda entità"
+        source_preference: "mixed"
+        required: true
+        max_tokens: 800
+
+      - title: "Feature Comparison"
+        description: "Tabella comparativa delle caratteristiche"
+        source_preference: "mixed"
+        required: true
+        max_tokens: 600
+        output_format: "table"
+
+      - title: "Conclusion"
+        description: "Sintesi e raccomandazione finale"
+        source_preference: "llm_reasoning"
+        required: true
+        max_tokens: 400
+        depends_on:
+          - "Entity A Analysis"
+          - "Entity B Analysis"
+          - "Feature Comparison"
+
+  # --------------------------------------------------------------------------
+  # Troubleshooting Guide
+  # --------------------------------------------------------------------------
+  - id: "troubleshooting"
+    name: "Troubleshooting Guide"
+    description: "Guida alla risoluzione di problemi specifici."
+    category: "technical"
+    keywords:
+      - "problema"
+      - "errore"
+      - "troubleshooting"
+      - "risoluzione"
+      - "fix"
+      - "debug"
+      - "non funziona"
+    sections:
+      - title: "Problem Description"
+        description: "Descrizione del problema riportato"
+        source_preference: "llm_reasoning"
+        required: true
+        max_tokens: 300
+
+      - title: "Known Issues"
+        description: "Problemi noti dalla documentazione interna"
+        source_preference: "rag_only"
+        required: true
+        max_tokens: 800
+        suggested_queries:
+          - "errore {subject}"
+          - "problema {subject}"
+          - "known issues {subject}"
+
+      - title: "Community Solutions"
+        description: "Soluzioni dalla community e web"
+        source_preference: "web_first"
+        required: false
+        max_tokens: 800
+
+      - title: "Step-by-Step Solution"
+        description: "Procedura di risoluzione passo-passo"
+        source_preference: "llm_reasoning"
+        required: true
+        max_tokens: 1000
+        depends_on:
+          - "Known Issues"
+
+  # --------------------------------------------------------------------------
+  # Research Brief
+  # --------------------------------------------------------------------------
+  - id: "research_brief"
+    name: "Research Brief"
+    description: "Ricerca rapida su un argomento specifico."
+    category: "research"
+    keywords:
+      - "ricerca"
+      - "research"
+      - "informazioni"
+      - "cosa è"
+      - "cos'è"
+      - "spiegami"
+    sections:
+      - title: "Topic Definition"
+        description: "Definizione e contesto dell'argomento"
+        source_preference: "mixed"
+        required: true
+        max_tokens: 500
+
+      - title: "Key Information"
+        description: "Informazioni chiave dall'internal KB"
+        source_preference: "rag_first"
+        required: true
+        max_tokens: 1000
+
+      - title: "External Context"
+        description: "Contesto esterno e informazioni aggiuntive"
+        source_preference: "web_only"
+        required: false
+        max_tokens: 800
+
+      - title: "Summary"
+        description: "Sintesi finale"
+        source_preference: "llm_reasoning"
+        required: true
+        max_tokens: 400
+
+  # --------------------------------------------------------------------------
+  # Computo Metrico (Bill of Quantities)
+  # --------------------------------------------------------------------------
+  - id: "computo_metrico"
+    name: "Computo Metrico"
+    description: "Computo metrico estimativo per lavori edili, ristrutturazioni e interventi."
+    category: "construction"
+    artifact_type: "computo_metrico"
+    artifact_formats:
+      - "xlsx"
+      - "docx"
+    keywords:
+      - "computo"
+      - "computo metrico"
+      - "ristrutturazione"
+      - "lavori"
+      - "preventivo"
+      - "quantità"
+      - "bagno"
+      - "cucina"
+      - "edilizi"
+      - "metri quadri"
+      - "m2"
+      - "mq"
+    sections:
+      - title: "Descrizione Intervento"
+        description: "Descrizione generale dell'intervento e contesto"
+        source_preference: "llm_reasoning"
+        required: true
+        max_tokens: 500
+
+      - title: "Voci di Computo"
+        description: "Elenco dettagliato delle voci con quantità e unità di misura"
+        source_preference: "llm_reasoning"
+        required: true
+        max_tokens: 2000
+        output_format: "table"
+
+      - title: "Note Tecniche"
+        description: "Note tecniche e avvertenze"
+        source_preference: "llm_reasoning"
+        required: false
+        max_tokens: 500
+
+# ============================================================================
+# TEMPLATE SELECTION RULES
+# ============================================================================
+# The system uses these rules to auto-select templates based on query patterns
+
+selection_rules:
+  # High-confidence matches
+  - pattern: "(audit|sicurezza|security|vulnerabilit)"
+    template: "technical_audit"
+    confidence_boost: 0.3
+
+  - pattern: "(mercato|market|competitor|trend|prezzi)"
+    template: "market_analysis"
+    confidence_boost: 0.3
+
+  - pattern: "(confronto|comparison|versus|vs |differenz)"
+    template: "comparison"
+    confidence_boost: 0.4
+
+  - pattern: "(problema|errore|non funziona|troubleshoot|fix)"
+    template: "troubleshooting"
+    confidence_boost: 0.3
+
+  - pattern: "(riassunto|sintesi|summary|knowledge base)"
+    template: "kb_summary"
+    confidence_boost: 0.3
+
+  - pattern: "(computo|computo metrico|ristrutturazione|preventivo|bagno|cucina|metri quadri|mq|m2)"
+    template: "computo_metrico"
+    confidence_boost: 0.5
+
+# ============================================================================
+# STATE MACHINE CONFIGURATION
+# ============================================================================
+
+state_machine:
+  states:
+    - IDLE           # No active report session
+    - PLANNING       # Proposing template and sections to user
+    - AWAITING_APPROVAL  # Waiting for user confirmation
+    - RESEARCHING    # Executing searches (RAG/Web)
+    - WRITING        # Generating report content
+    - REVIEW         # User reviewing draft
+    - COMPLETED      # Report finalized
+    - CANCELLED      # Session cancelled by user
+
+  transitions:
+    IDLE:
+      - trigger: "report_request"
+        target: "PLANNING"
+
+    PLANNING:
+      - trigger: "plan_ready"
+        target: "AWAITING_APPROVAL"
+      - trigger: "cancel"
+        target: "CANCELLED"
+
+    AWAITING_APPROVAL:
+      - trigger: "approve"
+        target: "RESEARCHING"
+      - trigger: "modify"
+        target: "PLANNING"
+      - trigger: "cancel"
+        target: "CANCELLED"
+
+    RESEARCHING:
+      - trigger: "research_complete"
+        target: "WRITING"
+      - trigger: "error"
+        target: "PLANNING"
+
+    WRITING:
+      - trigger: "draft_ready"
+        target: "REVIEW"
+      - trigger: "error"
+        target: "RESEARCHING"
+
+    REVIEW:
+      - trigger: "accept"
+        target: "COMPLETED"
+      - trigger: "revise"
+        target: "WRITING"
+      - trigger: "expand"
+        target: "RESEARCHING"
+
+    COMPLETED:
+      - trigger: "new_report"
+        target: "PLANNING"
+
+    CANCELLED:
+      - trigger: "new_report"
+        target: "PLANNING"
+
+  # Session timeout settings
+  timeout:
+    planning_minutes: 30
+    researching_minutes: 10
+    writing_minutes: 15
+    review_minutes: 60

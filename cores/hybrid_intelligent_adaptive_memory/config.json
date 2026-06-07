@@ -1,0 +1,55 @@
+{
+  "_note": "HIAMS - configurable via UBP_HIAMS__* env vars",
+  "enabled": "${UBP_HIAMS__ENABLED:-true}",
+  "log_level": "${UBP_HIAMS__LOG_LEVEL:-INFO}",
+  "chat_profile": {
+    "compression_trigger_threshold": "${UBP_HIAMS__CHAT_TRIGGER:-6}",
+    "min_turns_between_compressions": "${UBP_HIAMS__CHAT_MIN_TURNS_BETWEEN_COMPRESSIONS:-3}",
+    "min_delta_info_score": "${UBP_HIAMS__CHAT_MIN_DELTA_INFO_SCORE:-4.0}",
+    "layer0_base_window": "${UBP_HIAMS__CHAT_LAYER0_BASE_WINDOW:-8}",
+    "layer0_recall_window": "${UBP_HIAMS__CHAT_LAYER0_RECALL_WINDOW:-12}",
+    "max_layer1_blocks": "${UBP_HIAMS__CHAT_MAX_LAYER1_BLOCKS:-5}",
+    "projection_budget_tokens": "${UBP_HIAMS__CHAT_PROJECTION_BUDGET:-2800}",
+    "projection_budget_tokens_cross_thread": "${UBP_HIAMS__CHAT_PROJECTION_BUDGET_CROSS_THREAD:-4200}",
+    "enable_layer2": "${UBP_HIAMS__CHAT_ENABLE_LAYER2:-true}"
+  },
+  "agent_loop_profile": {
+    "compression_trigger_threshold": "${UBP_HIAMS__AGENT_TRIGGER:-5}",
+    "min_turns_between_compressions": "${UBP_HIAMS__AGENT_MIN_TURNS_BETWEEN_COMPRESSIONS:-2}",
+    "min_delta_info_score": "${UBP_HIAMS__AGENT_MIN_DELTA_INFO_SCORE:-3.0}",
+    "layer0_base_window": "${UBP_HIAMS__AGENT_LAYER0_BASE_WINDOW:-6}",
+    "layer0_recall_window": "${UBP_HIAMS__AGENT_LAYER0_RECALL_WINDOW:-10}",
+    "max_layer1_blocks": "${UBP_HIAMS__AGENT_MAX_LAYER1_BLOCKS:-4}",
+    "projection_budget_tokens": "${UBP_HIAMS__AGENT_PROJECTION_BUDGET:-2200}",
+    "projection_budget_tokens_cross_thread": "${UBP_HIAMS__AGENT_PROJECTION_BUDGET_CROSS_THREAD:-3200}",
+    "enable_layer2": "${UBP_HIAMS__AGENT_ENABLE_LAYER2:-true}"
+  },
+  "compression": {
+    "hysteresis_min_turns": "${UBP_HIAMS__HYSTERESIS_MIN_TURNS:-4}",
+    "delta_info_threshold": "${UBP_HIAMS__DELTA_INFO_THRESHOLD:-0.12}",
+    "semantic_delta_enabled": "${UBP_HIAMS__SEMANTIC_DELTA_ENABLED:-true}"
+  },
+  "promotion": {
+    "min_frequency": "${UBP_HIAMS__PROMOTION_MIN_FREQUENCY:-2}",
+    "critical_categories": [
+      "price",
+      "location",
+      "dietary",
+      "event"
+    ],
+    "immediate_categories": [
+      "location",
+      "event",
+      "price"
+    ],
+    "zero_latency_enabled": "${UBP_HIAMS__ZERO_LATENCY_ENABLED:-true}"
+  },
+  "projection": {
+    "always_include_structured": "${UBP_HIAMS__ALWAYS_INCLUDE_STRUCTURED:-true}",
+    "critical_fact_budget_reserve": "${UBP_HIAMS__CRITICAL_FACT_BUDGET_RESERVE:-500}",
+    "include_current_layer0_for_critical": "${UBP_HIAMS__INCLUDE_CURRENT_LAYER0_FOR_CRITICAL:-true}"
+  },
+  "compression_provider_override": "${UBP_HIAMS__PROVIDER_OVERRIDE:-}",
+  "compression_model_override": "${UBP_HIAMS__MODEL_OVERRIDE:-}",
+  "_fix_round_comment": "FIX ROUND 2 - HIAMS zero-latency recall boost - T15 fixed"
+}

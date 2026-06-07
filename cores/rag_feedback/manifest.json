@@ -1,0 +1,204 @@
+{
+    "name": "rag_feedback",
+    "version": "1.0.0",
+    "description": "Feedback collection and analytics for RAG responses (3-file architecture)",
+    "author": "UBP Team",
+    "module_type": "analytics",
+    "architecture": "3-file-pattern",
+    "requires_redis": true,
+    "requires_postgres": false,
+    "requires_event_bus": true,
+    "operations": [
+        {
+            "name": "submit_feedback",
+            "description": "Submit feedback (thumbs up/down or rating) for a RAG response",
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 100,
+                "requires_session": true,
+                "category": "operations"
+            },
+            "parameters": {
+                "response_id": "string (required, UUID of the RAG response)",
+                "feedback_type": "string (required, 'thumbs_up'|'thumbs_down'|'rating')",
+                "value": "any (required, true/false for thumbs, 1-5 for rating)",
+                "query": "string (optional, original query)",
+                "answer": "string (optional, response preview)",
+                "collection": "string (optional, knowledge base name)",
+                "metadata": "object (optional)"
+            },
+            "returns": {
+                "feedback_id": "string (UUID)",
+                "response_id": "string",
+                "status": "string (submitted)",
+                "created_at": "string (ISO timestamp)",
+                "request_id": "string (tracking ID)"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "get_response_feedback",
+            "description": "Get feedback for a specific response",
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 75,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "parameters": {
+                "response_id": "string (required)"
+            },
+            "returns": {
+                "response_id": "string",
+                "feedback": "object or null",
+                "found": "boolean",
+                "request_id": "string (tracking ID)"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "get_feedback_stats",
+            "description": "Get aggregated feedback statistics (admin only for global)",
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 200,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "parameters": {
+                "start_date": "string (optional, YYYY-MM-DD)",
+                "end_date": "string (optional, YYYY-MM-DD)",
+                "collection": "string (optional, filter by collection)"
+            },
+            "returns": {
+                "total_feedback": "integer",
+                "thumbs_up": "integer",
+                "thumbs_down": "integer",
+                "ratings_count": "integer",
+                "average_rating": "float or null",
+                "satisfaction_rate": "float (percentage)",
+                "period": "object (start/end dates)",
+                "request_id": "string (tracking ID)"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "list_feedback",
+            "description": "List feedback entries (users see own, admins see all)",
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 150,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "parameters": {
+                "user_id": "string (optional, admin only)",
+                "limit": "integer (optional, default 50, max 100)",
+                "offset": "integer (optional, default 0)"
+            },
+            "returns": {
+                "feedback": "array of feedback objects",
+                "count": "integer",
+                "limit": "integer",
+                "offset": "integer",
+                "request_id": "string (tracking ID)"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "delete_feedback",
+            "description": "Delete feedback for a response (users can delete own, admins can delete any)",
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 100,
+                "requires_session": true,
+                "category": "operations"
+            },
+            "parameters": {
+                "response_id": "string (required, UUID)"
+            },
+            "returns": {
+                "response_id": "string",
+                "deleted": "boolean",
+                "request_id": "string (tracking ID)"
+            },
+            "security": "client_admin",
+            "scope": "general",
+            "client_types": []
+        },
+        {
+            "name": "health_check",
+            "description": "Health check with statistics",
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 75,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "parameters": {},
+            "returns": {
+                "module": "string (module name)",
+                "version": "string",
+                "status": "string (healthy/unhealthy)",
+                "init_status": "object (initialization details)",
+                "total_feedback_count": "integer",
+                "provider": "object (provider health info)"
+            },
+            "security": "none",
+            "scope": "system",
+            "client_types": []
+        }
+    ],
+    "event_publications": [
+        "feedback.submitted",
+        "feedback.deleted"
+    ],
+    "dependencies": {
+        "modules": [],
+        "redis_keys": [
+            "ubp:feedback:response:*",
+            "ubp:feedback:stats:daily:*",
+            "ubp:feedback:stats:collection:*",
+            "ubp:feedback:user:*:list",
+            "ubp:feedback:all:list"
+        ]
+    },
+    "config_file": "config.json",
+    "config_schema": {
+        "enabled": {
+            "type": "boolean",
+            "required": true
+        },
+        "stats_ttl_seconds": {
+            "type": "integer",
+            "min": 86400
+        },
+        "feedback_ttl_seconds": {
+            "type": "integer",
+            "min": 86400
+        },
+        "max_feedback_per_user": {
+            "type": "integer",
+            "min": 100,
+            "max": 10000
+        },
+        "allow_anonymous_feedback": {
+            "type": "boolean"
+        }
+    },
+    "production_ready": true
+}

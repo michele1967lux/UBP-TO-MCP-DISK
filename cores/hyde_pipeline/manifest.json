@@ -1,0 +1,1085 @@
+{
+  "name": "hyde_pipeline",
+  "version": "1.0.0",
+  "description": "Enterprise HyDE (Hypothetical Document Embedding) Engine for improved RAG retrieval",
+  "architecture": "3-file-pattern",
+  "category": "core",
+  "production_ready": true,
+  "author": "UBP Team",
+  "license": "proprietary",
+  "repository": "internal",
+  "features": [
+    "Multi-format document generation",
+    "Domain-adaptive templates",
+    "Ensemble HyDE with diversity",
+    "Iterative refinement",
+    "Hallucination detection",
+    "Semantic chunking",
+    "Quality assurance scoring",
+    "Cross-lingual support (EN/IT)",
+    "Redis caching with semantic matching",
+    "Session management",
+    "Worker pool parallelism",
+    "Comprehensive metrics"
+  ],
+  "dependencies": {
+    "required": [],
+    "optional": [
+      {
+        "module": "inference_vllm",
+        "purpose": "vLLM inference backend"
+      },
+      {
+        "module": "inference_ollama_grok",
+        "purpose": "Ollama/Grok inference backend"
+      },
+      {
+        "module": "inference_openai_anthropic",
+        "purpose": "OpenAI/Anthropic API backend"
+      }
+    ]
+  },
+  "redis_keys": {
+    "patterns": [
+      "ubp:{env}:hyde:cache:hyde:{hash}",
+      "ubp:{env}:hyde:cache:qa:{hash}",
+      "ubp:{env}:hyde:cache:chunks:{hash}",
+      "ubp:{env}:hyde:session:{session_id}",
+      "ubp:{env}:hyde:stats:*"
+    ],
+    "description": "Environment-isolated keys with {env} = dev|test|prod"
+  },
+  "formats": {
+    "answer": {
+      "description": "Direct answer format simulating knowledge base response",
+      "temperature": 0.5,
+      "max_length": 400
+    },
+    "technical_doc": {
+      "description": "Technical documentation style with sections and details",
+      "temperature": 0.3,
+      "max_length": 600
+    },
+    "faq": {
+      "description": "FAQ entry format with clear Q&A structure",
+      "temperature": 0.4,
+      "max_length": 350
+    },
+    "code_snippet": {
+      "description": "Code-focused with examples and comments",
+      "temperature": 0.2,
+      "max_length": 500
+    },
+    "tutorial": {
+      "description": "Step-by-step tutorial format",
+      "temperature": 0.4,
+      "max_length": 700
+    },
+    "troubleshooting": {
+      "description": "Problem-solution format for debugging",
+      "temperature": 0.3,
+      "max_length": 500
+    },
+    "article": {
+      "description": "Article excerpt format with narrative flow",
+      "temperature": 0.6,
+      "max_length": 800
+    }
+  },
+  "domains": {
+    "ai_ml": {
+      "description": "Machine Learning, Deep Learning, LLMs, RAG, Embeddings",
+      "preferred_formats": [
+        "technical_doc",
+        "code_snippet",
+        "answer"
+      ]
+    },
+    "devops": {
+      "description": "Docker, Kubernetes, CI/CD, Infrastructure as Code",
+      "preferred_formats": [
+        "tutorial",
+        "troubleshooting",
+        "code_snippet"
+      ]
+    },
+    "api_integration": {
+      "description": "REST APIs, GraphQL, Authentication, Webhooks",
+      "preferred_formats": [
+        "code_snippet",
+        "technical_doc",
+        "faq"
+      ]
+    },
+    "database": {
+      "description": "SQL, NoSQL, Query Optimization, Data Modeling",
+      "preferred_formats": [
+        "code_snippet",
+        "technical_doc",
+        "troubleshooting"
+      ]
+    },
+    "security": {
+      "description": "Authentication, Encryption, Vulnerabilities, Compliance",
+      "preferred_formats": [
+        "technical_doc",
+        "troubleshooting",
+        "faq"
+      ]
+    },
+    "cloud": {
+      "description": "AWS, Azure, GCP, Serverless, Cloud Architecture",
+      "preferred_formats": [
+        "tutorial",
+        "technical_doc",
+        "troubleshooting"
+      ]
+    },
+    "general": {
+      "description": "General technical and conceptual queries",
+      "preferred_formats": [
+        "answer",
+        "faq",
+        "article"
+      ]
+    }
+  },
+  "operations": [
+    {
+      "name": "initialize",
+      "description": "Initialize all HyDE components and start worker pool",
+      "parameters": {},
+      "returns": {
+        "status": "string",
+        "components": "object"
+      },
+      "admin_only": false,
+      "idempotent": true,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 100,
+        "requires_session": true,
+        "category": "admin"
+      },
+      "security": "none",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "generate_hyde",
+      "description": "Full HyDE pipeline execution with session management",
+      "parameters": {
+        "query": {
+          "type": "string",
+          "required": true,
+          "description": "User's query",
+          "ui_type": "textarea",
+          "min_length": 3,
+          "max_length": 2000
+        },
+        "format_type": {
+          "type": "string",
+          "required": false,
+          "description": "Document format override",
+          "ui_type": "select",
+          "options": [
+            "answer",
+            "technical_doc",
+            "faq",
+            "code_snippet",
+            "tutorial",
+            "troubleshooting",
+            "article"
+          ]
+        },
+        "domain": {
+          "type": "string",
+          "required": false,
+          "default": "auto",
+          "description": "Domain override or 'auto' for detection",
+          "ui_type": "select",
+          "options": [
+            "auto",
+            "ai_ml",
+            "devops",
+            "api_integration",
+            "database",
+            "security",
+            "cloud",
+            "general"
+          ]
+        },
+        "language": {
+          "type": "string",
+          "required": false,
+          "default": "auto",
+          "description": "Language code or 'auto' for detection",
+          "ui_type": "select",
+          "options": [
+            "auto",
+            "en",
+            "it"
+          ]
+        },
+        "num_documents": {
+          "type": "integer",
+          "required": false,
+          "default": 1,
+          "description": "Number of documents (for ensemble)",
+          "ui_type": "number",
+          "min": 1,
+          "max": 5
+        },
+        "enable_refinement": {
+          "type": "boolean",
+          "required": false,
+          "default": true,
+          "description": "Enable iterative refinement",
+          "ui_type": "toggle"
+        },
+        "enable_ensemble": {
+          "type": "boolean",
+          "required": false,
+          "default": false,
+          "description": "Enable ensemble generation",
+          "ui_type": "toggle"
+        },
+        "max_length": {
+          "type": "integer",
+          "required": false,
+          "description": "Maximum document length",
+          "ui_type": "number",
+          "min": 100,
+          "max": 1000
+        },
+        "session_id": {
+          "type": "string",
+          "required": false,
+          "description": "Existing session ID for continuity"
+        },
+        "pipeline_config": {
+          "type": "object",
+          "required": false,
+          "description": "Pipeline step configuration override"
+        }
+      },
+      "returns": {
+        "session_id": "string",
+        "query": "string",
+        "document": "object",
+        "chunks": "array",
+        "classification": "object",
+        "quality_assessment": "object",
+        "hallucination_check": "object",
+        "refinement_applied": "boolean",
+        "time_ms": "number",
+        "step_times": "object"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 1500,
+        "requires_session": false,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "generate_document",
+      "description": "Direct document generation without pipeline",
+      "parameters": {
+        "query": {
+          "type": "string",
+          "required": true,
+          "description": "User's query"
+        },
+        "format_type": {
+          "type": "string",
+          "required": false,
+          "default": "answer",
+          "description": "Document format"
+        },
+        "domain": {
+          "type": "string",
+          "required": false,
+          "default": "auto"
+        },
+        "language": {
+          "type": "string",
+          "required": false,
+          "default": "auto"
+        },
+        "min_length": {
+          "type": "integer",
+          "required": false,
+          "default": 100
+        },
+        "max_length": {
+          "type": "integer",
+          "required": false,
+          "default": 400
+        },
+        "temperature": {
+          "type": "number",
+          "required": false,
+          "description": "Temperature override",
+          "min": 0.0,
+          "max": 1.0
+        }
+      },
+      "returns": {
+        "document": "object",
+        "format_type": "string",
+        "domain": "string",
+        "language": "string",
+        "time_ms": "number"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 1200,
+        "requires_session": false,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "generate_ensemble",
+      "description": "Generate multiple documents with diversity",
+      "parameters": {
+        "query": {
+          "type": "string",
+          "required": true
+        },
+        "count": {
+          "type": "integer",
+          "required": false,
+          "default": 3,
+          "min": 2,
+          "max": 5
+        },
+        "formats": {
+          "type": "array",
+          "required": false,
+          "description": "Specific formats to use"
+        },
+        "domain": {
+          "type": "string",
+          "required": false,
+          "default": "auto"
+        },
+        "language": {
+          "type": "string",
+          "required": false,
+          "default": "auto"
+        },
+        "fuse_results": {
+          "type": "boolean",
+          "required": false,
+          "default": true,
+          "description": "Whether to fuse documents"
+        }
+      },
+      "returns": {
+        "documents": "array",
+        "fused_document": "object",
+        "formats_used": "array",
+        "diversity_score": "number",
+        "time_ms": "number"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 2000,
+        "requires_session": false,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "classify_query",
+      "description": "Classify query for domain and language",
+      "parameters": {
+        "query": {
+          "type": "string",
+          "required": true
+        }
+      },
+      "returns": {
+        "query": "string",
+        "domain": "string",
+        "confidence": "number",
+        "language": "string",
+        "preferred_formats": "array",
+        "detected_keywords": "array"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 400,
+        "requires_session": false,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "assess_quality",
+      "description": "Assess document quality with multi-dimensional scoring",
+      "parameters": {
+        "document": {
+          "type": "object",
+          "required": true,
+          "description": "Document to assess"
+        },
+        "original_query": {
+          "type": "string",
+          "required": true,
+          "description": "Original query for relevance scoring"
+        }
+      },
+      "returns": {
+        "document_id": "string",
+        "overall_score": "number",
+        "relevance_score": "number",
+        "coherence_score": "number",
+        "informativeness_score": "number",
+        "format_score": "number",
+        "terminology_score": "number",
+        "quality_level": "string",
+        "issues": "array",
+        "suggestions": "array"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 500,
+        "requires_session": false,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "check_hallucination",
+      "description": "Check document for potentially fabricated content",
+      "parameters": {
+        "document": {
+          "type": "object",
+          "required": true
+        }
+      },
+      "returns": {
+        "document_id": "string",
+        "hallucination_detected": "boolean",
+        "confidence": "number",
+        "suspicious_elements": "array",
+        "recommendation": "string"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 800,
+        "requires_session": false,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "refine_document",
+      "description": "Iteratively improve a document. Requires either a 'query' parameter or a 'query' field in the document.",
+      "parameters": {
+        "document": {
+          "type": "object",
+          "required": true
+        },
+        "strategy": {
+          "type": "string",
+          "required": false,
+          "default": "expand",
+          "description": "Refinement strategy",
+          "options": [
+            "expand",
+            "focus",
+            "technical",
+            "simplify"
+          ]
+        },
+        "quality_score": {
+          "type": "number",
+          "required": false,
+          "default": 0.0
+        },
+        "issues": {
+          "type": "array",
+          "required": false,
+          "description": "Identified quality issues"
+        },
+        "query": {
+          "type": "string",
+          "required": false,
+          "description": "Original query for refinement context (required if not in document)"
+        }
+      },
+      "returns": {
+        "original_document": "object",
+        "refined_document": "object",
+        "strategy": "string",
+        "iterations": "integer",
+        "score_before": "number",
+        "score_after": "number",
+        "time_ms": "number"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 1000,
+        "requires_session": false,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "chunk_document",
+      "description": "Chunk document for embedding",
+      "parameters": {
+        "document": {
+          "type": "object",
+          "required": true
+        },
+        "strategy": {
+          "type": "string",
+          "required": false,
+          "description": "Chunking strategy override",
+          "options": [
+            "semantic",
+            "fixed",
+            "sentence",
+            "paragraph"
+          ]
+        },
+        "chunk_size": {
+          "type": "integer",
+          "required": false,
+          "description": "Chunk size override"
+        }
+      },
+      "returns": {
+        "document_id": "string",
+        "chunks": "array",
+        "chunk_count": "integer",
+        "strategy": "string"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 600,
+        "requires_session": false,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "fuse_documents",
+      "description": "Combine multiple documents intelligently",
+      "parameters": {
+        "documents": {
+          "type": "array",
+          "required": true,
+          "description": "Documents to fuse"
+        },
+        "strategy": {
+          "type": "string",
+          "required": false,
+          "default": "weighted_concat",
+          "options": [
+            "weighted_concat",
+            "best_selection",
+            "merge_unique"
+          ]
+        }
+      },
+      "returns": {
+        "document": "object"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 700,
+        "requires_session": false,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "get_session",
+      "description": "Retrieve session state",
+      "parameters": {
+        "session_id": {
+          "type": "string",
+          "required": true
+        }
+      },
+      "returns": {
+        "session_id": "string",
+        "created_at": "string",
+        "updated_at": "string",
+        "history_count": "integer",
+        "document_count": "integer",
+        "history": "array",
+        "metadata": "object"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 50,
+        "requires_session": true,
+        "category": "admin"
+      },
+      "security": "admin",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "delete_session",
+      "description": "Delete a session",
+      "parameters": {
+        "session_id": {
+          "type": "string",
+          "required": true
+        }
+      },
+      "returns": {
+        "deleted": "boolean",
+        "session_id": "string"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 100,
+        "requires_session": true,
+        "category": "admin"
+      },
+      "security": "admin",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "get_stats",
+      "description": "Get metrics and statistics",
+      "parameters": {
+        "period": {
+          "type": "string",
+          "required": false,
+          "default": "24h",
+          "description": "Time period for stats"
+        }
+      },
+      "returns": {
+        "period": "string",
+        "metrics": "object",
+        "cache": "object",
+        "worker_pool": "object"
+      },
+      "admin_only": true,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 50,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "admin",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "get_pipeline_config",
+      "description": "Get current pipeline configuration",
+      "parameters": {},
+      "returns": {
+        "default_timeout_seconds": "integer",
+        "fail_fast": "boolean",
+        "steps": "object",
+        "available_steps": "array"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 50,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "admin",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "set_pipeline_config",
+      "description": "Update pipeline step configuration",
+      "parameters": {
+        "steps": {
+          "type": "array",
+          "required": true,
+          "description": "Step configuration updates",
+          "items": {
+            "type": "object",
+            "properties": {
+              "step": "string",
+              "enabled": "boolean",
+              "timeout": "integer"
+            }
+          }
+        }
+      },
+      "returns": {
+        "updated_config": "object"
+      },
+      "admin_only": true,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "admin",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "reload_config",
+      "description": "Hot-reload configuration from config.json",
+      "parameters": {},
+      "returns": {
+        "status": "string",
+        "timestamp": "string"
+      },
+      "admin_only": true,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 200,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "admin",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "shutdown",
+      "description": "Graceful shutdown of all components",
+      "parameters": {},
+      "returns": {
+        "status": "string"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 100,
+        "requires_session": true,
+        "category": "admin"
+      },
+      "security": "none",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "health_check",
+      "description": "Check health status of all components",
+      "parameters": {},
+      "returns": {
+        "module": "string",
+        "status": "string",
+        "initialized": "boolean",
+        "llm_delegation": "object",
+        "worker_pool": "object",
+        "cache": "object",
+        "components": "object"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 50,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "none",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "get_available_formats",
+      "description": "Get list of available document formats",
+      "parameters": {},
+      "returns": {
+        "formats": "array",
+        "count": "integer"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 50,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "admin",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "get_available_domains",
+      "description": "Get list of available domains with metadata",
+      "parameters": {},
+      "returns": {
+        "domains": "array",
+        "domain_info": "object"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 50,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "admin",
+      "scope": "system",
+      "client_types": []
+    }
+  ],
+  "events": {
+    "publishes": [
+      {
+        "event": "hyde.initialized",
+        "description": "Module initialized successfully",
+        "payload": {
+          "module": "string",
+          "status": "string"
+        }
+      },
+      {
+        "event": "hyde.pipeline.started",
+        "description": "Pipeline execution started",
+        "payload": {
+          "session_id": "string",
+          "query": "string"
+        }
+      },
+      {
+        "event": "hyde.pipeline.completed",
+        "description": "Pipeline execution completed",
+        "payload": {
+          "session_id": "string",
+          "document_id": "string",
+          "format_type": "string",
+          "quality_score": "number",
+          "time_ms": "number"
+        }
+      },
+      {
+        "event": "hyde.pipeline.failed",
+        "description": "Pipeline execution failed",
+        "payload": {
+          "session_id": "string",
+          "error": "string"
+        }
+      },
+      {
+        "event": "hyde.generation.completed",
+        "description": "Document generation completed",
+        "payload": {
+          "document_id": "string",
+          "format_type": "string",
+          "domain": "string",
+          "time_ms": "number"
+        }
+      },
+      {
+        "event": "hyde.generation.failed",
+        "description": "Document generation failed",
+        "payload": {
+          "error": "string"
+        }
+      },
+      {
+        "event": "hyde.ensemble.completed",
+        "description": "Ensemble generation completed",
+        "payload": {
+          "document_count": "integer",
+          "diversity_score": "number"
+        }
+      },
+      {
+        "event": "hyde.refinement.completed",
+        "description": "Document refinement completed",
+        "payload": {
+          "document_id": "string",
+          "strategy": "string",
+          "improvement": "number"
+        }
+      },
+      {
+        "event": "hyde.hallucination.detected",
+        "description": "Potential hallucination detected",
+        "payload": {
+          "document_id": "string",
+          "confidence": "number",
+          "suspicious_count": "integer"
+        }
+      },
+      {
+        "event": "hyde.session.created",
+        "description": "New session created",
+        "payload": {
+          "session_id": "string"
+        }
+      },
+      {
+        "event": "hyde.session.updated",
+        "description": "Session updated with new interaction",
+        "payload": {
+          "session_id": "string",
+          "history_count": "integer"
+        }
+      },
+      {
+        "event": "hyde.health.degraded",
+        "description": "Component health degraded",
+        "payload": {
+          "component": "string",
+          "status": "string"
+        }
+      },
+      {
+        "event": "hyde.shutdown",
+        "description": "Module shutdown completed",
+        "payload": {
+          "module": "string"
+        }
+      }
+    ],
+    "subscribes": []
+  },
+  "quality_scoring": {
+    "dimensions": {
+      "relevance": {
+        "weight": 0.35,
+        "description": "Keyword overlap with original query"
+      },
+      "coherence": {
+        "weight": 0.25,
+        "description": "Sentence structure and flow"
+      },
+      "informativeness": {
+        "weight": 0.2,
+        "description": "Information density and specificity"
+      },
+      "format_adherence": {
+        "weight": 0.1,
+        "description": "Matches expected document format"
+      },
+      "terminology": {
+        "weight": 0.1,
+        "description": "Domain-appropriate technical terms"
+      }
+    },
+    "levels": {
+      "excellent": {
+        "min_score": 8.0,
+        "description": "High-quality, ready for retrieval"
+      },
+      "good": {
+        "min_score": 6.0,
+        "description": "Acceptable quality"
+      },
+      "acceptable": {
+        "min_score": 4.0,
+        "description": "Minimum acceptable"
+      },
+      "poor": {
+        "min_score": 0.0,
+        "description": "Triggers refinement if enabled"
+      }
+    }
+  },
+  "chunking_strategies": {
+    "semantic": {
+      "description": "Split on natural semantic boundaries (paragraphs, sections)",
+      "default": true
+    },
+    "sentence": {
+      "description": "Split on sentence boundaries with overlap"
+    },
+    "paragraph": {
+      "description": "Split on paragraph boundaries"
+    },
+    "fixed": {
+      "description": "Fixed-size chunks with configurable overlap"
+    }
+  },
+  "refinement_strategies": {
+    "expand": {
+      "description": "Add more specific technical details",
+      "temperature": 0.5
+    },
+    "focus": {
+      "description": "Concentrate on core question, remove tangents",
+      "temperature": 0.3
+    },
+    "technical": {
+      "description": "Enhance with domain terminology and specifics",
+      "temperature": 0.3
+    },
+    "simplify": {
+      "description": "Use clearer language, improve accessibility",
+      "temperature": 0.4
+    }
+  },
+  "ensemble_fusion_strategies": {
+    "weighted_concat": {
+      "description": "Concatenate weighted by quality scores",
+      "default": true
+    },
+    "best_selection": {
+      "description": "Select highest quality document"
+    },
+    "merge_unique": {
+      "description": "Merge unique sentences from each document"
+    }
+  },
+  "module_type": "rag"
+}

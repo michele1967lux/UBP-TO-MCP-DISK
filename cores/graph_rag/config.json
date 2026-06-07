@@ -1,0 +1,259 @@
+{
+  "graph_rag": {
+    "enabled": "${UBP_GRAPH__ENABLED:-true}",
+    "default_backend": "${UBP_GRAPH__DEFAULT_BACKEND:-memory}",
+    "max_graph_size": "${UBP_GRAPH__MAX_SIZE:-100000}",
+    "auto_persist": "${UBP_GRAPH__AUTO_PERSIST:-true}",
+    "persist_interval_seconds": "${UBP_GRAPH__PERSIST_INTERVAL:-300}"
+  },
+
+  "entity_extraction": {
+    "enabled": "${UBP_GRAPH__ENTITY_ENABLED:-true}",
+    "method": "${UBP_GRAPH__ENTITY_METHOD:-llm}",
+    "max_entities_per_chunk": "${UBP_GRAPH__ENTITY_MAX_PER_CHUNK:-20}",
+    "min_confidence": "${UBP_GRAPH__ENTITY_MIN_CONFIDENCE:-0.6}",
+    "temperature": "${UBP_GRAPH__ENTITY_TEMPERATURE:-0.1}",
+    "entity_types": {
+      "person": "${UBP_GRAPH__ENTITY_TYPE_PERSON:-true}",
+      "organization": "${UBP_GRAPH__ENTITY_TYPE_ORG:-true}",
+      "location": "${UBP_GRAPH__ENTITY_TYPE_LOC:-true}",
+      "date": "${UBP_GRAPH__ENTITY_TYPE_DATE:-true}",
+      "technology": "${UBP_GRAPH__ENTITY_TYPE_TECH:-true}",
+      "concept": "${UBP_GRAPH__ENTITY_TYPE_CONCEPT:-true}",
+      "product": "${UBP_GRAPH__ENTITY_TYPE_PRODUCT:-true}",
+      "event": "${UBP_GRAPH__ENTITY_TYPE_EVENT:-true}",
+      "quantity": "${UBP_GRAPH__ENTITY_TYPE_QUANTITY:-true}",
+      "custom": "${UBP_GRAPH__ENTITY_TYPE_CUSTOM:-true}"
+    },
+    "coreference_resolution": "${UBP_GRAPH__ENTITY_COREF:-true}",
+    "entity_linking": "${UBP_GRAPH__ENTITY_LINKING:-true}",
+    "disambiguation_threshold": "${UBP_GRAPH__ENTITY_DISAMBIG_THRESHOLD:-0.85}"
+  },
+
+  "relation_extraction": {
+    "enabled": "${UBP_GRAPH__RELATION_ENABLED:-true}",
+    "method": "${UBP_GRAPH__RELATION_METHOD:-llm}",
+    "max_relations_per_chunk": "${UBP_GRAPH__RELATION_MAX_PER_CHUNK:-30}",
+    "min_confidence": "${UBP_GRAPH__RELATION_MIN_CONFIDENCE:-0.5}",
+    "temperature": "${UBP_GRAPH__RELATION_TEMPERATURE:-0.1}",
+    "relation_types": {
+      "works_for": "${UBP_GRAPH__REL_WORKS_FOR:-true}",
+      "located_in": "${UBP_GRAPH__REL_LOCATED_IN:-true}",
+      "part_of": "${UBP_GRAPH__REL_PART_OF:-true}",
+      "created_by": "${UBP_GRAPH__REL_CREATED_BY:-true}",
+      "used_by": "${UBP_GRAPH__REL_USED_BY:-true}",
+      "related_to": "${UBP_GRAPH__REL_RELATED_TO:-true}",
+      "depends_on": "${UBP_GRAPH__REL_DEPENDS_ON:-true}",
+      "causes": "${UBP_GRAPH__REL_CAUSES:-true}",
+      "has_property": "${UBP_GRAPH__REL_HAS_PROPERTY:-true}",
+      "instance_of": "${UBP_GRAPH__REL_INSTANCE_OF:-true}",
+      "subclass_of": "${UBP_GRAPH__REL_SUBCLASS_OF:-true}",
+      "custom": "${UBP_GRAPH__REL_CUSTOM:-true}"
+    },
+    "extract_evidence_spans": "${UBP_GRAPH__RELATION_EVIDENCE_SPANS:-true}",
+    "bidirectional_detection": "${UBP_GRAPH__RELATION_BIDIRECTIONAL:-true}"
+  },
+
+  "graph_construction": {
+    "merge_strategy": "${UBP_GRAPH__MERGE_STRATEGY:-smart}",
+    "entity_merge_threshold": "${UBP_GRAPH__ENTITY_MERGE_THRESHOLD:-0.9}",
+    "relation_merge_threshold": "${UBP_GRAPH__RELATION_MERGE_THRESHOLD:-0.85}",
+    "max_nodes": "${UBP_GRAPH__MAX_NODES:-50000}",
+    "max_edges": "${UBP_GRAPH__MAX_EDGES:-200000}",
+    "schema_validation": "${UBP_GRAPH__SCHEMA_VALIDATION:-true}",
+    "allow_self_loops": "${UBP_GRAPH__ALLOW_SELF_LOOPS:-false}",
+    "allow_parallel_edges": "${UBP_GRAPH__ALLOW_PARALLEL_EDGES:-true}",
+    "track_provenance": "${UBP_GRAPH__TRACK_PROVENANCE:-true}",
+    "versioning": "${UBP_GRAPH__VERSIONING:-false}"
+  },
+
+  "graph_backends": {
+    "memory": {
+      "enabled": "${UBP_GRAPH__BACKEND_MEMORY:-true}",
+      "max_memory_mb": "${UBP_GRAPH__BACKEND_MEMORY_MAX_MB:-512}"
+    },
+    "redis": {
+      "enabled": "${UBP_GRAPH__BACKEND_REDIS:-false}",
+      "key_prefix": "${UBP_GRAPH__BACKEND_REDIS_PREFIX:-ubp:graph}",
+      "ttl_seconds": "${UBP_GRAPH__BACKEND_REDIS_TTL:-86400}",
+      "use_graph_module": "${UBP_GRAPH__BACKEND_REDIS_GRAPH:-false}"
+    },
+    "neo4j": {
+      "enabled": "${UBP_GRAPH__BACKEND_NEO4J:-false}",
+      "uri": "${UBP_GRAPH__BACKEND_NEO4J_URI:-bolt://localhost:7687}",
+      "username": "${UBP_GRAPH__BACKEND_NEO4J_USER:-neo4j}",
+      "password": "${UBP_GRAPH__BACKEND_NEO4J_PASS:-}",
+      "database": "${UBP_GRAPH__BACKEND_NEO4J_DB:-neo4j}",
+      "connection_pool_size": "${UBP_GRAPH__BACKEND_NEO4J_POOL:-10}"
+    }
+  },
+
+  "graph_retrieval": {
+    "enabled": "${UBP_GRAPH__RETRIEVAL_ENABLED:-true}",
+    "default_strategy": "${UBP_GRAPH__RETRIEVAL_STRATEGY:-hybrid}",
+    "max_hops": "${UBP_GRAPH__RETRIEVAL_MAX_HOPS:-3}",
+    "max_nodes_per_hop": "${UBP_GRAPH__RETRIEVAL_MAX_NODES_HOP:-50}",
+    "max_subgraph_nodes": "${UBP_GRAPH__RETRIEVAL_MAX_SUBGRAPH:-100}",
+    "entity_search_top_k": "${UBP_GRAPH__RETRIEVAL_ENTITY_TOP_K:-10}",
+    "relation_filter_enabled": "${UBP_GRAPH__RETRIEVAL_RELATION_FILTER:-true}",
+    "scoring_weights": {
+      "entity_relevance": "${UBP_GRAPH__SCORE_ENTITY_RELEVANCE:-0.4}",
+      "path_length": "${UBP_GRAPH__SCORE_PATH_LENGTH:-0.2}",
+      "relation_strength": "${UBP_GRAPH__SCORE_RELATION_STRENGTH:-0.2}",
+      "node_centrality": "${UBP_GRAPH__SCORE_NODE_CENTRALITY:-0.2}"
+    }
+  },
+
+  "hybrid_retrieval": {
+    "enabled": "${UBP_GRAPH__HYBRID_ENABLED:-true}",
+    "vector_weight": "${UBP_GRAPH__HYBRID_VECTOR_WEIGHT:-0.5}",
+    "graph_weight": "${UBP_GRAPH__HYBRID_GRAPH_WEIGHT:-0.5}",
+    "vector_module": "${UBP_GRAPH__HYBRID_VECTOR_MODULE:-retrieval_pipeline}",
+    "vector_operation": "${UBP_GRAPH__HYBRID_VECTOR_OPERATION:-search}",
+    "fusion_method": "${UBP_GRAPH__HYBRID_FUSION:-rrf}",
+    "rrf_k": "${UBP_GRAPH__HYBRID_RRF_K:-60}"
+  },
+
+  "subgraph_reasoning": {
+    "enabled": "${UBP_GRAPH__REASONING_ENABLED:-true}",
+    "context_aggregation": "${UBP_GRAPH__REASONING_CONTEXT_AGG:-weighted}",
+    "path_inference": "${UBP_GRAPH__REASONING_PATH_INFERENCE:-true}",
+    "community_detection": "${UBP_GRAPH__REASONING_COMMUNITY:-true}",
+    "max_reasoning_paths": "${UBP_GRAPH__REASONING_MAX_PATHS:-10}",
+    "path_scoring": "${UBP_GRAPH__REASONING_PATH_SCORING:-length_weighted}",
+    "include_indirect_relations": "${UBP_GRAPH__REASONING_INDIRECT:-true}"
+  },
+
+  "graph_algorithms": {
+    "pagerank": {
+      "enabled": "${UBP_GRAPH__ALGO_PAGERANK:-true}",
+      "damping_factor": "${UBP_GRAPH__ALGO_PAGERANK_DAMPING:-0.85}",
+      "max_iterations": "${UBP_GRAPH__ALGO_PAGERANK_MAX_ITER:-100}",
+      "tolerance": "${UBP_GRAPH__ALGO_PAGERANK_TOLERANCE:-0.0001}"
+    },
+    "community_detection": {
+      "enabled": "${UBP_GRAPH__ALGO_COMMUNITY:-true}",
+      "method": "${UBP_GRAPH__ALGO_COMMUNITY_METHOD:-louvain}",
+      "resolution": "${UBP_GRAPH__ALGO_COMMUNITY_RESOLUTION:-1.0}"
+    },
+    "centrality": {
+      "enabled": "${UBP_GRAPH__ALGO_CENTRALITY:-true}",
+      "methods": ["degree", "betweenness", "closeness"]
+    },
+    "shortest_path": {
+      "enabled": "${UBP_GRAPH__ALGO_SHORTEST_PATH:-true}",
+      "max_length": "${UBP_GRAPH__ALGO_SHORTEST_PATH_MAX:-5}"
+    }
+  },
+
+  "query_processing": {
+    "entity_recognition_in_query": "${UBP_GRAPH__QUERY_ENTITY_RECOGNITION:-true}",
+    "query_expansion": "${UBP_GRAPH__QUERY_EXPANSION:-true}",
+    "synonym_matching": "${UBP_GRAPH__QUERY_SYNONYMS:-true}",
+    "fuzzy_entity_matching": "${UBP_GRAPH__QUERY_FUZZY:-true}",
+    "fuzzy_threshold": "${UBP_GRAPH__QUERY_FUZZY_THRESHOLD:-0.8}"
+  },
+
+  "answer_generation": {
+    "context_format": "${UBP_GRAPH__ANSWER_CONTEXT_FORMAT:-structured}",
+    "include_paths": "${UBP_GRAPH__ANSWER_INCLUDE_PATHS:-true}",
+    "include_evidence": "${UBP_GRAPH__ANSWER_INCLUDE_EVIDENCE:-true}",
+    "max_context_triples": "${UBP_GRAPH__ANSWER_MAX_TRIPLES:-50}",
+    "temperature": "${UBP_GRAPH__ANSWER_TEMPERATURE:-0.3}"
+  },
+
+  "graph_visualization": {
+    "enabled": "${UBP_GRAPH__VIZ_ENABLED:-true}",
+    "export_formats": ["json", "graphml", "gexf"],
+    "max_nodes_for_viz": "${UBP_GRAPH__VIZ_MAX_NODES:-500}",
+    "layout_algorithm": "${UBP_GRAPH__VIZ_LAYOUT:-force_directed}"
+  },
+
+  "incremental_updates": {
+    "enabled": "${UBP_GRAPH__INCREMENTAL_ENABLED:-true}",
+    "batch_size": "${UBP_GRAPH__INCREMENTAL_BATCH_SIZE:-100}",
+    "update_embeddings": "${UBP_GRAPH__INCREMENTAL_UPDATE_EMB:-true}",
+    "recompute_centrality": "${UBP_GRAPH__INCREMENTAL_RECOMPUTE_CENTRALITY:-false}",
+    "prune_orphans": "${UBP_GRAPH__INCREMENTAL_PRUNE_ORPHANS:-true}"
+  },
+
+  "cache": {
+    "enabled": "${UBP_GRAPH__CACHE_ENABLED:-true}",
+    "ttl_seconds": "${UBP_GRAPH__CACHE_TTL:-3600}",
+    "cache_extractions": "${UBP_GRAPH__CACHE_EXTRACTIONS:-true}",
+    "cache_subgraphs": "${UBP_GRAPH__CACHE_SUBGRAPHS:-true}",
+    "cache_paths": "${UBP_GRAPH__CACHE_PATHS:-true}",
+    "max_cache_size_mb": "${UBP_GRAPH__CACHE_MAX_SIZE_MB:-256}"
+  },
+
+  "session_management": {
+    "enabled": "${UBP_GRAPH__SESSION_ENABLED:-true}",
+    "ttl_seconds": "${UBP_GRAPH__SESSION_TTL:-3600}",
+    "max_history_size": "${UBP_GRAPH__SESSION_MAX_HISTORY:-30}",
+    "persist_subgraphs": "${UBP_GRAPH__SESSION_PERSIST_SUBGRAPHS:-true}"
+  },
+
+  "worker_pool": {
+    "enabled": "${UBP_GRAPH__WORKERS_ENABLED:-true}",
+    "pool_size": "${UBP_GRAPH__WORKER_POOL_SIZE:-4}",
+    "max_pool_size": "${UBP_GRAPH__WORKER_MAX_POOL_SIZE:-8}",
+    "task_timeout_seconds": "${UBP_GRAPH__WORKER_TASK_TIMEOUT:-60}",
+    "queue_max_size": "${UBP_GRAPH__WORKER_QUEUE_SIZE:-100}"
+  },
+
+  "metrics": {
+    "enabled": "${UBP_GRAPH__METRICS_ENABLED:-true}",
+    "collect_graph_stats": "${UBP_GRAPH__METRICS_GRAPH_STATS:-true}",
+    "collect_extraction_stats": "${UBP_GRAPH__METRICS_EXTRACTION:-true}",
+    "collect_retrieval_stats": "${UBP_GRAPH__METRICS_RETRIEVAL:-true}",
+    "collect_timings": "${UBP_GRAPH__METRICS_TIMINGS:-true}",
+    "retention_hours": "${UBP_GRAPH__METRICS_RETENTION:-24}"
+  },
+
+  "debug": {
+    "enabled": "${UBP_GRAPH__DEBUG_ENABLED:-false}",
+    "log_extractions": "${UBP_GRAPH__DEBUG_LOG_EXTRACTIONS:-true}",
+    "log_graph_ops": "${UBP_GRAPH__DEBUG_LOG_GRAPH_OPS:-true}",
+    "log_retrievals": "${UBP_GRAPH__DEBUG_LOG_RETRIEVALS:-true}",
+    "log_reasoning": "${UBP_GRAPH__DEBUG_LOG_REASONING:-true}",
+    "trace_execution": "${UBP_GRAPH__DEBUG_TRACE:-false}"
+  },
+
+  "delegation": {
+    "llm_module": "${UBP_GRAPH__LLM_MODULE:-inference_ollama_grok}",
+    "llm_operation": "${UBP_GRAPH__LLM_OPERATION:-generate}",
+    "timeout_seconds": "${UBP_GRAPH__LLM_TIMEOUT:-30}",
+    "max_retries": "${UBP_GRAPH__LLM_MAX_RETRIES:-2}"
+  },
+
+  "pipeline": {
+    "default_timeout_seconds": "${UBP_GRAPH__PIPELINE_TIMEOUT:-120}",
+    "fail_fast": "${UBP_GRAPH__PIPELINE_FAIL_FAST:-false}",
+    "steps": {
+      "parse_query": {
+        "enabled": "${UBP_GRAPH__STEP_PARSE_ENABLED:-true}",
+        "timeout": "${UBP_GRAPH__STEP_PARSE_TIMEOUT:-5}"
+      },
+      "extract_query_entities": {
+        "enabled": "${UBP_GRAPH__STEP_QUERY_ENTITIES_ENABLED:-true}",
+        "timeout": "${UBP_GRAPH__STEP_QUERY_ENTITIES_TIMEOUT:-10}"
+      },
+      "graph_retrieval": {
+        "enabled": "${UBP_GRAPH__STEP_GRAPH_RETRIEVAL_ENABLED:-true}",
+        "timeout": "${UBP_GRAPH__STEP_GRAPH_RETRIEVAL_TIMEOUT:-30}"
+      },
+      "subgraph_extraction": {
+        "enabled": "${UBP_GRAPH__STEP_SUBGRAPH_ENABLED:-true}",
+        "timeout": "${UBP_GRAPH__STEP_SUBGRAPH_TIMEOUT:-20}"
+      },
+      "context_aggregation": {
+        "enabled": "${UBP_GRAPH__STEP_CONTEXT_ENABLED:-true}",
+        "timeout": "${UBP_GRAPH__STEP_CONTEXT_TIMEOUT:-10}"
+      },
+      "generate_answer": {
+        "enabled": "${UBP_GRAPH__STEP_GENERATE_ENABLED:-true}",
+        "timeout": "${UBP_GRAPH__STEP_GENERATE_TIMEOUT:-30}"
+      }
+    }
+  }
+}

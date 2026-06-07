@@ -1,0 +1,219 @@
+{
+    "name": "rag_multi_layer_memory",
+    "version": "1.0.0",
+    "description": "Centralized, client-aware, multi-domain contextual memory with progressive layers (Layer 0 working memory, Layer 1 compressed mid-term, Layer 2 long-term minimal)",
+    "author": "UBP Team",
+    "module_type": "memory",
+    "architecture": "3-file-pattern",
+    "requires_redis": false,
+    "requires_postgres": false,
+    "requires_event_bus": true,
+    "optional_modules": [
+        "inference_vllm",
+        "inference_ollama_grok",
+        "inference_openai_anthropic"
+    ],
+    "operations": [
+        {
+            "name": "initialize",
+            "description": "Initialize multi-layer memory system",
+            "parameters": {},
+            "returns": {
+                "status": "string",
+                "module": "string",
+                "config": "object"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": true,
+                "estimated_latency_ms": 50,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "none",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "shutdown",
+            "description": "Shutdown multi-layer memory and release resources",
+            "parameters": {},
+            "returns": {
+                "status": "string"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": true,
+                "estimated_latency_ms": 50,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "health_check",
+            "description": "Health check for multi-layer memory system",
+            "parameters": {},
+            "returns": {
+                "status": "string",
+                "layers": "object"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 10,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "none",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "add_snapshot",
+            "description": "Add a new Sub-Layer Zero snapshot to the working memory (Layer 0). Manages sliding window automatically.",
+            "parameters": {
+                "session_id": "string (required) - conversation session identifier",
+                "snapshot": "object (required) - Sub-Layer Zero snapshot data"
+            },
+            "returns": {
+                "status": "string",
+                "layer0_count": "integer",
+                "compression_triggered": "boolean"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 100,
+                "requires_session": true,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "get_memory_context",
+            "description": "Get the full multi-layer memory context for LLM consumption. Returns Layer 0 + Layer 1 + Layer 2 formatted for injection.",
+            "parameters": {
+                "session_id": "string (required) - conversation session identifier"
+            },
+            "returns": {
+                "layer0": "array of snapshots",
+                "layer1": "array of compressed blocks",
+                "layer2": "object (long-term memory)",
+                "token_estimate": "integer"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 10,
+                "requires_session": true,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "trigger_compression",
+            "description": "Manually trigger compression of Layer 0 into Layer 1 (and optionally Layer 2). Normally triggered automatically at compress_at threshold.",
+            "parameters": {
+                "session_id": "string (required) - conversation session identifier",
+                "force": "boolean (optional, default false) - force compression even if threshold not reached"
+            },
+            "returns": {
+                "status": "string",
+                "new_layer1_block": "object or null",
+                "layer2_updated": "boolean"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 5000,
+                "requires_session": true,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "clear_session",
+            "description": "Clear all memory layers for a given session",
+            "parameters": {
+                "session_id": "string (required) - conversation session identifier"
+            },
+            "returns": {
+                "status": "string",
+                "session_id": "string"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": true,
+                "estimated_latency_ms": 10,
+                "requires_session": true,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "get_layer",
+            "description": "Get a specific layer's data for a session (0, 1, or 2)",
+            "parameters": {
+                "session_id": "string (required) - conversation session identifier",
+                "layer": "integer (required) - layer number (0, 1, or 2)"
+            },
+            "returns": {
+                "layer": "integer",
+                "data": "object or array"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 10,
+                "requires_session": true,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "get_stats",
+            "description": "Get statistics about the multi-layer memory system",
+            "parameters": {
+                "session_id": "string (optional) - if provided, stats for specific session; otherwise global stats"
+            },
+            "returns": {
+                "active_sessions": "integer",
+                "session_stats": "object (if session_id provided)"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 10,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        }
+    ],
+    "event_subscriptions": [
+        "memory.message_added",
+        "rag.chat.completed"
+    ],
+    "event_publications": [
+        "memory.layer0.snapshot_added",
+        "memory.layer1.compression_completed",
+        "memory.layer2.updated",
+        "memory.session_cleared"
+    ],
+    "config_file": "config.json"
+}

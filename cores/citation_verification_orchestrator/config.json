@@ -1,0 +1,38 @@
+{
+    "enabled": "${UBP_CITATION_VERIFICATION__ENABLED:-true}",
+
+    "verification": {
+        "auto_verify_threshold_tightness": "${UBP_CITATION_VERIFICATION__AUTO_TIGHTNESS:-0.7}",
+        "auto_verify_web_sources": "${UBP_CITATION_VERIFICATION__AUTO_WEB:-true}",
+        "grounding_min_score": "${UBP_CITATION_VERIFICATION__GROUNDING_MIN:-0.5}",
+        "hallucination_max_rate": "${UBP_CITATION_VERIFICATION__HALLUCINATION_MAX:-0.3}",
+        "max_claims_to_verify": "${UBP_CITATION_VERIFICATION__MAX_CLAIMS:-20}",
+        "verification_temperature": "${UBP_CITATION_VERIFICATION__TEMPERATURE:-0.1}",
+        "verification_depth": "${UBP_CITATION_VERIFICATION__DEPTH:-standard}"
+    },
+
+    "trust": {
+        "min_trust_score": "${UBP_CITATION_VERIFICATION__TRUST_MIN:-0.6}",
+        "trust_database_ttl_days": "${UBP_CITATION_VERIFICATION__TRUST_TTL:-30}",
+        "trust_auto_learn": "${UBP_CITATION_VERIFICATION__AUTO_LEARN:-true}",
+        "trust_score_increment": 0.02,
+        "trust_score_decrement": 0.05,
+        "trust_grounding_positive_threshold": 0.8,
+        "trust_grounding_negative_threshold": 0.3,
+        "trust_decay_rate_per_day": 0.001,
+        "bootstrap_from_citations_verifier": true,
+        "internal_sources_trusted": true
+    },
+
+    "disclaimer_languages": {
+        "it": "Alcune affermazioni potrebbero non essere pienamente supportate dalle fonti disponibili.",
+        "en": "Some claims may not be fully supported by available sources."
+    },
+
+    "keywords": {
+        "verify_it": ["verifica", "controlla le fonti", "è attendibile", "è vero che", "verifica citazioni", "controlla accuratezza"],
+        "verify_en": ["verify", "check sources", "is it true", "fact check", "check citations"],
+        "trust_filter_it": ["fonti affidabili", "fonti verificate", "fonti sicure", "fonti attendibili"],
+        "trust_filter_en": ["trusted sources", "verified sources", "reliable sources"]
+    }
+}

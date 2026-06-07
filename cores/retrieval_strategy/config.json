@@ -1,0 +1,228 @@
+{
+  "retrieval_strategy": {
+    "enabled": "${UBP_RETRIEVAL__ENABLED:-true}",
+    "default_strategy": "${UBP_RETRIEVAL__DEFAULT_STRATEGY:-hybrid}",
+    "max_results": "${UBP_RETRIEVAL__MAX_RESULTS:-20}",
+    "min_score_threshold": "${UBP_RETRIEVAL__MIN_SCORE:-0.0}",
+    "timeout_seconds": "${UBP_RETRIEVAL__TIMEOUT:-30}"
+  },
+
+  "hybrid_retrieval": {
+    "enabled": "${UBP_RETRIEVAL__HYBRID_ENABLED:-true}",
+    "fusion_method": "${UBP_RETRIEVAL__HYBRID_FUSION:-rrf}",
+    "alpha": "${UBP_RETRIEVAL__HYBRID_ALPHA:-0.5}",
+    "bm25_weight": "${UBP_RETRIEVAL__HYBRID_BM25_WEIGHT:-0.4}",
+    "vector_weight": "${UBP_RETRIEVAL__HYBRID_VECTOR_WEIGHT:-0.6}",
+    "normalize_scores": "${UBP_RETRIEVAL__HYBRID_NORMALIZE:-true}",
+    "deduplicate": "${UBP_RETRIEVAL__HYBRID_DEDUPE:-true}",
+    "dedupe_threshold": "${UBP_RETRIEVAL__HYBRID_DEDUPE_THRESHOLD:-0.95}"
+  },
+
+  "bm25_retriever": {
+    "enabled": "${UBP_RETRIEVAL__BM25_ENABLED:-true}",
+    "k1": "${UBP_RETRIEVAL__BM25_K1:-1.5}",
+    "b": "${UBP_RETRIEVAL__BM25_B:-0.75}",
+    "epsilon": "${UBP_RETRIEVAL__BM25_EPSILON:-0.25}",
+    "top_k": "${UBP_RETRIEVAL__BM25_TOP_K:-50}",
+    "tokenizer": "${UBP_RETRIEVAL__BM25_TOKENIZER:-simple}",
+    "stopwords": "${UBP_RETRIEVAL__BM25_STOPWORDS:-true}",
+    "stemming": "${UBP_RETRIEVAL__BM25_STEMMING:-true}",
+    "lowercase": "${UBP_RETRIEVAL__BM25_LOWERCASE:-true}",
+    "min_token_length": "${UBP_RETRIEVAL__BM25_MIN_TOKEN_LEN:-2}",
+    "language": "${UBP_RETRIEVAL__BM25_LANGUAGE:-auto}"
+  },
+
+  "vector_retriever": {
+    "enabled": "${UBP_RETRIEVAL__VECTOR_ENABLED:-true}",
+    "embedding_module": "${UBP_RETRIEVAL__VECTOR_EMB_MODULE:-embedding_service}",
+    "embedding_operation": "${UBP_RETRIEVAL__VECTOR_EMB_OPERATION:-embed}",
+    "vector_store_module": "${UBP_RETRIEVAL__VECTOR_STORE_MODULE:-qdrant_store}",
+    "vector_store_operation": "${UBP_RETRIEVAL__VECTOR_STORE_OPERATION:-search}",
+    "top_k": "${UBP_RETRIEVAL__VECTOR_TOP_K:-50}",
+    "similarity_metric": "${UBP_RETRIEVAL__VECTOR_SIMILARITY:-cosine}",
+    "score_threshold": "${UBP_RETRIEVAL__VECTOR_SCORE_THRESHOLD:-0.0}",
+    "ef_search": "${UBP_RETRIEVAL__VECTOR_EF_SEARCH:-128}",
+    "use_filters": "${UBP_RETRIEVAL__VECTOR_USE_FILTERS:-true}"
+  },
+
+  "fusion": {
+    "rrf": {
+      "k": "${UBP_RETRIEVAL__RRF_K:-60}",
+      "weight_bm25": "${UBP_RETRIEVAL__RRF_WEIGHT_BM25:-1.0}",
+      "weight_vector": "${UBP_RETRIEVAL__RRF_WEIGHT_VECTOR:-1.0}"
+    },
+    "weighted": {
+      "normalize_method": "${UBP_RETRIEVAL__WEIGHTED_NORMALIZE:-minmax}",
+      "combination": "${UBP_RETRIEVAL__WEIGHTED_COMBINATION:-sum}"
+    },
+    "max_fusion": {
+      "use_rank": "${UBP_RETRIEVAL__MAX_USE_RANK:-false}"
+    },
+    "dbsf": {
+      "enabled": "${UBP_RETRIEVAL__DBSF_ENABLED:-false}",
+      "min_score": "${UBP_RETRIEVAL__DBSF_MIN:-0.0}",
+      "max_score": "${UBP_RETRIEVAL__DBSF_MAX:-1.0}"
+    }
+  },
+
+  "hierarchical_retrieval": {
+    "enabled": "${UBP_RETRIEVAL__HIER_ENABLED:-true}",
+    "levels": {
+      "document": {
+        "enabled": "${UBP_RETRIEVAL__HIER_DOC_ENABLED:-true}",
+        "chunk_size": "${UBP_RETRIEVAL__HIER_DOC_CHUNK_SIZE:-4000}",
+        "chunk_overlap": "${UBP_RETRIEVAL__HIER_DOC_OVERLAP:-200}",
+        "top_k": "${UBP_RETRIEVAL__HIER_DOC_TOP_K:-5}",
+        "weight": "${UBP_RETRIEVAL__HIER_DOC_WEIGHT:-0.2}"
+      },
+      "section": {
+        "enabled": "${UBP_RETRIEVAL__HIER_SEC_ENABLED:-true}",
+        "chunk_size": "${UBP_RETRIEVAL__HIER_SEC_CHUNK_SIZE:-1000}",
+        "chunk_overlap": "${UBP_RETRIEVAL__HIER_SEC_OVERLAP:-100}",
+        "top_k": "${UBP_RETRIEVAL__HIER_SEC_TOP_K:-10}",
+        "weight": "${UBP_RETRIEVAL__HIER_SEC_WEIGHT:-0.3}"
+      },
+      "paragraph": {
+        "enabled": "${UBP_RETRIEVAL__HIER_PARA_ENABLED:-true}",
+        "chunk_size": "${UBP_RETRIEVAL__HIER_PARA_CHUNK_SIZE:-300}",
+        "chunk_overlap": "${UBP_RETRIEVAL__HIER_PARA_OVERLAP:-50}",
+        "top_k": "${UBP_RETRIEVAL__HIER_PARA_TOP_K:-20}",
+        "weight": "${UBP_RETRIEVAL__HIER_PARA_WEIGHT:-0.5}"
+      }
+    },
+    "parent_child_linking": "${UBP_RETRIEVAL__HIER_PARENT_CHILD:-true}",
+    "expand_context": "${UBP_RETRIEVAL__HIER_EXPAND_CONTEXT:-true}",
+    "context_window_sentences": "${UBP_RETRIEVAL__HIER_CONTEXT_WINDOW:-2}",
+    "merge_overlapping": "${UBP_RETRIEVAL__HIER_MERGE_OVERLAP:-true}",
+    "merge_gap_tokens": "${UBP_RETRIEVAL__HIER_MERGE_GAP:-50}"
+  },
+
+  "router_retrieval": {
+    "enabled": "${UBP_RETRIEVAL__ROUTER_ENABLED:-true}",
+    "llm_module": "${UBP_RETRIEVAL__ROUTER_LLM_MODULE:-inference_ollama_grok}",
+    "llm_operation": "${UBP_RETRIEVAL__ROUTER_LLM_OPERATION:-generate}",
+    "temperature": "${UBP_RETRIEVAL__ROUTER_TEMPERATURE:-0.1}",
+    "timeout_seconds": "${UBP_RETRIEVAL__ROUTER_TIMEOUT:-10}",
+    "fallback_strategy": "${UBP_RETRIEVAL__ROUTER_FALLBACK:-hybrid}",
+    "cache_decisions": "${UBP_RETRIEVAL__ROUTER_CACHE:-true}",
+    "decision_cache_ttl": "${UBP_RETRIEVAL__ROUTER_CACHE_TTL:-3600}",
+    
+    "query_classification": {
+      "enabled": "${UBP_RETRIEVAL__ROUTER_CLASSIFY_ENABLED:-true}",
+      "classes": {
+        "factual": {
+          "description": "Simple factual questions",
+          "preferred_strategy": "hybrid",
+          "top_k": "${UBP_RETRIEVAL__ROUTER_FACTUAL_TOP_K:-10}"
+        },
+        "analytical": {
+          "description": "Complex analytical questions",
+          "preferred_strategy": "hierarchical",
+          "top_k": "${UBP_RETRIEVAL__ROUTER_ANALYTICAL_TOP_K:-15}"
+        },
+        "comparative": {
+          "description": "Comparison questions",
+          "preferred_strategy": "multi_index",
+          "top_k": "${UBP_RETRIEVAL__ROUTER_COMPARATIVE_TOP_K:-20}"
+        },
+        "keyword": {
+          "description": "Keyword-heavy queries",
+          "preferred_strategy": "bm25",
+          "top_k": "${UBP_RETRIEVAL__ROUTER_KEYWORD_TOP_K:-15}"
+        },
+        "semantic": {
+          "description": "Semantic/conceptual queries",
+          "preferred_strategy": "vector",
+          "top_k": "${UBP_RETRIEVAL__ROUTER_SEMANTIC_TOP_K:-15}"
+        }
+      }
+    },
+    
+    "index_routing": {
+      "enabled": "${UBP_RETRIEVAL__ROUTER_INDEX_ENABLED:-true}",
+      "available_indexes": ["default", "technical", "legal", "financial", "general"],
+      "auto_detect": "${UBP_RETRIEVAL__ROUTER_INDEX_AUTO:-true}",
+      "multi_index_threshold": "${UBP_RETRIEVAL__ROUTER_MULTI_INDEX_THRESHOLD:-0.7}"
+    },
+    
+    "skip_retrieval": {
+      "enabled": "${UBP_RETRIEVAL__ROUTER_SKIP_ENABLED:-true}",
+      "confidence_threshold": "${UBP_RETRIEVAL__ROUTER_SKIP_THRESHOLD:-0.9}",
+      "query_patterns": ["greeting", "clarification", "follow_up"]
+    }
+  },
+
+  "multi_index": {
+    "enabled": "${UBP_RETRIEVAL__MULTI_INDEX_ENABLED:-true}",
+    "parallel_search": "${UBP_RETRIEVAL__MULTI_INDEX_PARALLEL:-true}",
+    "max_indexes": "${UBP_RETRIEVAL__MULTI_INDEX_MAX:-5}",
+    "merge_strategy": "${UBP_RETRIEVAL__MULTI_INDEX_MERGE:-rrf}",
+    "index_weights": {
+      "default": "${UBP_RETRIEVAL__MULTI_INDEX_WEIGHT_DEFAULT:-1.0}",
+      "technical": "${UBP_RETRIEVAL__MULTI_INDEX_WEIGHT_TECH:-1.2}",
+      "legal": "${UBP_RETRIEVAL__MULTI_INDEX_WEIGHT_LEGAL:-1.0}",
+      "financial": "${UBP_RETRIEVAL__MULTI_INDEX_WEIGHT_FIN:-1.0}"
+    }
+  },
+
+  "reranking": {
+    "enabled": "${UBP_RETRIEVAL__RERANK_ENABLED:-true}",
+    "reranker_module": "${UBP_RETRIEVAL__RERANK_MODULE:-reranker_service}",
+    "reranker_operation": "${UBP_RETRIEVAL__RERANK_OPERATION:-rerank}",
+    "top_k_to_rerank": "${UBP_RETRIEVAL__RERANK_TOP_K:-50}",
+    "final_top_k": "${UBP_RETRIEVAL__RERANK_FINAL_K:-10}",
+    "min_score": "${UBP_RETRIEVAL__RERANK_MIN_SCORE:-0.0}",
+    "batch_size": "${UBP_RETRIEVAL__RERANK_BATCH_SIZE:-32}"
+  },
+
+  "query_expansion": {
+    "enabled": "${UBP_RETRIEVAL__EXPAND_ENABLED:-false}",
+    "method": "${UBP_RETRIEVAL__EXPAND_METHOD:-llm}",
+    "max_expansions": "${UBP_RETRIEVAL__EXPAND_MAX:-3}",
+    "include_synonyms": "${UBP_RETRIEVAL__EXPAND_SYNONYMS:-true}",
+    "include_related": "${UBP_RETRIEVAL__EXPAND_RELATED:-true}"
+  },
+
+  "filters": {
+    "enabled": "${UBP_RETRIEVAL__FILTERS_ENABLED:-true}",
+    "metadata_filters": "${UBP_RETRIEVAL__FILTERS_METADATA:-true}",
+    "date_range_filter": "${UBP_RETRIEVAL__FILTERS_DATE:-true}",
+    "source_filter": "${UBP_RETRIEVAL__FILTERS_SOURCE:-true}",
+    "language_filter": "${UBP_RETRIEVAL__FILTERS_LANGUAGE:-true}"
+  },
+
+  "cache": {
+    "enabled": "${UBP_RETRIEVAL__CACHE_ENABLED:-true}",
+    "ttl_seconds": "${UBP_RETRIEVAL__CACHE_TTL:-1800}",
+    "cache_bm25": "${UBP_RETRIEVAL__CACHE_BM25:-true}",
+    "cache_vector": "${UBP_RETRIEVAL__CACHE_VECTOR:-true}",
+    "cache_hybrid": "${UBP_RETRIEVAL__CACHE_HYBRID:-true}",
+    "cache_router_decisions": "${UBP_RETRIEVAL__CACHE_ROUTER:-true}",
+    "semantic_cache": "${UBP_RETRIEVAL__CACHE_SEMANTIC:-true}",
+    "semantic_threshold": "${UBP_RETRIEVAL__CACHE_SEMANTIC_THRESHOLD:-0.95}"
+  },
+
+  "metrics": {
+    "enabled": "${UBP_RETRIEVAL__METRICS_ENABLED:-true}",
+    "track_latency": "${UBP_RETRIEVAL__METRICS_LATENCY:-true}",
+    "track_hit_rates": "${UBP_RETRIEVAL__METRICS_HIT_RATES:-true}",
+    "track_strategy_usage": "${UBP_RETRIEVAL__METRICS_STRATEGY:-true}",
+    "retention_hours": "${UBP_RETRIEVAL__METRICS_RETENTION:-24}"
+  },
+
+  "debug": {
+    "enabled": "${UBP_RETRIEVAL__DEBUG_ENABLED:-false}",
+    "log_queries": "${UBP_RETRIEVAL__DEBUG_LOG_QUERIES:-true}",
+    "log_scores": "${UBP_RETRIEVAL__DEBUG_LOG_SCORES:-true}",
+    "log_fusion": "${UBP_RETRIEVAL__DEBUG_LOG_FUSION:-true}",
+    "log_routing": "${UBP_RETRIEVAL__DEBUG_LOG_ROUTING:-true}",
+    "trace_execution": "${UBP_RETRIEVAL__DEBUG_TRACE:-false}"
+  },
+
+  "delegation": {
+    "embedding_timeout": "${UBP_RETRIEVAL__EMB_TIMEOUT:-10}",
+    "vector_search_timeout": "${UBP_RETRIEVAL__VECTOR_TIMEOUT:-15}",
+    "rerank_timeout": "${UBP_RETRIEVAL__RERANK_TIMEOUT:-20}",
+    "max_retries": "${UBP_RETRIEVAL__MAX_RETRIES:-2}"
+  }
+}

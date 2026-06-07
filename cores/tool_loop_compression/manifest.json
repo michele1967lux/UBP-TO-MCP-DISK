@@ -1,0 +1,17 @@
+{
+    "name": "tool_loop_compression",
+    "version": "1.0.0",
+    "description": "Stateless tool-loop context compression (DCBL) + budget-aware retrieval cap (pure) — extracted from agent_loop (Wave C)",
+    "author": "UBP Team",
+    "module_type": "utility",
+    "architecture": "3-file-pattern",
+    "requires_redis": false, "requires_postgres": false, "requires_event_bus": false,
+    "config_file": "config.json",
+    "dependencies": {"modules": ["tool_analysis", "tool_synopsis"], "optional_modules": [], "python_packages": [], "notes": "Pure; imports nucleus + synopsis. Hot-path direct import (no DI). Distinct from context_compression_engine (stateful/session) — see WAVE_C0_DECISION.md."},
+    "operations": [
+        {"name": "initialize", "description": "Initialize", "parameters": {}, "returns": {"type": "object"}},
+        {"name": "shutdown", "description": "Shutdown", "parameters": {}, "returns": {"type": "null"}},
+        {"name": "health_check", "description": "Health", "parameters": {}, "returns": {"type": "object"}}
+    ],
+    "event_subscriptions": [], "event_publications": [], "tools": []
+}

@@ -1,0 +1,25 @@
+{
+  "layer0": {
+    "max_snapshots": "${UBP_MULTI_LAYER_MEMORY__LAYER0_MAX_SNAPSHOTS:-5}",
+    "compress_at": "${UBP_MULTI_LAYER_MEMORY__LAYER0_COMPRESS_AT:-4}"
+  },
+  "layer1": {
+    "max_blocks": "${UBP_MULTI_LAYER_MEMORY__LAYER1_MAX_BLOCKS:-4}",
+    "batch_size": "${UBP_MULTI_LAYER_MEMORY__LAYER1_BATCH_SIZE:-4}"
+  },
+  "layer2": {
+    "enabled": "${UBP_MULTI_LAYER_MEMORY__LAYER2_ENABLED:-true}",
+    "update_only_if_relevant": "${UBP_MULTI_LAYER_MEMORY__LAYER2_UPDATE_ONLY_IF_RELEVANT:-true}"
+  },
+  "token_limits": {
+    "layer0_max": "${UBP_MULTI_LAYER_MEMORY__TOKEN_LAYER0_MAX:-450}",
+    "layer1_max": "${UBP_MULTI_LAYER_MEMORY__TOKEN_LAYER1_MAX:-1200}",
+    "layer2_max": "${UBP_MULTI_LAYER_MEMORY__TOKEN_LAYER2_MAX:-300}"
+  },
+  "compression": {
+    "llm_provider": "${UBP_MEMORY__LLM_PROVIDER:-vllm_remote}",
+    "llm_timeout_seconds": "${UBP_MEMORY__LLM_TIMEOUT_SECONDS:-30}",
+    "temperature": "${UBP_MULTI_LAYER_MEMORY__COMPRESSION_TEMPERATURE:-0.3}",
+    "max_tokens": "${UBP_MULTI_LAYER_MEMORY__COMPRESSION_MAX_TOKENS:-1500}"
+  }
+}

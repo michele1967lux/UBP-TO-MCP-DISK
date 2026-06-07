@@ -1,0 +1,540 @@
+{
+    "name": "query_expansion_pipeline",
+    "version": "1.0.0",
+    "description": "Advanced Query Expansion for RAG - Multi-strategy expansion, intent detection, entity extraction, decomposition",
+    "author": "UBP Team",
+    "module_type": "enrichment",
+    "architecture": "3-file-pattern",
+    "requires_redis": true,
+    "requires_postgres": false,
+    "requires_event_bus": true,
+    "dependencies": {
+        "modules": [],
+        "optional_modules": [
+            "inference_vllm",
+            "inference_ollama_grok",
+            "inference_openai_anthropic"
+        ],
+        "python_packages": [],
+        "redis_keys": [
+            "ubp:query_expansion:cache:*"
+        ],
+        "notes": "LLM module optional but recommended for semantic expansion. Basic strategies work without LLM."
+    },
+    "operations": [
+        {
+            "name": "initialize",
+            "description": "Initialize query expansion pipeline",
+            "parameters": {
+                "preload_llm": {
+                    "type": "boolean",
+                    "required": false,
+                    "default": false,
+                    "description": "Pre-resolve LLM module"
+                }
+            },
+            "returns": {
+                "status": "string",
+                "strategies_available": "array",
+                "llm_available": "boolean"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 100,
+                "requires_session": true,
+                "category": "admin"
+            },
+            "security": "none",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "expand",
+            "description": "Main expansion operation with configurable strategy",
+            "parameters": {
+                "query": {
+                    "type": "string",
+                    "required": true
+                },
+                "strategy": {
+                    "type": "string",
+                    "required": false,
+                    "default": "semantic",
+                    "options": [
+                        "semantic",
+                        "synonym",
+                        "decompose",
+                        "reformulate",
+                        "keywords",
+                        "contextual",
+                        "hybrid"
+                    ]
+                },
+                "num_expansions": {
+                    "type": "integer",
+                    "required": false,
+                    "default": 5
+                },
+                "chat_history": {
+                    "type": "array",
+                    "required": false
+                },
+                "include_original": {
+                    "type": "boolean",
+                    "required": false,
+                    "default": true
+                },
+                "detect_intent": {
+                    "type": "boolean",
+                    "required": false,
+                    "default": true
+                },
+                "extract_entities": {
+                    "type": "boolean",
+                    "required": false,
+                    "default": true
+                },
+                "filter_quality": {
+                    "type": "boolean",
+                    "required": false,
+                    "default": true
+                }
+            },
+            "returns": {
+                "original_query": "string",
+                "expanded_queries": "array of {text, strategy, score}",
+                "combined_query": "string",
+                "strategy_used": "string",
+                "intent": "object",
+                "entities": "array",
+                "language": "string",
+                "time_ms": "number"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 1000,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "expand_semantic",
+            "description": "Semantic expansion using LLM",
+            "parameters": {
+                "query": {
+                    "type": "string",
+                    "required": true
+                },
+                "num_variants": {
+                    "type": "integer",
+                    "required": false,
+                    "default": 3
+                },
+                "chat_history": {
+                    "type": "array",
+                    "required": false
+                }
+            },
+            "returns": {
+                "original_query": "string",
+                "expanded_queries": "array",
+                "combined_query": "string"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 1200,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "expand_synonyms",
+            "description": "Synonym-based expansion",
+            "parameters": {
+                "query": {
+                    "type": "string",
+                    "required": true
+                },
+                "max_synonyms_per_term": {
+                    "type": "integer",
+                    "required": false,
+                    "default": 3
+                }
+            },
+            "returns": {
+                "original_query": "string",
+                "expanded_queries": "array",
+                "combined_query": "string"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 500,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "decompose_query",
+            "description": "Decompose complex query into simpler sub-queries",
+            "parameters": {
+                "query": {
+                    "type": "string",
+                    "required": true
+                },
+                "max_subqueries": {
+                    "type": "integer",
+                    "required": false,
+                    "default": 5
+                }
+            },
+            "returns": {
+                "original_query": "string",
+                "expanded_queries": "array (sub-queries)",
+                "combined_query": "string"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 800,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "reformulate_query",
+            "description": "Reformulate as different question types",
+            "parameters": {
+                "query": {
+                    "type": "string",
+                    "required": true
+                }
+            },
+            "returns": {
+                "original_query": "string",
+                "expanded_queries": "array (reformulations)",
+                "combined_query": "string"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 900,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "extract_keywords",
+            "description": "Extract and expand keywords",
+            "parameters": {
+                "query": {
+                    "type": "string",
+                    "required": true
+                },
+                "max_keywords": {
+                    "type": "integer",
+                    "required": false,
+                    "default": 5
+                }
+            },
+            "returns": {
+                "original_query": "string",
+                "expanded_queries": "array",
+                "combined_query": "string"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 400,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "expand_contextual",
+            "description": "Context-aware expansion using chat history",
+            "parameters": {
+                "query": {
+                    "type": "string",
+                    "required": true
+                },
+                "chat_history": {
+                    "type": "array",
+                    "required": true
+                }
+            },
+            "returns": {
+                "original_query": "string",
+                "expanded_queries": "array",
+                "combined_query": "string"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 1100,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "expand_hybrid",
+            "description": "Multi-strategy hybrid expansion",
+            "parameters": {
+                "query": {
+                    "type": "string",
+                    "required": true
+                },
+                "strategies": {
+                    "type": "array",
+                    "required": false,
+                    "default": [
+                        "semantic",
+                        "synonym",
+                        "keywords"
+                    ]
+                },
+                "weights": {
+                    "type": "object",
+                    "required": false
+                }
+            },
+            "returns": {
+                "original_query": "string",
+                "expanded_queries": "array",
+                "combined_query": "string"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 1500,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "detect_intent",
+            "description": "Detect query intent",
+            "parameters": {
+                "query": {
+                    "type": "string",
+                    "required": true
+                }
+            },
+            "returns": {
+                "intent": "string",
+                "confidence": "number",
+                "signals": "array"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 300,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "extract_entities",
+            "description": "Extract named entities from query",
+            "parameters": {
+                "query": {
+                    "type": "string",
+                    "required": true
+                }
+            },
+            "returns": {
+                "query": "string",
+                "entities": "array of {text, type, start, end}",
+                "entity_count": "integer"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 400,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "normalize_query",
+            "description": "Normalize and clean query",
+            "parameters": {
+                "query": {
+                    "type": "string",
+                    "required": true
+                },
+                "options": {
+                    "type": "object",
+                    "required": false,
+                    "description": "{lowercase, remove_punctuation, remove_stopwords}"
+                }
+            },
+            "returns": {
+                "original": "string",
+                "normalized": "string",
+                "changed": "boolean"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 200,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "detect_language",
+            "description": "Detect query language",
+            "parameters": {
+                "query": {
+                    "type": "string",
+                    "required": true
+                }
+            },
+            "returns": {
+                "query": "string",
+                "language": "string (en, it, de, fr, es)"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "get_config",
+            "description": "Get current configuration",
+            "parameters": {},
+            "returns": {
+                "expansion": "object",
+                "strategies": "array",
+                "default_strategy": "string"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 50,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "get_stats",
+            "description": "Get expansion statistics",
+            "admin_only": true,
+            "parameters": {
+                "period": {
+                    "type": "string",
+                    "required": false,
+                    "default": "24h"
+                }
+            },
+            "returns": {
+                "module": "string",
+                "cache_stats": "object"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 50,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "health_check",
+            "description": "Health check",
+            "parameters": {},
+            "returns": {
+                "module": "string",
+                "status": "string",
+                "llm_delegation": "object",
+                "strategies": "array"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 50,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "none",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "shutdown",
+            "description": "Graceful shutdown",
+            "parameters": {},
+            "returns": {
+                "status": "string"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 100,
+                "requires_session": true,
+                "category": "admin"
+            },
+            "security": "none",
+            "scope": "system",
+            "client_types": []
+        }
+    ],
+    "event_subscriptions": [],
+    "event_publications": [
+        "query_expansion.initialized",
+        "query_expansion.expanded",
+        "query_expansion.shutdown"
+    ],
+    "config_file": "config.json",
+    "test_suite": "test_query_expansion_pipeline.py",
+    "production_ready": true
+}

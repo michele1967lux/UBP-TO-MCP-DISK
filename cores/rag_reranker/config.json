@@ -1,0 +1,12 @@
+{
+  "enabled": true,
+  "backend": "local_cross_encoder",
+  "model_name": "${UBP_ENRICHMENT__RERANK_MODEL:-cross-encoder/stsb-roberta-large}",
+  "device": "${UBP_ENRICHMENT__RERANK_DEVICE:-auto}",
+  "batch_size": "${UBP_ENRICHMENT__RERANK_BATCH_SIZE:-32}",
+  "max_length": "${UBP_ENRICHMENT__RERANK_MAX_LENGTH:-512}",
+  "api_key": null,
+  "cohere_api_key": null,
+  "jina_api_key": null,
+  "_note": "v4.2.9: Unified with enrichment_pipeline settings via ENV vars"
+}

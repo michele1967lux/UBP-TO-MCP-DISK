@@ -1,0 +1,271 @@
+# =============================================================================
+# Layer D - Negation Rules
+# =============================================================================
+# Negation patterns that SUBTRACT from or ZERO OUT capability scores.
+# These are critical for reducing false activations.
+#
+# Effects:
+#   - subtract: Remove fixed value from affected capabilities
+#   - zero: Set affected capabilities to 0
+#   - constraint: Set explicit source constraint
+#
+# ROADMAP v1.7.x - FEAT-ROUTER-002
+# =============================================================================
+
+version: "1.0"
+
+# =============================================================================
+# NEGATIONS that REDUCE web/freshness scores
+# =============================================================================
+reduce_web:
+  
+  - id: no_web_search_it
+    triggers:
+      - "senza cercare online"
+      - "senza internet"
+      - "non cercare su internet"
+      - "non usare il web"
+      - "senza usare google"
+    affects: ["needs_fresh_info"]
+    effect: "zero"
+    description: "User explicitly rejects web search"
+  
+  - id: no_web_search_en
+    triggers:
+      - "without searching online"
+      - "without internet"
+      - "don't search the web"
+      - "don't use google"
+      - "no web search"
+    affects: ["needs_fresh_info"]
+    effect: "zero"
+    description: "User explicitly rejects web search (English)"
+  
+  - id: only_internal_it
+    triggers:
+      - "solo documenti interni"
+      - "solo dalla documentazione"
+      - "solo nei miei documenti"
+      - "solo dal knowledge base"
+      - "usa solo i documenti"
+    affects: ["needs_fresh_info"]
+    effect: "zero"
+    constraint: "internal_only"
+    description: "User wants only internal sources"
+  
+  - id: only_internal_en
+    triggers:
+      - "only internal documents"
+      - "only from documentation"
+      - "only from my documents"
+      - "only from knowledge base"
+      - "use only documents"
+      - "internal only"
+    affects: ["needs_fresh_info"]
+    effect: "zero"
+    constraint: "internal_only"
+    description: "User wants only internal sources (English)"
+
+# =============================================================================
+# NEGATIONS that REDUCE internal/RAG scores
+# =============================================================================
+reduce_internal:
+  
+  - id: no_docs_it
+    triggers:
+      - "non cercare nei documenti"
+      - "senza usare i documenti"
+      - "non voglio documenti"
+      - "ignora i documenti"
+    affects: ["internal_knowledge"]
+    effect: "subtract"
+    value: 0.8
+    description: "User rejects document search"
+  
+  - id: no_docs_en
+    triggers:
+      - "don't search documents"
+      - "without using documents"
+      - "don't use documents"
+      - "ignore documents"
+      - "skip the docs"
+    affects: ["internal_knowledge"]
+    effect: "subtract"
+    value: 0.8
+    description: "User rejects document search (English)"
+  
+  - id: external_only_it
+    triggers:
+      - "cerca su internet"
+      - "cerca online"
+      - "usa google"
+      - "cerca sul web"
+    affects: ["internal_knowledge"]
+    effect: "subtract"
+    value: 0.5
+    constraint: "external_preferred"
+    description: "User prefers external sources"
+  
+  - id: external_only_en
+    triggers:
+      - "search the internet"
+      - "search online"
+      - "use google"
+      - "search the web"
+      - "look it up online"
+    affects: ["internal_knowledge"]
+    effect: "subtract"
+    value: 0.5
+    constraint: "external_preferred"
+    description: "User prefers external sources (English)"
+
+# =============================================================================
+# NEGATIONS that indicate NON-conversational intent
+# =============================================================================
+reduce_conversation:
+  
+  - id: serious_query_it
+    triggers:
+      - "ho bisogno di informazioni"
+      - "devo sapere"
+      - "è importante"
+      - "urgente"
+      - "per lavoro"
+    affects: ["pure_conversation"]
+    effect: "subtract"
+    value: 0.6
+    description: "Serious query indicators"
+  
+  - id: serious_query_en
+    triggers:
+      - "i need information"
+      - "i need to know"
+      - "it's important"
+      - "urgent"
+      - "for work"
+      - "this is serious"
+    affects: ["pure_conversation"]
+    effect: "subtract"
+    value: 0.6
+    description: "Serious query indicators (English)"
+  
+  - id: not_chitchat_it
+    triggers:
+      - "non sto scherzando"
+      - "sul serio"
+      - "non è una battuta"
+    affects: ["pure_conversation"]
+    effect: "subtract"
+    value: 0.8
+    description: "User clarifies this is not small talk"
+  
+  - id: not_chitchat_en
+    triggers:
+      - "i'm not joking"
+      - "seriously"
+      - "this is not a joke"
+      - "i'm being serious"
+    affects: ["pure_conversation"]
+    effect: "subtract"
+    value: 0.8
+    description: "User clarifies this is not small talk (English)"
+
+# =============================================================================
+# NEGATIONS for TEMPORAL/FRESHNESS context
+# =============================================================================
+reduce_freshness:
+  
+  - id: historical_it
+    triggers:
+      - "in passato"
+      - "storicamente"
+      - "nel corso degli anni"
+      - "tradizionalmente"
+    affects: ["needs_fresh_info"]
+    effect: "subtract"
+    value: 0.4
+    description: "Historical context reduces freshness need"
+  
+  - id: historical_en
+    triggers:
+      - "in the past"
+      - "historically"
+      - "over the years"
+      - "traditionally"
+    affects: ["needs_fresh_info"]
+    effect: "subtract"
+    value: 0.4
+    description: "Historical context reduces freshness need (English)"
+  
+  - id: general_knowledge_it
+    triggers:
+      - "in generale"
+      - "di solito"
+      - "normalmente"
+      - "tipicamente"
+    affects: ["needs_fresh_info"]
+    effect: "subtract"
+    value: 0.3
+    description: "General knowledge doesn't need fresh data"
+  
+  - id: general_knowledge_en
+    triggers:
+      - "in general"
+      - "usually"
+      - "normally"
+      - "typically"
+      - "as a rule"
+    affects: ["needs_fresh_info"]
+    effect: "subtract"
+    value: 0.3
+    description: "General knowledge doesn't need fresh data (English)"
+
+# =============================================================================
+# COMPOUND NEGATIONS (multi-signal)
+# =============================================================================
+compound_negations:
+  
+  - id: pure_reasoning_it
+    triggers:
+      - "ragiona"
+      - "pensa"
+      - "usa la logica"
+      - "dal punto di vista logico"
+    affects: ["needs_fresh_info", "internal_knowledge"]
+    effect: "subtract"
+    value: 0.3
+    description: "User wants pure reasoning, not retrieval"
+  
+  - id: pure_reasoning_en
+    triggers:
+      - "think about"
+      - "reason through"
+      - "use logic"
+      - "logically speaking"
+    affects: ["needs_fresh_info", "internal_knowledge"]
+    effect: "subtract"
+    value: 0.3
+    description: "User wants pure reasoning, not retrieval (English)"
+  
+  - id: quick_answer_it
+    triggers:
+      - "in breve"
+      - "brevemente"
+      - "in poche parole"
+      - "riassumendo"
+    affects: ["technical_depth"]
+    effect: "subtract"
+    value: 0.4
+    description: "User wants brief answer, not technical depth"
+  
+  - id: quick_answer_en
+    triggers:
+      - "briefly"
+      - "in short"
+      - "in a nutshell"
+      - "to summarize"
+      - "tl;dr"
+    affects: ["technical_depth"]
+    effect: "subtract"
+    value: 0.4
+    description: "User wants brief answer, not technical depth (English)"

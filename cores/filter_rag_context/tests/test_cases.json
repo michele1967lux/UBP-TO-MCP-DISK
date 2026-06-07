@@ -1,0 +1,90 @@
+{
+  "A_all_garbage": {
+    "query": "ok",
+    "chunks": [
+      {"chunk_id": "a0", "text": "La metformina è un farmaco utilizzato nel trattamento del diabete mellito di tipo 2.", "score": 0.0018, "source_id": "doc1"},
+      {"chunk_id": "a1", "text": "Il paracetamolo è un analgesico e antipiretico ampiamente utilizzato per il dolore lieve.", "score": 0.0015, "source_id": "doc2"},
+      {"chunk_id": "a2", "text": "L'insulina è un ormone peptidico prodotto dalle cellule beta del pancreas.", "score": 0.0012, "source_id": "doc3"},
+      {"chunk_id": "a3", "text": "Il diabete di tipo 1 è una malattia autoimmune che distrugge le cellule beta pancreatiche.", "score": 0.0019, "source_id": "doc1"},
+      {"chunk_id": "a4", "text": "La glicemia a digiuno normale è compresa tra 70 e 100 mg/dL secondo le linee guida.", "score": 0.0011, "source_id": "doc2"},
+      {"chunk_id": "a5", "text": "L'emoglobina glicata (HbA1c) è un indicatore del controllo glicemico negli ultimi 3 mesi.", "score": 0.0014, "source_id": "doc3"},
+      {"chunk_id": "a6", "text": "Le sulfoniluree stimolano la secrezione di insulina dalle cellule beta del pancreas.", "score": 0.0016, "source_id": "doc4"},
+      {"chunk_id": "a7", "text": "La neuropatia diabetica è una complicanza cronica del diabete che colpisce i nervi periferici.", "score": 0.0013, "source_id": "doc4"},
+      {"chunk_id": "a8", "text": "Il monitoraggio continuo del glucosio (CGM) fornisce letture in tempo reale della glicemia.", "score": 0.0010, "source_id": "doc5"},
+      {"chunk_id": "a9", "text": "La retinopatia diabetica è la principale causa di cecità nei pazienti con diabete mellito.", "score": 0.0017, "source_id": "doc5"}
+    ]
+  },
+  "B_mixed_scores": {
+    "query": "effetti collaterali metformina",
+    "chunks": [
+      {"chunk_id": "b0", "text": "Gli effetti collaterali più comuni della metformina includono disturbi gastrointestinali come nausea, vomito, diarrea e dolore addominale. L'acidosi lattica è rara ma grave.", "score": 0.67, "source_id": "pharma1"},
+      {"chunk_id": "b1", "text": "La metformina può causare deficit di vitamina B12 con uso prolungato. Si raccomanda il monitoraggio periodico dei livelli di B12 nei pazienti in terapia cronica.", "score": 0.54, "source_id": "pharma2"},
+      {"chunk_id": "b2", "text": "Controindicazioni della metformina: insufficienza renale (eGFR < 30), insufficienza epatica grave, stati di ipossia tissutale, alcolismo.", "score": 0.31, "source_id": "pharma1"},
+      {"chunk_id": "b3", "text": "La dose iniziale di metformina è generalmente 500 mg due volte al giorno con i pasti.", "score": 0.08, "source_id": "pharma3"},
+      {"chunk_id": "b4", "text": "Il diabete è una malattia.", "score": 0.02, "source_id": "pharma4"}
+    ]
+  },
+  "C_high_uniform": {
+    "query": "cos'è il GDPR",
+    "chunks": [
+      {"chunk_id": "c0", "text": "Il GDPR (General Data Protection Regulation) è il Regolamento UE 2016/679 sulla protezione dei dati personali. È entrato in vigore il 25 maggio 2018.", "score": 0.72, "source_id": "legal1"},
+      {"chunk_id": "c1", "text": "I principi fondamentali del GDPR includono: liceità, correttezza, trasparenza, limitazione delle finalità, minimizzazione dei dati e limitazione della conservazione.", "score": 0.68, "source_id": "legal2"},
+      {"chunk_id": "c2", "text": "Il GDPR si applica a tutti i soggetti che trattano dati personali di cittadini UE, indipendentemente dalla sede del titolare del trattamento.", "score": 0.65, "source_id": "legal1"},
+      {"chunk_id": "c3", "text": "Le sanzioni per violazione del GDPR possono arrivare fino a 20 milioni di euro o il 4% del fatturato mondiale annuo, se superiore.", "score": 0.61, "source_id": "legal3"},
+      {"chunk_id": "c4", "text": "Il diritto all'oblio (art. 17 GDPR) consente all'interessato di ottenere la cancellazione dei propri dati personali dal titolare del trattamento.", "score": 0.58, "source_id": "legal2"}
+    ]
+  },
+  "D_gap_analysis": {
+    "query": "trattamento ipertensione arteriosa",
+    "chunks": [
+      {"chunk_id": "d0", "text": "Il trattamento dell'ipertensione arteriosa si basa su modifiche dello stile di vita e terapia farmacologica. I farmaci di prima linea includono ACE-inibitori, ARB, calcio-antagonisti e diuretici tiazidici.", "score": 0.71, "source_id": "cardio1"},
+      {"chunk_id": "d1", "text": "La pressione arteriosa target è generalmente < 140/90 mmHg nella popolazione generale e < 130/80 mmHg nei pazienti ad alto rischio cardiovascolare secondo le linee guida ESC 2024.", "score": 0.65, "source_id": "cardio1"},
+      {"chunk_id": "d2", "text": "La combinazione di ACE-inibitore con diuretico tiazidico è una delle associazioni più utilizzate nel trattamento dell'ipertensione resistente alla monoterapia.", "score": 0.59, "source_id": "cardio2"},
+      {"chunk_id": "d3", "text": "La pressione alta è un problema comune. Molte persone ne soffrono senza saperlo perché spesso non dà sintomi evidenti.", "score": 0.25, "source_id": "blog1"},
+      {"chunk_id": "d4", "text": "Bevi più acqua e mangia meno sale per stare meglio! L'ipertensione si può controllare facilmente con questi trucchi.", "score": 0.22, "source_id": "blog2"},
+      {"chunk_id": "d5", "text": "La pressione del sangue è misurata in millimetri di mercurio. I valori normali sono sotto i centoventisu ottanta.", "score": 0.18, "source_id": "blog3"}
+    ]
+  },
+  "E_keyword_rescue": {
+    "query": "interazioni metformina alcol",
+    "chunks": [
+      {"chunk_id": "e0", "text": "L'assunzione di alcol durante la terapia con metformina aumenta significativamente il rischio di acidosi lattica. L'alcol inibisce la gluconeogenesi epatica e potenzia l'effetto ipoglicemizzante della metformina, creando un rischio di ipoglicemia grave.", "score": 0.14, "source_id": "pharma1"}
+    ]
+  },
+  "F_zero_output": {
+    "query": "quantum computing applications",
+    "chunks": [
+      {"chunk_id": "f0", "text": "The weather today is sunny with a high of 25 degrees Celsius and low humidity levels expected throughout the afternoon.", "score": 0.04, "source_id": "weather1"},
+      {"chunk_id": "f1", "text": "Recipe for chocolate cake: mix flour, sugar, eggs, and cocoa powder together in a large bowl until smooth and creamy.", "score": 0.03, "source_id": "cooking1"},
+      {"chunk_id": "f2", "text": "The football match ended 2-1 with a dramatic last-minute goal that sent the crowd into a frenzy of celebration.", "score": 0.04, "source_id": "sports1"},
+      {"chunk_id": "f3", "text": "Stock prices fluctuated wildly today as investors reacted to the latest economic data and central bank policy decisions.", "score": 0.03, "source_id": "finance1"},
+      {"chunk_id": "f4", "text": "The new smartphone features a 6.7 inch display with OLED technology and a powerful processor for gaming and productivity.", "score": 0.05, "source_id": "tech1"}
+    ]
+  },
+  "G_boilerplate": {
+    "query": "effetti metformina sul fegato",
+    "chunks": [
+      {"chunk_id": "g0", "text": "Table of Contents\n1. Introduction .......... 3\n2. Methods ............... 15\n3. Results ............... 28\n4. Discussion ............ 42\n5. References ............ 56", "score": 0.45, "source_id": "doc1"},
+      {"chunk_id": "g1", "text": "La metformina ha effetti epatoprotettivi dimostrati in studi clinici. Riduce la steatosi epatica non alcolica (NAFLD) e migliora i markers di funzionalità epatica come ALT e AST nei pazienti diabetici.", "score": 0.62, "source_id": "doc1"}
+    ]
+  },
+  "H_low_confidence": {
+    "query": "interazioni farmacologiche warfarin",
+    "chunks": [
+      {"chunk_id": "h0", "text": "Il warfarin è un anticoagulante orale che presenta numerose interazioni farmacologiche clinicamente significative con antibiotici, antifungini e FANS. Il monitoraggio dell'INR è essenziale durante la co-somministrazione.", "score": 0.15, "source_id": "pharma1"},
+      {"chunk_id": "h1", "text": "Le interazioni del warfarin con i cibi ricchi di vitamina K (verdure a foglia verde, broccoli, cavoli) possono ridurre l'effetto anticoagulante e richiedono aggiustamenti posologici frequenti.", "score": 0.12, "source_id": "pharma2"},
+      {"chunk_id": "h2", "text": "La farmacocinetica del warfarin è influenzata dal polimorfismo genetico del CYP2C9 e del VKORC1, che determinano la variabilità interindividuale nella risposta al farmaco anticoagulante.", "score": 0.09, "source_id": "pharma3"},
+      {"chunk_id": "h3", "text": "I pazienti in terapia anticoagulante orale devono effettuare controlli periodici dell'INR ogni due-quattro settimane per garantire il mantenimento del range terapeutico appropriato.", "score": 0.08, "source_id": "pharma4"}
+    ]
+  },
+  "I_min_kept_2": {
+    "query": "protocollo trattamento sepsi",
+    "chunks": [
+      {"chunk_id": "i0", "text": "Il tempo è bello oggi con temperature miti e cielo sereno su tutta la penisola italiana e le isole maggiori.", "score": 0.03, "source_id": "weather1"},
+      {"chunk_id": "i1", "text": "La ricetta della carbonara richiede guanciale, pecorino romano, uova e pepe nero macinato fresco al momento.", "score": 0.02, "source_id": "cooking1"},
+      {"chunk_id": "i2", "text": "Il campionato di calcio prosegue con risultati sorprendenti nelle ultime giornate di campionato della serie A.", "score": 0.04, "source_id": "sports1"},
+      {"chunk_id": "i3", "text": "I mercati finanziari hanno registrato un calo significativo dovuto alle tensioni geopolitiche internazionali crescenti.", "score": 0.01, "source_id": "finance1"},
+      {"chunk_id": "i4", "text": "Il protocollo sepsi prevede la somministrazione di antibiotici ad ampio spettro entro la prima ora dalla diagnosi clinica e il supporto emodinamico.", "score": 0.05, "source_id": "medical1"}
+    ]
+  }
+}

@@ -1,0 +1,197 @@
+{
+  "agentic_rag": {
+    "enabled": "${UBP_AGENTIC__ENABLED:-true}",
+    "default_mode": "${UBP_AGENTIC__DEFAULT_MODE:-react}",
+    "max_iterations": "${UBP_AGENTIC__MAX_ITERATIONS:-10}",
+    "max_parallel_tasks": "${UBP_AGENTIC__MAX_PARALLEL:-5}",
+    "timeout_seconds": "${UBP_AGENTIC__TIMEOUT:-120}",
+    "enable_human_in_loop": "${UBP_AGENTIC__HUMAN_IN_LOOP:-false}"
+  },
+
+  "planning": {
+    "enabled": "${UBP_AGENTIC__PLANNING_ENABLED:-true}",
+    "decomposition_strategy": "${UBP_AGENTIC__DECOMPOSITION:-adaptive}",
+    "max_subtasks": "${UBP_AGENTIC__MAX_SUBTASKS:-8}",
+    "min_confidence_threshold": "${UBP_AGENTIC__MIN_CONFIDENCE:-0.6}",
+    "replan_on_failure": "${UBP_AGENTIC__REPLAN_ON_FAILURE:-true}",
+    "max_replans": "${UBP_AGENTIC__MAX_REPLANS:-3}",
+    "llm_module": "${UBP_AGENTIC__PLANNER_LLM:-inference_ollama_grok}",
+    "llm_operation": "${UBP_AGENTIC__PLANNER_OPERATION:-generate}",
+    "temperature": "${UBP_AGENTIC__PLANNER_TEMP:-0.2}",
+    "plan_cache_ttl": "${UBP_AGENTIC__PLAN_CACHE_TTL:-300}"
+  },
+
+  "execution": {
+    "strategy": "${UBP_AGENTIC__EXEC_STRATEGY:-parallel_when_possible}",
+    "parallel": {
+      "enabled": "${UBP_AGENTIC__PARALLEL_ENABLED:-true}",
+      "max_concurrent": "${UBP_AGENTIC__PARALLEL_MAX_CONCURRENT:-5}",
+      "worker_pool_size": "${UBP_AGENTIC__WORKER_POOL_SIZE:-8}",
+      "task_timeout": "${UBP_AGENTIC__TASK_TIMEOUT:-30}",
+      "batch_size": "${UBP_AGENTIC__PARALLEL_BATCH_SIZE:-3}",
+      "dependency_aware": "${UBP_AGENTIC__DEPENDENCY_AWARE:-true}",
+      "fail_fast": "${UBP_AGENTIC__FAIL_FAST:-false}",
+      "retry_failed": "${UBP_AGENTIC__RETRY_FAILED:-true}",
+      "max_retries": "${UBP_AGENTIC__MAX_RETRIES:-2}"
+    },
+    "sequential": {
+      "step_timeout": "${UBP_AGENTIC__STEP_TIMEOUT:-30}",
+      "continue_on_error": "${UBP_AGENTIC__CONTINUE_ON_ERROR:-false}"
+    }
+  },
+
+  "react_loop": {
+    "enabled": "${UBP_AGENTIC__REACT_ENABLED:-true}",
+    "max_iterations": "${UBP_AGENTIC__REACT_MAX_ITER:-8}",
+    "thought_action_observe": "${UBP_AGENTIC__TAO_ENABLED:-true}",
+    "reflection_enabled": "${UBP_AGENTIC__REFLECTION_ENABLED:-true}",
+    "reflection_interval": "${UBP_AGENTIC__REFLECTION_INTERVAL:-3}",
+    "early_stopping": {
+      "enabled": "${UBP_AGENTIC__EARLY_STOP_ENABLED:-true}",
+      "confidence_threshold": "${UBP_AGENTIC__EARLY_STOP_CONFIDENCE:-0.9}",
+      "answer_found_pattern": "${UBP_AGENTIC__ANSWER_PATTERN:-FINAL_ANSWER}"
+    }
+  },
+
+  "tools": {
+    "registry": {
+      "enabled": "${UBP_AGENTIC__TOOLS_ENABLED:-true}",
+      "auto_discover": "${UBP_AGENTIC__TOOLS_AUTO_DISCOVER:-true}",
+      "validate_schemas": "${UBP_AGENTIC__TOOLS_VALIDATE:-true}"
+    },
+    "builtin": {
+      "retrieval": {
+        "enabled": "${UBP_AGENTIC__TOOL_RETRIEVAL:-true}",
+        "module": "${UBP_AGENTIC__RETRIEVAL_MODULE:-retrieval_strategy}",
+        "default_strategy": "${UBP_AGENTIC__RETRIEVAL_STRATEGY:-hybrid}",
+        "default_top_k": "${UBP_AGENTIC__RETRIEVAL_TOP_K:-5}"
+      },
+      "web_search": {
+        "enabled": "${UBP_AGENTIC__TOOL_WEB_SEARCH:-false}",
+        "module": "${UBP_AGENTIC__WEB_SEARCH_MODULE:-web_search}",
+        "max_results": "${UBP_AGENTIC__WEB_SEARCH_MAX:-5}"
+      },
+      "calculator": {
+        "enabled": "${UBP_AGENTIC__TOOL_CALCULATOR:-true}",
+        "safe_eval": "${UBP_AGENTIC__CALC_SAFE_EVAL:-true}"
+      },
+      "code_executor": {
+        "enabled": "${UBP_AGENTIC__TOOL_CODE_EXEC:-false}",
+        "sandbox": "${UBP_AGENTIC__CODE_SANDBOX:-true}",
+        "timeout": "${UBP_AGENTIC__CODE_TIMEOUT:-10}"
+      },
+      "summarizer": {
+        "enabled": "${UBP_AGENTIC__TOOL_SUMMARIZER:-true}",
+        "max_input_tokens": "${UBP_AGENTIC__SUMMARIZER_MAX_INPUT:-4000}",
+        "target_length": "${UBP_AGENTIC__SUMMARIZER_TARGET:-200}"
+      },
+      "graph_query": {
+        "enabled": "${UBP_AGENTIC__TOOL_GRAPH:-true}",
+        "module": "${UBP_AGENTIC__GRAPH_MODULE:-graph_rag}"
+      }
+    },
+    "external": {
+      "enabled": "${UBP_AGENTIC__EXTERNAL_TOOLS:-true}",
+      "timeout": "${UBP_AGENTIC__EXTERNAL_TIMEOUT:-15}",
+      "max_retries": "${UBP_AGENTIC__EXTERNAL_RETRIES:-2}"
+    }
+  },
+
+  "state_management": {
+    "enabled": "${UBP_AGENTIC__STATE_ENABLED:-true}",
+    "persist_state": "${UBP_AGENTIC__PERSIST_STATE:-true}",
+    "state_backend": "${UBP_AGENTIC__STATE_BACKEND:-memory}",
+    "checkpoint_interval": "${UBP_AGENTIC__CHECKPOINT_INTERVAL:-3}",
+    "max_state_size_mb": "${UBP_AGENTIC__MAX_STATE_SIZE:-10}",
+    "context_window": {
+      "max_tokens": "${UBP_AGENTIC__CONTEXT_MAX_TOKENS:-8000}",
+      "compression_enabled": "${UBP_AGENTIC__CONTEXT_COMPRESS:-true}",
+      "compression_ratio": "${UBP_AGENTIC__CONTEXT_COMPRESS_RATIO:-0.5}"
+    }
+  },
+
+  "memory": {
+    "working_memory": {
+      "enabled": "${UBP_AGENTIC__WORKING_MEM_ENABLED:-true}",
+      "max_items": "${UBP_AGENTIC__WORKING_MEM_MAX:-20}",
+      "relevance_decay": "${UBP_AGENTIC__WORKING_MEM_DECAY:-0.9}"
+    },
+    "episodic_memory": {
+      "enabled": "${UBP_AGENTIC__EPISODIC_MEM_ENABLED:-true}",
+      "max_episodes": "${UBP_AGENTIC__EPISODIC_MEM_MAX:-50}",
+      "ttl_seconds": "${UBP_AGENTIC__EPISODIC_MEM_TTL:-3600}"
+    }
+  },
+
+  "answer_synthesis": {
+    "enabled": "${UBP_AGENTIC__SYNTHESIS_ENABLED:-true}",
+    "llm_module": "${UBP_AGENTIC__SYNTHESIS_LLM:-inference_ollama_grok}",
+    "temperature": "${UBP_AGENTIC__SYNTHESIS_TEMP:-0.3}",
+    "include_sources": "${UBP_AGENTIC__SYNTHESIS_SOURCES:-true}",
+    "include_reasoning": "${UBP_AGENTIC__SYNTHESIS_REASONING:-true}",
+    "max_answer_tokens": "${UBP_AGENTIC__MAX_ANSWER_TOKENS:-1000}"
+  },
+
+  "observation": {
+    "tracing": {
+      "enabled": "${UBP_AGENTIC__TRACING_ENABLED:-true}",
+      "trace_thoughts": "${UBP_AGENTIC__TRACE_THOUGHTS:-true}",
+      "trace_actions": "${UBP_AGENTIC__TRACE_ACTIONS:-true}",
+      "trace_observations": "${UBP_AGENTIC__TRACE_OBSERVATIONS:-true}",
+      "trace_tool_calls": "${UBP_AGENTIC__TRACE_TOOLS:-true}"
+    },
+    "metrics": {
+      "enabled": "${UBP_AGENTIC__METRICS_ENABLED:-true}",
+      "track_latency": "${UBP_AGENTIC__METRICS_LATENCY:-true}",
+      "track_tool_usage": "${UBP_AGENTIC__METRICS_TOOL_USAGE:-true}",
+      "track_iterations": "${UBP_AGENTIC__METRICS_ITERATIONS:-true}",
+      "track_token_usage": "${UBP_AGENTIC__METRICS_TOKENS:-true}"
+    }
+  },
+
+  "error_handling": {
+    "retry_strategy": "${UBP_AGENTIC__RETRY_STRATEGY:-exponential}",
+    "max_retries": "${UBP_AGENTIC__ERROR_MAX_RETRIES:-3}",
+    "base_delay_ms": "${UBP_AGENTIC__RETRY_BASE_DELAY:-500}",
+    "max_delay_ms": "${UBP_AGENTIC__RETRY_MAX_DELAY:-5000}",
+    "recoverable_errors": ["timeout", "rate_limit", "transient"],
+    "fallback_enabled": "${UBP_AGENTIC__FALLBACK_ENABLED:-true}",
+    "fallback_strategy": "${UBP_AGENTIC__FALLBACK_STRATEGY:-simple_retrieval}"
+  },
+
+  "safety": {
+    "max_tool_calls_per_query": "${UBP_AGENTIC__MAX_TOOL_CALLS:-20}",
+    "max_tokens_per_step": "${UBP_AGENTIC__MAX_TOKENS_STEP:-2000}",
+    "blocked_tools": [],
+    "require_confirmation_for": ["code_executor", "external_api"],
+    "rate_limiting": {
+      "enabled": "${UBP_AGENTIC__RATE_LIMIT_ENABLED:-true}",
+      "max_queries_per_minute": "${UBP_AGENTIC__RATE_LIMIT_QPM:-30}",
+      "max_tool_calls_per_minute": "${UBP_AGENTIC__RATE_LIMIT_TOOLS:-100}"
+    }
+  },
+
+  "cache": {
+    "enabled": "${UBP_AGENTIC__CACHE_ENABLED:-true}",
+    "ttl_seconds": "${UBP_AGENTIC__CACHE_TTL:-1800}",
+    "cache_plans": "${UBP_AGENTIC__CACHE_PLANS:-true}",
+    "cache_tool_results": "${UBP_AGENTIC__CACHE_TOOL_RESULTS:-true}",
+    "cache_final_answers": "${UBP_AGENTIC__CACHE_ANSWERS:-false}",
+    "max_cache_size_mb": "${UBP_AGENTIC__MAX_CACHE_SIZE:-256}"
+  },
+
+  "debug": {
+    "enabled": "${UBP_AGENTIC__DEBUG_ENABLED:-false}",
+    "log_plans": "${UBP_AGENTIC__DEBUG_LOG_PLANS:-true}",
+    "log_tool_calls": "${UBP_AGENTIC__DEBUG_LOG_TOOLS:-true}",
+    "log_state_changes": "${UBP_AGENTIC__DEBUG_LOG_STATE:-true}",
+    "log_llm_prompts": "${UBP_AGENTIC__DEBUG_LOG_PROMPTS:-false}",
+    "verbose_errors": "${UBP_AGENTIC__DEBUG_VERBOSE_ERRORS:-true}"
+  },
+
+  "delegation": {
+    "llm_timeout": "${UBP_AGENTIC__LLM_TIMEOUT:-30}",
+    "tool_timeout": "${UBP_AGENTIC__TOOL_TIMEOUT:-15}",
+    "embedding_timeout": "${UBP_AGENTIC__EMB_TIMEOUT:-10}"
+  }
+}

@@ -1,0 +1,830 @@
+{
+  "name": "graph_rag",
+  "version": "1.0.0",
+  "description": "Enterprise Knowledge Graph RAG Engine with entity/relation extraction, graph construction, and graph-based retrieval",
+  "architecture": "3-file-pattern",
+  "category": "core",
+  "production_ready": true,
+  "features": [
+    "Entity extraction with LLM",
+    "Relation extraction with evidence spans",
+    "Knowledge graph construction",
+    "Entity merge and deduplication",
+    "Graph-based retrieval",
+    "Multi-hop path finding",
+    "Subgraph extraction",
+    "Subgraph reasoning",
+    "PageRank and centrality",
+    "Cross-lingual support (EN/IT)",
+    "Multiple export formats",
+    "Redis caching",
+    "Session management"
+  ],
+  "entity_types": [
+    {
+      "type": "person",
+      "description": "People, individuals"
+    },
+    {
+      "type": "organization",
+      "description": "Companies, institutions"
+    },
+    {
+      "type": "location",
+      "description": "Places, addresses"
+    },
+    {
+      "type": "date",
+      "description": "Dates, time periods"
+    },
+    {
+      "type": "technology",
+      "description": "Technologies, tools"
+    },
+    {
+      "type": "concept",
+      "description": "Abstract concepts"
+    },
+    {
+      "type": "product",
+      "description": "Products, services"
+    },
+    {
+      "type": "event",
+      "description": "Events, occurrences"
+    },
+    {
+      "type": "quantity",
+      "description": "Numbers, measurements"
+    },
+    {
+      "type": "custom",
+      "description": "Custom entity types"
+    }
+  ],
+  "relation_types": [
+    {
+      "type": "works_for",
+      "description": "Employment relationship"
+    },
+    {
+      "type": "located_in",
+      "description": "Location relationship"
+    },
+    {
+      "type": "part_of",
+      "description": "Part-whole relationship"
+    },
+    {
+      "type": "created_by",
+      "description": "Creator relationship"
+    },
+    {
+      "type": "used_by",
+      "description": "Usage relationship"
+    },
+    {
+      "type": "related_to",
+      "description": "General relationship"
+    },
+    {
+      "type": "depends_on",
+      "description": "Dependency relationship"
+    },
+    {
+      "type": "causes",
+      "description": "Causal relationship"
+    },
+    {
+      "type": "has_property",
+      "description": "Property relationship"
+    },
+    {
+      "type": "instance_of",
+      "description": "Instance relationship"
+    },
+    {
+      "type": "subclass_of",
+      "description": "Subclass relationship"
+    },
+    {
+      "type": "custom",
+      "description": "Custom relation types"
+    }
+  ],
+  "retrieval_strategies": [
+    {
+      "strategy": "entity_centric",
+      "description": "Search starting from matched entities"
+    },
+    {
+      "strategy": "relation_guided",
+      "description": "Follow specific relation types"
+    },
+    {
+      "strategy": "path_based",
+      "description": "Find paths between entities"
+    },
+    {
+      "strategy": "subgraph",
+      "description": "Extract local neighborhood"
+    },
+    {
+      "strategy": "hybrid",
+      "description": "Combine graph and vector search"
+    }
+  ],
+  "operations": [
+    {
+      "name": "initialize",
+      "description": "Initialize all Graph-RAG components",
+      "parameters": {},
+      "returns": {
+        "status": "string",
+        "components": "object",
+        "graph_stats": "object"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": true,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "none",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "query",
+      "description": "Full Graph-RAG pipeline",
+      "parameters": {
+        "query": {
+          "type": "string",
+          "required": true,
+          "description": "User's query"
+        },
+        "language": {
+          "type": "string",
+          "required": false,
+          "default": "auto",
+          "options": [
+            "auto",
+            "en",
+            "it"
+          ]
+        },
+        "max_hops": {
+          "type": "integer",
+          "required": false,
+          "default": 2,
+          "min": 1,
+          "max": 5
+        },
+        "max_subgraph_nodes": {
+          "type": "integer",
+          "required": false,
+          "default": 100,
+          "min": 10,
+          "max": 500
+        },
+        "retrieval_strategy": {
+          "type": "string",
+          "required": false,
+          "default": "hybrid",
+          "options": [
+            "entity_centric",
+            "relation_guided",
+            "path_based",
+            "subgraph",
+            "hybrid"
+          ]
+        },
+        "session_id": {
+          "type": "string",
+          "required": false
+        }
+      },
+      "returns": {
+        "session_id": "string",
+        "query": "string",
+        "answer": "string",
+        "confidence": "number",
+        "query_entity_count": "integer",
+        "supporting_fact_count": "integer",
+        "graph_context": "object",
+        "completeness": "string",
+        "time_ms": "number"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 2000,
+        "requires_session": false,
+        "category": "knowledge"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "extract_entities",
+      "description": "Extract entities from text",
+      "parameters": {
+        "text": {
+          "type": "string",
+          "required": true
+        },
+        "doc_id": {
+          "type": "string",
+          "required": false
+        },
+        "language": {
+          "type": "string",
+          "required": false,
+          "default": "auto"
+        }
+      },
+      "returns": {
+        "doc_id": "string",
+        "entity_count": "integer",
+        "entities": "array"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 2000,
+        "requires_session": false,
+        "category": "knowledge"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "extract_relations",
+      "description": "Extract relations between entities",
+      "parameters": {
+        "text": {
+          "type": "string",
+          "required": true
+        },
+        "entities": {
+          "type": "array",
+          "required": true
+        },
+        "doc_id": {
+          "type": "string",
+          "required": false
+        },
+        "language": {
+          "type": "string",
+          "required": false,
+          "default": "auto"
+        }
+      },
+      "returns": {
+        "doc_id": "string",
+        "relation_count": "integer",
+        "relations": "array"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 2000,
+        "requires_session": false,
+        "category": "knowledge"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "build_graph",
+      "description": "Build knowledge graph from texts",
+      "parameters": {
+        "texts": {
+          "type": "array",
+          "required": true
+        },
+        "doc_ids": {
+          "type": "array",
+          "required": false
+        },
+        "language": {
+          "type": "string",
+          "required": false,
+          "default": "auto"
+        }
+      },
+      "returns": {
+        "documents_processed": "integer",
+        "entities_added": "integer",
+        "relations_added": "integer",
+        "graph_stats": "object"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 5000,
+        "requires_session": false,
+        "category": "knowledge"
+      },
+      "security": "client_admin",
+      "scope": "general",
+      "client_types": []
+    },
+    {
+      "name": "search_entities",
+      "description": "Search entities in the knowledge graph",
+      "parameters": {
+        "query": {
+          "type": "string",
+          "required": true
+        },
+        "top_k": {
+          "type": "integer",
+          "required": false,
+          "default": 10
+        },
+        "entity_types": {
+          "type": "array",
+          "required": false
+        },
+        "fuzzy": {
+          "type": "boolean",
+          "required": false,
+          "default": true
+        }
+      },
+      "returns": {
+        "query": "string",
+        "result_count": "integer",
+        "results": "array"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 500,
+        "requires_session": false,
+        "category": "knowledge"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "get_subgraph",
+      "description": "Extract subgraph around entities",
+      "parameters": {
+        "entity_ids": {
+          "type": "array",
+          "required": true
+        },
+        "max_depth": {
+          "type": "integer",
+          "required": false,
+          "default": 2
+        },
+        "max_nodes": {
+          "type": "integer",
+          "required": false,
+          "default": 100
+        },
+        "relation_types": {
+          "type": "array",
+          "required": false
+        }
+      },
+      "returns": {
+        "subgraph_id": "string",
+        "node_count": "integer",
+        "edge_count": "integer",
+        "entities": "array",
+        "relations": "array"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 1000,
+        "requires_session": false,
+        "category": "knowledge"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "find_paths",
+      "description": "Find paths between two entities",
+      "parameters": {
+        "source_entity_id": {
+          "type": "string",
+          "required": true
+        },
+        "target_entity_id": {
+          "type": "string",
+          "required": true
+        },
+        "max_length": {
+          "type": "integer",
+          "required": false,
+          "default": 5
+        },
+        "max_paths": {
+          "type": "integer",
+          "required": false,
+          "default": 10
+        }
+      },
+      "returns": {
+        "source_id": "string",
+        "target_id": "string",
+        "path_count": "integer",
+        "paths": "array"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 1000,
+        "requires_session": false,
+        "category": "knowledge"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "add_entity",
+      "description": "Add a single entity to the graph",
+      "parameters": {
+        "text": {
+          "type": "string",
+          "required": true
+        },
+        "normalized": {
+          "type": "string",
+          "required": true
+        },
+        "entity_type": {
+          "type": "string",
+          "required": true
+        },
+        "properties": {
+          "type": "object",
+          "required": false
+        }
+      },
+      "returns": {
+        "success": "boolean",
+        "entity": "object"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 200,
+        "requires_session": false,
+        "category": "knowledge"
+      },
+      "security": "client_admin",
+      "scope": "general",
+      "client_types": []
+    },
+    {
+      "name": "add_relation",
+      "description": "Add a relation between entities",
+      "parameters": {
+        "source_id": {
+          "type": "string",
+          "required": true
+        },
+        "target_id": {
+          "type": "string",
+          "required": true
+        },
+        "relation_type": {
+          "type": "string",
+          "required": true
+        },
+        "evidence": {
+          "type": "string",
+          "required": false
+        },
+        "properties": {
+          "type": "object",
+          "required": false
+        }
+      },
+      "returns": {
+        "success": "boolean",
+        "relation": "object"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 200,
+        "requires_session": false,
+        "category": "knowledge"
+      },
+      "security": "client_admin",
+      "scope": "general",
+      "client_types": []
+    },
+    {
+      "name": "get_graph_stats",
+      "description": "Get knowledge graph statistics",
+      "parameters": {},
+      "returns": {
+        "node_count": "integer",
+        "edge_count": "integer",
+        "entity_types": "object",
+        "avg_degree": "number"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "knowledge"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "export_graph",
+      "description": "Export knowledge graph",
+      "parameters": {
+        "format": {
+          "type": "string",
+          "required": false,
+          "default": "triples",
+          "options": [
+            "triples",
+            "json"
+          ]
+        },
+        "max_triples": {
+          "type": "integer",
+          "required": false,
+          "default": 10000
+        }
+      },
+      "returns": {
+        "format": "string",
+        "count": "integer",
+        "data": "object"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 500,
+        "requires_session": false,
+        "category": "knowledge"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "clear_graph",
+      "description": "Clear the knowledge graph",
+      "parameters": {},
+      "returns": {
+        "status": "string",
+        "graph_stats": "object"
+      },
+      "admin_only": true,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": true,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "admin",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "get_session",
+      "description": "Get session state",
+      "parameters": {
+        "session_id": {
+          "type": "string",
+          "required": true
+        }
+      },
+      "returns": {
+        "session_id": "string",
+        "history_count": "integer"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "delete_session",
+      "description": "Delete a session",
+      "parameters": {
+        "session_id": {
+          "type": "string",
+          "required": true
+        }
+      },
+      "returns": {
+        "deleted": "boolean"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": true,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "get_stats",
+      "description": "Get metrics and statistics",
+      "parameters": {},
+      "returns": {
+        "graph_stats": "object",
+        "metrics": "object",
+        "cache": "object"
+      },
+      "admin_only": true,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "admin",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "reload_config",
+      "description": "Hot-reload configuration",
+      "parameters": {},
+      "returns": {
+        "status": "string"
+      },
+      "admin_only": true,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": true,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "admin",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "health_check",
+      "description": "Check component health",
+      "parameters": {},
+      "returns": {
+        "module": "string",
+        "status": "string",
+        "graph_stats": "object"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "none",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "get_entity_types",
+      "description": "Get available entity types",
+      "parameters": {},
+      "returns": {
+        "entity_types": "array"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 50,
+        "requires_session": false,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "get_relation_types",
+      "description": "Get available relation types",
+      "parameters": {},
+      "returns": {
+        "relation_types": "array"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 50,
+        "requires_session": false,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "shutdown",
+      "description": "Graceful shutdown",
+      "parameters": {},
+      "returns": {
+        "status": "string"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": true,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "none",
+      "scope": "system",
+      "client_types": []
+    }
+  ],
+  "events": {
+    "publishes": [
+      {
+        "event": "graph.initialized",
+        "description": "Module initialized"
+      },
+      {
+        "event": "graph.entity.added",
+        "description": "Entity added to graph"
+      },
+      {
+        "event": "graph.relation.added",
+        "description": "Relation added to graph"
+      },
+      {
+        "event": "graph.query.completed",
+        "description": "Query completed"
+      },
+      {
+        "event": "graph.shutdown",
+        "description": "Module shutdown"
+      }
+    ]
+  },
+  "dependencies": {
+    "optional": [
+      {
+        "module": "inference_vllm",
+        "purpose": "vLLM inference"
+      },
+      {
+        "module": "inference_ollama_grok",
+        "purpose": "Ollama inference"
+      },
+      {
+        "module": "retrieval_pipeline",
+        "purpose": "Hybrid retrieval"
+      }
+    ]
+  },
+  "module_type": "rag"
+}

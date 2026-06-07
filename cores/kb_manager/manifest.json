@@ -1,0 +1,234 @@
+{
+    "name": "kb_manager",
+    "version": "1.1.0",
+    "description": "Domain-agnostic CRUD manager for structured KB items (menu items, products, etc.)",
+    "author": "UBP Team",
+    "module_type": "kb_management",
+    "requires_redis": true,
+    "requires_postgres": false,
+    "requires_event_bus": true,
+    "operations": [
+        {
+            "name": "initialize",
+            "description": "Initialize module: resolve rag_qdrant, Redis, create provider",
+            "parameters": {},
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 75,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "none",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "add_item",
+            "description": "Add a new structured item to dedicated Qdrant collection",
+            "security": "admin",
+            "parameters": {
+                "client_id": "str — target client ID (adapter resolves dedicated collection)",
+                "category": "str — item category (e.g. 'cocktail', 'antipasto')",
+                "data": "dict — structured item data (name, price, ingredients, etc.)",
+                "schema_name": "str (optional) — schema to validate against"
+            },
+            "returns": {
+                "status": "str — 'added' | 'failed'",
+                "item_id": "str — generated item identifier",
+                "collection": "str — dedicated collection"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 350,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "update_item",
+            "description": "Update an existing item (partial merge)",
+            "security": "admin",
+            "parameters": {
+                "client_id": "str — target client ID",
+                "item_id": "str — item to update",
+                "data": "dict — fields to update (merged with existing)",
+                "schema_name": "str (optional) — schema to validate against"
+            },
+            "returns": {
+                "status": "str — 'updated' | 'not_found' | 'failed'",
+                "item_id": "str",
+                "version": "int — new version number"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 150,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "delete_item",
+            "description": "Delete an item from Qdrant",
+            "security": "admin",
+            "parameters": {
+                "client_id": "str — target client ID",
+                "item_id": "str — item to delete"
+            },
+            "returns": {
+                "status": "str — 'deleted'",
+                "item_id": "str"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": true,
+                "estimated_latency_ms": 150,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "get_item",
+            "description": "Get a single item by ID",
+            "security": "authenticated",
+            "parameters": {
+                "client_id": "str — target client ID",
+                "item_id": "str"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 50,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "search_items",
+            "description": "Semantic search for items",
+            "security": "authenticated",
+            "parameters": {
+                "client_id": "str — target client ID",
+                "query": "str — search text",
+                "category": "str (optional) — filter by category",
+                "limit": "int (optional, default 10)"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 1000,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "list_items",
+            "description": "List items with optional category filter",
+            "security": "authenticated",
+            "parameters": {
+                "client_id": "str — target client ID",
+                "category": "str (optional)",
+                "limit": "int (optional, default 50)",
+                "offset": "int (optional, default 0)"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "register_schema",
+            "description": "Register a domain schema for validation and text representation",
+            "security": "admin",
+            "parameters": {
+                "schema_name": "str",
+                "schema_def": "dict — schema definition with fields and text_template"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "save_config",
+            "description": "Save client _config.json (L3 overrides) to dedicated Qdrant collection",
+            "security": "admin",
+            "parameters": {
+                "client_id": "str — target client ID",
+                "config_data": "dict — L3 configuration data (whitelist-filtered on merge)"
+            },
+            "returns": {
+                "status": "str — 'saved'",
+                "collection": "str — dedicated collection name"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 200,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "load_config",
+            "description": "Load client _config.json (L3 overrides) from dedicated Qdrant collection",
+            "security": "authenticated",
+            "parameters": {
+                "client_id": "str — target client ID"
+            },
+            "returns": "dict or null — L3 configuration data",
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 75,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "scope": "free",
+            "client_types": []
+        }
+    ],
+    "event_publications": [
+        "kb_manager.item_added",
+        "kb_manager.item_updated",
+        "kb_manager.item_deleted"
+    ],
+    "event_subscriptions": [],
+    "dependencies": {
+        "modules": [
+            "rag_qdrant"
+        ],
+        "optional_modules": [
+            "inference_ollama_grok",
+            "web_search"
+        ],
+        "redis_keys": [
+            "ubp:kb_mgr:*"
+        ]
+    },
+    "config_file": "config.json"
+}

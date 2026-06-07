@@ -1,0 +1,334 @@
+{
+    "name": "rag_hybrid_search",
+    "version": "1.0.0",
+    "description": "Hybrid search combining dense (vector) and sparse (BM25) retrieval with score fusion",
+    "author": "UBP Team",
+    "module_type": "search",
+    "architecture": "3-file-pattern",
+    "requires_redis": false,
+    "requires_postgres": false,
+    "requires_event_bus": false,
+    "operations": [
+        {
+            "name": "hybrid_search",
+            "description": "Perform hybrid search combining dense and sparse retrieval",
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 350,
+                "requires_session": false,
+                "category": "knowledge"
+            },
+            "parameters": {
+                "query": {
+                    "type": "string",
+                    "required": true,
+                    "description": "Search query"
+                },
+                "collection_name": {
+                    "type": "string",
+                    "required": true,
+                    "description": "Target collection name"
+                },
+                "top_k": {
+                    "type": "integer",
+                    "required": false,
+                    "default": 10,
+                    "description": "Number of results to return"
+                },
+                "fusion_method": {
+                    "type": "string",
+                    "required": false,
+                    "enum": [
+                        "rrf",
+                        "weighted",
+                        "max"
+                    ],
+                    "description": "Score fusion method (rrf, weighted, max)"
+                },
+                "dense_weight": {
+                    "type": "float",
+                    "required": false,
+                    "description": "Weight for dense search in weighted fusion (0-1)"
+                },
+                "include_sparse_only": {
+                    "type": "boolean",
+                    "required": false,
+                    "default": false,
+                    "description": "Return only BM25 results"
+                },
+                "include_dense_only": {
+                    "type": "boolean",
+                    "required": false,
+                    "default": false,
+                    "description": "Return only vector results"
+                }
+            },
+            "returns": {
+                "query": "string",
+                "collection": "string",
+                "results": "array of result objects",
+                "count": "integer",
+                "search_type": "string (hybrid|sparse|dense)",
+                "fusion_method": "string",
+                "dense_results_count": "integer",
+                "sparse_results_count": "integer",
+                "request_id": "string"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "sparse_search",
+            "description": "Perform BM25-only sparse search",
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 250,
+                "requires_session": false,
+                "category": "knowledge"
+            },
+            "parameters": {
+                "query": {
+                    "type": "string",
+                    "required": true,
+                    "description": "Search query"
+                },
+                "collection_name": {
+                    "type": "string",
+                    "required": true,
+                    "description": "Target collection name"
+                },
+                "top_k": {
+                    "type": "integer",
+                    "required": false,
+                    "default": 10,
+                    "description": "Number of results to return"
+                }
+            },
+            "returns": {
+                "query": "string",
+                "collection": "string",
+                "results": "array of result objects",
+                "count": "integer",
+                "search_type": "string (sparse)",
+                "request_id": "string"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "index_document",
+            "description": "Index a document for sparse search (auto-called via events)",
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": true,
+                "estimated_latency_ms": 200,
+                "requires_session": false,
+                "category": "knowledge"
+            },
+            "parameters": {
+                "collection_name": {
+                    "type": "string",
+                    "required": true,
+                    "description": "Target collection"
+                },
+                "doc_id": {
+                    "type": "string",
+                    "required": true,
+                    "description": "Document identifier"
+                },
+                "content": {
+                    "type": "string",
+                    "required": true,
+                    "description": "Document text content"
+                },
+                "metadata": {
+                    "type": "object",
+                    "required": false,
+                    "description": "Optional metadata"
+                }
+            },
+            "returns": {
+                "status": "string (indexed)",
+                "collection": "string",
+                "doc_id": "string",
+                "request_id": "string"
+            },
+            "security": "client_admin",
+            "scope": "general",
+            "client_types": []
+        },
+        {
+            "name": "remove_document",
+            "description": "Remove a document from the sparse index",
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": true,
+                "estimated_latency_ms": 150,
+                "requires_session": false,
+                "category": "knowledge"
+            },
+            "parameters": {
+                "collection_name": {
+                    "type": "string",
+                    "required": true,
+                    "description": "Target collection"
+                },
+                "doc_id": {
+                    "type": "string",
+                    "required": true,
+                    "description": "Document identifier"
+                }
+            },
+            "returns": {
+                "status": "string (removed|not_found)",
+                "collection": "string",
+                "doc_id": "string",
+                "request_id": "string"
+            },
+            "security": "client_admin",
+            "scope": "general",
+            "client_types": []
+        },
+        {
+            "name": "get_index_stats",
+            "description": "Get BM25 index statistics for a collection",
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "parameters": {
+                "collection_name": {
+                    "type": "string",
+                    "required": true,
+                    "description": "Target collection"
+                }
+            },
+            "returns": {
+                "collection": "string",
+                "stats": "object (total_documents, unique_terms, average_doc_length, etc.)",
+                "indexed": "boolean",
+                "request_id": "string"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "list_indexed_collections",
+            "description": "List all collections with BM25 indexes",
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "parameters": {},
+            "returns": {
+                "collections": "array of strings",
+                "count": "integer",
+                "request_id": "string"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "rebuild_index",
+            "description": "Rebuild BM25 index from rag_qdrant (admin only)",
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 5000,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "parameters": {
+                "collection_name": {
+                    "type": "string",
+                    "required": true,
+                    "description": "Target collection"
+                }
+            },
+            "returns": {
+                "status": "string (rebuilt)",
+                "collection": "string",
+                "indexed_documents": "integer",
+                "request_id": "string"
+            },
+            "admin_only": true,
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "clear_index",
+            "description": "Clear the BM25 index for a collection (admin only)",
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 1000,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "parameters": {
+                "collection_name": {
+                    "type": "string",
+                    "required": true,
+                    "description": "Target collection"
+                }
+            },
+            "returns": {
+                "status": "string (cleared|not_found)",
+                "collection": "string",
+                "request_id": "string"
+            },
+            "admin_only": true,
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "health_check",
+            "description": "Health check with index statistics",
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 75,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "parameters": {},
+            "returns": {
+                "module": "string",
+                "version": "string",
+                "status": "string (healthy|unhealthy)",
+                "total_searches": "integer",
+                "total_hybrid_searches": "integer",
+                "total_sparse_searches": "integer",
+                "provider": "object"
+            },
+            "security": "none",
+            "scope": "system",
+            "client_types": []
+        }
+    ],
+    "event_subscriptions": [
+        "qdrant.document_indexed",
+        "qdrant.document_deleted"
+    ],
+    "dependencies": {
+        "modules": [
+            "rag_qdrant"
+        ]
+    },
+    "config_file": "config.json",
+    "production_ready": true
+}

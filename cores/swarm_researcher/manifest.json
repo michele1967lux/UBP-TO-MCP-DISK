@@ -1,0 +1,457 @@
+{
+    "name": "swarm_researcher",
+    "version": "1.0.0",
+    "description": "Multi-source parallel research with citation tracking, aggregation, and quality analysis",
+    "author": "UBP Team",
+    "module_type": "research",
+    "architecture": "3-file-pattern",
+    "requires_redis": false,
+    "requires_postgres": false,
+    "requires_event_bus": false,
+    "dependencies": {
+        "modules": [],
+        "optional_modules": [
+            "rag_qdrant",
+            "retrieval_strategy",
+            "web_search",
+            "reranker"
+        ],
+        "python_packages": [],
+        "notes": "Works standalone but benefits from RAG and Web modules for multi-source research"
+    },
+    "operations": [
+        {
+            "name": "initialize",
+            "description": "Initialize swarm researcher",
+            "parameters": {
+                "max_workers": {
+                    "type": "integer",
+                    "required": false,
+                    "default": 5
+                },
+                "default_timeout": {
+                    "type": "integer",
+                    "required": false,
+                    "default": 60
+                },
+                "citation_style": {
+                    "type": "string",
+                    "required": false,
+                    "default": "apa"
+                }
+            },
+            "returns": {
+                "status": "string",
+                "rag_available": "boolean",
+                "web_available": "boolean"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 500,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "none",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "research_single",
+            "description": "Execute research for a single query",
+            "parameters": {
+                "query": {
+                    "type": "string",
+                    "required": true
+                },
+                "source_config": {
+                    "type": "object",
+                    "required": false
+                },
+                "section_id": {
+                    "type": "string",
+                    "required": false
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "result": "ResearchResult",
+                "documents": "array",
+                "citations": "array"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 10000,
+                "requires_session": true,
+                "category": "agent"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "research_parallel",
+            "description": "Execute research for multiple queries in parallel",
+            "parameters": {
+                "queries": {
+                    "type": "array",
+                    "required": true
+                },
+                "source_config": {
+                    "type": "object",
+                    "required": false
+                },
+                "extract_citations": {
+                    "type": "boolean",
+                    "required": false,
+                    "default": true
+                },
+                "deduplicate": {
+                    "type": "boolean",
+                    "required": false,
+                    "default": true
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "results": "array",
+                "aggregated": "AggregatedResult",
+                "stats": "ExecutionStats"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 15000,
+                "requires_session": true,
+                "category": "agent"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "research_section",
+            "description": "Execute research optimized for a document section",
+            "parameters": {
+                "section_id": {
+                    "type": "string",
+                    "required": true
+                },
+                "queries": {
+                    "type": "array",
+                    "required": true
+                },
+                "source_config": {
+                    "type": "object",
+                    "required": false
+                },
+                "max_documents": {
+                    "type": "integer",
+                    "required": false,
+                    "default": 10
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "section_id": "string",
+                "documents": "array",
+                "citations": "array"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 12000,
+                "requires_session": true,
+                "category": "agent"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "research_with_dependencies",
+            "description": "Execute research tasks respecting dependencies",
+            "parameters": {
+                "task_graph": {
+                    "type": "array",
+                    "required": true,
+                    "description": "Tasks with depends_on fields"
+                },
+                "source_config": {
+                    "type": "object",
+                    "required": false
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "results": "array",
+                "by_section": "object"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 20000,
+                "requires_session": true,
+                "category": "agent"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "aggregate_results",
+            "description": "Aggregate multiple research results",
+            "parameters": {
+                "results": {
+                    "type": "array",
+                    "required": true
+                },
+                "strategy": {
+                    "type": "string",
+                    "required": false,
+                    "default": "rrf"
+                },
+                "weights": {
+                    "type": "object",
+                    "required": false
+                },
+                "deduplicate": {
+                    "type": "boolean",
+                    "required": false,
+                    "default": true
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "aggregated": "AggregatedResult"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 1000,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "deduplicate",
+            "description": "Deduplicate documents",
+            "parameters": {
+                "documents": {
+                    "type": "array",
+                    "required": true
+                },
+                "similarity_threshold": {
+                    "type": "number",
+                    "required": false,
+                    "default": 0.85
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "documents": "array",
+                "duplicates_removed": "integer"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 500,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "track_citations",
+            "description": "Track citations for documents",
+            "parameters": {
+                "documents": {
+                    "type": "array",
+                    "required": true
+                },
+                "style": {
+                    "type": "string",
+                    "required": false,
+                    "default": "apa"
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "citations": "array"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 300,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "generate_bibliography",
+            "description": "Generate formatted bibliography",
+            "parameters": {
+                "citations": {
+                    "type": "array",
+                    "required": false
+                },
+                "style": {
+                    "type": "string",
+                    "required": false,
+                    "default": "apa"
+                },
+                "numbered": {
+                    "type": "boolean",
+                    "required": false,
+                    "default": true
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "bibliography": "Bibliography",
+                "formatted_text": "string"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 200,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "score_quality",
+            "description": "Score quality of documents",
+            "parameters": {
+                "documents": {
+                    "type": "array",
+                    "required": true
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "scores": "array",
+                "average_quality": "number"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 500,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "analyze_coverage",
+            "description": "Analyze research coverage",
+            "parameters": {
+                "queries": {
+                    "type": "array",
+                    "required": true
+                },
+                "results": {
+                    "type": "array",
+                    "required": true
+                },
+                "required_topics": {
+                    "type": "array",
+                    "required": false
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "coverage": "CoverageReport"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 500,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "get_progress",
+            "description": "Get current execution progress",
+            "parameters": {},
+            "returns": {
+                "success": "boolean",
+                "progress": "ExecutionProgress"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 50,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "get_stats",
+            "description": "Get execution statistics",
+            "parameters": {},
+            "returns": {
+                "success": "boolean",
+                "stats": "ExecutionStats"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        }
+    ],
+    "source_preferences": [
+        "rag_only",
+        "web_only",
+        "rag_first",
+        "web_first",
+        "mixed",
+        "llm_reasoning",
+        "adaptive"
+    ],
+    "aggregation_strategies": [
+        "rrf",
+        "weighted",
+        "interleave",
+        "union",
+        "concat"
+    ],
+    "citation_styles": [
+        "apa",
+        "mla",
+        "chicago",
+        "ieee",
+        "harvard",
+        "numeric",
+        "inline"
+    ],
+    "config_file": "config.json",
+    "production_ready": true
+}

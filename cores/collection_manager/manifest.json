@@ -1,0 +1,152 @@
+{
+    "name": "collection_manager",
+    "version": "2.0.0",
+    "description": "Collection management system for organizing and managing data collections (3-file architecture)",
+    "author": "UBP Team",
+    "module_type": "manager",
+    "architecture": "3-file-pattern",
+    "requires_redis": true,
+    "requires_postgres": true,
+    "requires_event_bus": true,
+    "operations": [
+        {
+            "name": "create_collection",
+            "description": "Create a new collection",
+            "parameters": {
+                "name": "string",
+                "description": "string (optional)",
+                "schema": "object (optional)",
+                "metadata": "object (optional)"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 300,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "list_collections",
+            "description": "List all collections",
+            "parameters": {
+                "filter": "object (optional)",
+                "limit": "integer (optional)",
+                "offset": "integer (optional)"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 75,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "get_collection",
+            "description": "Get collection details",
+            "parameters": {
+                "collection_id": "string"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 50,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "update_collection",
+            "description": "Update collection metadata",
+            "parameters": {
+                "collection_id": "string",
+                "updates": "object"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 150,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "delete_collection",
+            "description": "Delete a collection",
+            "parameters": {
+                "collection_id": "string"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": true,
+                "estimated_latency_ms": 150,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "add_item",
+            "description": "Add item to collection",
+            "parameters": {
+                "collection_id": "string",
+                "item_data": "object"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 250,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "get_items",
+            "description": "Get items from collection",
+            "parameters": {
+                "collection_id": "string",
+                "filter": "object (optional)",
+                "limit": "integer (optional)"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        }
+    ],
+    "event_subscriptions": [
+        "collection.create",
+        "collection.item.add"
+    ],
+    "event_publications": [
+        "collection.created",
+        "collection.updated",
+        "collection.deleted",
+        "collection.item.added"
+    ],
+    "config_file": "config.json"
+}

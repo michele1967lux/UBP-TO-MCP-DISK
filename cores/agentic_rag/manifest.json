@@ -1,0 +1,587 @@
+{
+  "name": "agentic_rag",
+  "version": "1.0.0",
+  "description": "Autonomous RAG Engine with tool use, planning, and parallel execution",
+  "architecture": "3-file-pattern",
+  "category": "core",
+  "production_ready": true,
+  "features": [
+    "ReAct-style reasoning loops",
+    "Plan-then-execute mode",
+    "Parallel task execution",
+    "Dependency-aware scheduling",
+    "Worker pool management",
+    "Tool registry and execution",
+    "Built-in tools (retrieval, calculator, summarizer, graph)",
+    "External tool integration",
+    "Query decomposition",
+    "Adaptive replanning",
+    "State management",
+    "Working memory",
+    "Episodic memory",
+    "Progress callbacks",
+    "Comprehensive metrics",
+    "Cross-lingual support (EN/IT)"
+  ],
+  "execution_modes": [
+    {
+      "mode": "react",
+      "description": "ReAct-style Thought-Action-Observation loop",
+      "use_cases": [
+        "Complex reasoning",
+        "Multi-step queries",
+        "Dynamic exploration"
+      ]
+    },
+    {
+      "mode": "plan_execute",
+      "description": "Create plan then execute tasks",
+      "use_cases": [
+        "Structured workflows",
+        "Deterministic execution"
+      ]
+    },
+    {
+      "mode": "parallel",
+      "description": "Maximum parallel execution",
+      "use_cases": [
+        "Multi-source queries",
+        "Performance-critical",
+        "Independent subtasks"
+      ]
+    }
+  ],
+  "builtin_tools": [
+    {
+      "name": "retrieval",
+      "description": "Search and retrieve documents from knowledge base",
+      "category": "retrieval"
+    },
+    {
+      "name": "calculator",
+      "description": "Perform mathematical calculations",
+      "category": "computation"
+    },
+    {
+      "name": "summarizer",
+      "description": "Summarize long text",
+      "category": "text_processing"
+    },
+    {
+      "name": "graph_query",
+      "description": "Query knowledge graph for relationships",
+      "category": "knowledge_graph"
+    },
+    {
+      "name": "web_search",
+      "description": "Search the web (optional)",
+      "category": "web"
+    }
+  ],
+  "parallel_execution": {
+    "features": [
+      "Worker pool with configurable size",
+      "Semaphore-based concurrency control",
+      "Dependency-aware task scheduling",
+      "Batch execution",
+      "Fail-fast and continue-on-error modes",
+      "Retry with exponential backoff",
+      "Task timeout handling",
+      "Progress callbacks"
+    ],
+    "default_config": {
+      "max_concurrent": 5,
+      "worker_pool_size": 8,
+      "batch_size": 3,
+      "task_timeout": 30
+    }
+  },
+  "operations": [
+    {
+      "name": "initialize",
+      "description": "Initialize agentic RAG components",
+      "parameters": {},
+      "returns": {
+        "status": "string",
+        "tools": "array",
+        "modes": "array"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": true,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "none",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "query",
+      "description": "Execute agentic RAG query with selected mode",
+      "parameters": {
+        "query": {
+          "type": "string",
+          "required": true
+        },
+        "mode": {
+          "type": "string",
+          "required": false,
+          "default": "react",
+          "options": [
+            "react",
+            "plan_execute",
+            "parallel"
+          ]
+        },
+        "max_iterations": {
+          "type": "integer",
+          "required": false,
+          "default": 8
+        },
+        "enable_parallel": {
+          "type": "boolean",
+          "required": false,
+          "default": true
+        },
+        "language": {
+          "type": "string",
+          "required": false,
+          "default": "auto"
+        }
+      },
+      "returns": {
+        "session_id": "string",
+        "query": "string",
+        "answer": "string",
+        "confidence": "number",
+        "mode_used": "string",
+        "total_iterations": "integer",
+        "total_tool_calls": "integer",
+        "execution_time_ms": "number"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 10000,
+        "requires_session": true,
+        "category": "agent"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "react",
+      "description": "Execute ReAct-style reasoning loop",
+      "parameters": {
+        "query": {
+          "type": "string",
+          "required": true
+        },
+        "max_iterations": {
+          "type": "integer",
+          "required": false,
+          "default": 8
+        },
+        "language": {
+          "type": "string",
+          "required": false,
+          "default": "auto"
+        }
+      },
+      "returns": {
+        "answer": "string",
+        "steps": "array"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 10000,
+        "requires_session": true,
+        "category": "agent"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "plan_execute",
+      "description": "Create plan then execute",
+      "parameters": {
+        "query": {
+          "type": "string",
+          "required": true
+        },
+        "enable_parallel": {
+          "type": "boolean",
+          "required": false,
+          "default": true
+        },
+        "language": {
+          "type": "string",
+          "required": false,
+          "default": "auto"
+        }
+      },
+      "returns": {
+        "answer": "string",
+        "plan": "object"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 10000,
+        "requires_session": true,
+        "category": "agent"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "parallel_query",
+      "description": "Execute with maximum parallelism",
+      "parameters": {
+        "query": {
+          "type": "string",
+          "required": true
+        },
+        "max_concurrent": {
+          "type": "integer",
+          "required": false,
+          "default": 5
+        },
+        "language": {
+          "type": "string",
+          "required": false,
+          "default": "auto"
+        }
+      },
+      "returns": {
+        "answer": "string",
+        "parallel_batches": "integer"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 8000,
+        "requires_session": true,
+        "category": "agent"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "create_plan",
+      "description": "Create execution plan without executing",
+      "parameters": {
+        "query": {
+          "type": "string",
+          "required": true
+        },
+        "language": {
+          "type": "string",
+          "required": false,
+          "default": "en"
+        }
+      },
+      "returns": {
+        "plan_id": "string",
+        "tasks": "array",
+        "execution_order": "array"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 5000,
+        "requires_session": false,
+        "category": "agent"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "execute_plan",
+      "description": "Execute an existing plan",
+      "parameters": {
+        "plan_dict": {
+          "type": "object",
+          "required": true
+        },
+        "enable_parallel": {
+          "type": "boolean",
+          "required": false,
+          "default": true
+        }
+      },
+      "returns": {
+        "success": "boolean",
+        "task_results": "object"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 15000,
+        "requires_session": true,
+        "category": "agent"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "call_tool",
+      "description": "Directly invoke a tool",
+      "parameters": {
+        "tool_name": {
+          "type": "string",
+          "required": true
+        },
+        "arguments": {
+          "type": "object",
+          "required": true
+        }
+      },
+      "returns": {
+        "tool_id": "string",
+        "success": "boolean",
+        "result": "any"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 5000,
+        "requires_session": true,
+        "category": "agent"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "register_tool",
+      "description": "Register an external tool",
+      "parameters": {
+        "name": {
+          "type": "string",
+          "required": true
+        },
+        "description": {
+          "type": "string",
+          "required": true
+        },
+        "parameters": {
+          "type": "array",
+          "required": true
+        },
+        "handler_module": {
+          "type": "string",
+          "required": true
+        },
+        "handler_operation": {
+          "type": "string",
+          "required": true
+        }
+      },
+      "returns": {
+        "registered": "boolean"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "list_tools",
+      "description": "List available tools",
+      "parameters": {},
+      "returns": {
+        "tools": "array",
+        "count": "integer"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "get_state",
+      "description": "Get agent state for a session",
+      "parameters": {
+        "session_id": {
+          "type": "string",
+          "required": true
+        }
+      },
+      "returns": {
+        "state_id": "string",
+        "status": "string",
+        "steps": "array"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "get_stats",
+      "description": "Get metrics and statistics",
+      "parameters": {},
+      "returns": {
+        "metrics": "object",
+        "executor": "object"
+      },
+      "admin_only": true,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "admin",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "reload_config",
+      "description": "Hot-reload configuration",
+      "parameters": {},
+      "returns": {
+        "status": "string"
+      },
+      "admin_only": true,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": true,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "admin",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "health_check",
+      "description": "Check component health",
+      "parameters": {},
+      "returns": {
+        "module": "string",
+        "status": "string"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "none",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "shutdown",
+      "description": "Graceful shutdown",
+      "parameters": {},
+      "returns": {
+        "status": "string"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": true,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "none",
+      "scope": "system",
+      "client_types": []
+    }
+  ],
+  "events": {
+    "publishes": [
+      {
+        "event": "agentic.initialized",
+        "description": "Module initialized"
+      },
+      {
+        "event": "agentic.query.started",
+        "description": "Query execution started"
+      },
+      {
+        "event": "agentic.step.completed",
+        "description": "Reasoning step completed"
+      },
+      {
+        "event": "agentic.tool.called",
+        "description": "Tool invocation"
+      },
+      {
+        "event": "agentic.query.completed",
+        "description": "Query completed"
+      },
+      {
+        "event": "agentic.shutdown",
+        "description": "Module shutdown"
+      }
+    ]
+  },
+  "dependencies": {
+    "optional": [
+      {
+        "module": "inference_ollama_grok",
+        "purpose": "LLM for reasoning"
+      },
+      {
+        "module": "retrieval_strategy",
+        "purpose": "Document retrieval tool"
+      },
+      {
+        "module": "graph_rag",
+        "purpose": "Knowledge graph tool"
+      },
+      {
+        "module": "web_search",
+        "purpose": "Web search tool"
+      }
+    ]
+  },
+  "module_type": "rag"
+}

@@ -1,0 +1,954 @@
+{
+    "name": "admin_clients",
+    "version": "2.0.0",
+    "description": "Enterprise Client Management module with KB authorization, model assignment, user limits, and full configuration management",
+    "author": "UBP Team",
+    "module_type": "admin",
+    "architecture": "3-file-pattern",
+    "requires_redis": true,
+    "requires_postgres": false,
+    "requires_event_bus": true,
+    "operations": [
+        {
+            "name": "initialize",
+            "description": "Initialize client management module with Redis and secret generation",
+            "parameters": {},
+            "returns": {
+                "status": "string (initialized status)",
+                "module": "string (module name)",
+                "storage": "string (storage backend)",
+                "security": "object (security features)",
+                "features": "object (module features)"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "none",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "create_client",
+            "description": "Create a new OAuth/API client with full enterprise configuration",
+            "parameters": {
+                "client_name": {
+                    "type": "string",
+                    "required": true,
+                    "ui_type": "text",
+                    "label": "Client Name",
+                    "description": "Identificativo univoco del client",
+                    "validation": {
+                        "minLength": 3,
+                        "maxLength": 100
+                    }
+                },
+                "client_type": {
+                    "type": "string",
+                    "required": true,
+                    "ui_type": "select",
+                    "label": "Client Type",
+                    "description": "Tipo di autenticazione",
+                    "options": [
+                        {
+                            "label": "OAuth2",
+                            "value": "oauth2"
+                        },
+                        {
+                            "label": "API Key",
+                            "value": "api_key"
+                        },
+                        {
+                            "label": "Service Account",
+                            "value": "service_account"
+                        }
+                    ]
+                },
+                "description": {
+                    "type": "string",
+                    "required": false,
+                    "ui_type": "textarea",
+                    "label": "Description",
+                    "validation": {
+                        "maxLength": 500
+                    }
+                },
+                "redirect_uris": {
+                    "type": "array",
+                    "required": false,
+                    "ui_type": "tags",
+                    "label": "Redirect URIs",
+                    "description": "URI di redirect per client OAuth2",
+                    "validation": {
+                        "itemType": "string"
+                    }
+                },
+                "scopes": {
+                    "type": "array",
+                    "required": false,
+                    "ui_type": "tags",
+                    "label": "Scopes",
+                    "description": "Permessi richiesti dal client",
+                    "validation": {
+                        "itemType": "string"
+                    }
+                },
+                "tenant_id": {
+                    "type": "string",
+                    "required": false,
+                    "ui_type": "text",
+                    "label": "Tenant ID",
+                    "description": "ID tenant per multi-tenancy"
+                },
+                "is_active": {
+                    "type": "boolean",
+                    "required": false,
+                    "ui_type": "checkbox",
+                    "label": "Active",
+                    "description": "Se il client è attivo",
+                    "default": true
+                },
+                "expires_at": {
+                    "type": "string",
+                    "required": false,
+                    "ui_type": "datetime-local",
+                    "label": "Expiration Date",
+                    "description": "Data di scadenza del client"
+                },
+                "kb_config": {
+                    "type": "object",
+                    "required": false,
+                    "ui_type": "json",
+                    "label": "KB Configuration",
+                    "description": "Configurazione Knowledge Base per il client",
+                    "default": {
+                        "universal_kbs_assigned": [],
+                        "can_create_universal_kb": false,
+                        "max_universal_kbs": 5,
+                        "user_kb_assignment_mode": "default",
+                        "default_user_kb_config": {
+                            "inherit_all_universal_kbs": true,
+                            "universal_kb_access_level": "read",
+                            "personal_kb_enabled": true,
+                            "personal_kb_max_size_mb": 100,
+                            "personal_kb_max_documents": 50
+                        },
+                        "custom_user_kb_assignments": {}
+                    }
+                },
+                "ingestion_config": {
+                    "type": "object",
+                    "required": false,
+                    "ui_type": "json",
+                    "label": "Ingestion Configuration",
+                    "description": "Setting di ingestion dedicati per il client",
+                    "default": {
+                        "enabled": true,
+                        "max_documents_per_day": 100,
+                        "max_document_size_mb": 10,
+                        "allowed_formats": [
+                            "pdf",
+                            "docx",
+                            "txt",
+                            "md"
+                        ],
+                        "chunk_size": 512,
+                        "chunk_overlap": 50,
+                        "embedding_model": "default"
+                    }
+                },
+                "model_config": {
+                    "type": "object",
+                    "required": false,
+                    "ui_type": "json",
+                    "label": "Model Configuration",
+                    "description": "Modelli LLM assegnati al client",
+                    "default": {
+                        "allowed_models": [
+                            "tinyllama"
+                        ],
+                        "default_model": "tinyllama",
+                        "max_tokens_per_request": 4096,
+                        "temperature_range": {
+                            "min": 0.0,
+                            "max": 1.0
+                        },
+                        "rate_limit_requests_per_minute": 60
+                    }
+                },
+                "user_limits": {
+                    "type": "object",
+                    "required": false,
+                    "ui_type": "json",
+                    "label": "User Limits",
+                    "description": "Limiti utenti per il client",
+                    "default": {
+                        "max_users": 100,
+                        "current_users": 0,
+                        "user_roles_allowed": [
+                            "user",
+                            "viewer"
+                        ],
+                        "max_concurrent_sessions_per_user": 3
+                    }
+                },
+                "rag_config": {
+                    "type": "object",
+                    "required": false,
+                    "ui_type": "json",
+                    "label": "RAG Configuration",
+                    "description": "Configurazione pipeline RAG",
+                    "default": {
+                        "pipeline": "standard",
+                        "top_k": 5,
+                        "similarity_threshold": 0.7,
+                        "reranking_enabled": false,
+                        "conversation_memory_enabled": true,
+                        "web_search_enabled": false
+                    }
+                },
+                "prompt_config": {
+                    "type": "object",
+                    "required": false,
+                    "ui_type": "json",
+                    "label": "Prompt Configuration",
+                    "description": "System prompt e template dedicati",
+                    "default": {
+                        "identity": null,
+                        "system_prompt": "",
+                        "context_template": "Use the following context to answer the question:\n{context}",
+                        "can_modify_system_prompt": false,
+                        "can_modify_context_template": false,
+                        "language": "it",
+                        "response_style": "professional"
+                    }
+                },
+                "authorization": {
+                    "type": "object",
+                    "required": false,
+                    "ui_type": "json",
+                    "label": "Authorization",
+                    "description": "Endpoint e permessi autorizzati",
+                    "default": {
+                        "allowed_endpoints": [
+                            "*"
+                        ],
+                        "denied_endpoints": []
+                    }
+                },
+                "settings_permissions": {
+                    "type": "object",
+                    "required": false,
+                    "ui_type": "json",
+                    "label": "Settings Permissions",
+                    "description": "Permessi di modifica configurazioni",
+                    "default": {
+                        "can_modify_ingestion_settings": false,
+                        "can_modify_model_settings": false,
+                        "can_modify_rag_settings": false
+                    }
+                },
+                "client_policy": {
+                    "type": "object",
+                    "required": false,
+                    "ui_type": "json",
+                    "label": "Client Policy (v17.19)",
+                    "description": "Per-client runtime policy. allowed_subagent_profiles must be either ['*'] (permit all), [] (deny-all), or a list of concrete profile names. Wildcard mix is rejected.",
+                    "default": {
+                        "allowed_subagent_profiles": []
+                    }
+                },
+                "request_id": {
+                    "type": "string",
+                    "required": false,
+                    "ui_type": "text",
+                    "label": "Request ID",
+                    "description": "ID richiesta (auto-generato se non fornito)"
+                }
+            },
+            "returns": {
+                "client_id": "string (UUID)",
+                "client_secret": "string (generated secret, only returned once)",
+                "client_name": "string",
+                "client_type": "string",
+                "description": "string",
+                "redirect_uris": "array of strings",
+                "scopes": "array of strings",
+                "tenant_id": "string",
+                "is_active": "boolean",
+                "kb_config": "object",
+                "ingestion_config": "object",
+                "model_config": "object",
+                "user_limits": "object",
+                "rag_config": "object",
+                "prompt_config": "object",
+                "authorization": "object",
+                "settings_permissions": "object",
+                "client_policy": "object",
+                "created_at": "string (ISO datetime)",
+                "updated_at": "string (ISO datetime)",
+                "expires_at": "string (ISO datetime)",
+                "request_id": "string (tracking ID)"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 300,
+                "requires_session": true,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "list_clients",
+            "description": "List all clients with optional filtering and pagination",
+            "parameters": {
+                "filter": "object (optional, {is_active: bool, client_type: str, scopes: [str], tenant_id: str})",
+                "limit": "integer (optional, max results to return)",
+                "offset": "integer (optional, number of results to skip)"
+            },
+            "returns": {
+                "clients": "array of client objects (without client_secret_hash)"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 75,
+                "requires_session": true,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "get_client",
+            "description": "Get client details by ID with full enterprise configuration",
+            "parameters": {
+                "client_id": "string (required, UUID)"
+            },
+            "returns": {
+                "client object": "Full client configuration including kb_config, model_config, etc."
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 50,
+                "requires_session": true,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "update_client",
+            "description": "Update client information and enterprise configuration",
+            "parameters": {
+                "client_id": "string (required, UUID)",
+                "client_name": "string (optional, 3-100 chars, must be unique)",
+                "description": "string (optional, max 500 chars)",
+                "redirect_uris": "array of strings (optional)",
+                "scopes": "array of strings (optional)",
+                "tenant_id": "string (optional)",
+                "is_active": "boolean (optional)",
+                "expires_at": "string (optional, ISO datetime)",
+                "kb_config": "object (optional)",
+                "ingestion_config": "object (optional)",
+                "model_config": "object (optional)",
+                "user_limits": "object (optional)",
+                "rag_config": "object (optional)",
+                "prompt_config": "object (optional)",
+                "authorization": "object (optional)",
+                "settings_permissions": "object (optional)",
+                "client_policy": "object (optional, v17.19: { allowed_subagent_profiles: ['*'] | [] | ['profile1', 'profile2'] }; wildcard mix rejected with 422)",
+                "request_id": "string (optional, auto-generated UUID if not provided)"
+            },
+            "returns": {
+                "client object": "Updated client configuration",
+                "request_id": "string (tracking ID)"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": true,
+                "estimated_latency_ms": 250,
+                "requires_session": true,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "delete_client",
+            "description": "Delete a client permanently",
+            "parameters": {
+                "client_id": "string (required, UUID)",
+                "request_id": "string (optional, auto-generated UUID if not provided)"
+            },
+            "returns": {
+                "message": "string (success message)",
+                "client_id": "string (deleted client ID)",
+                "client_name": "string (deleted client name)",
+                "request_id": "string (tracking ID)"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 250,
+                "requires_session": true,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "rotate_secret",
+            "description": "Rotate client secret (generate new secret and invalidate old one)",
+            "parameters": {
+                "client_id": "string (required, UUID)",
+                "request_id": "string (optional, auto-generated UUID if not provided)"
+            },
+            "returns": {
+                "message": "string (success message)",
+                "client_id": "string",
+                "client_secret": "string (new secret, only returned once)",
+                "rotated_at": "string (ISO datetime)",
+                "request_id": "string (tracking ID)"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 200,
+                "requires_session": true,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "revoke_client",
+            "description": "Revoke client access (soft delete - sets is_active to false)",
+            "parameters": {
+                "client_id": "string (required, UUID)",
+                "reason": "string (optional, revocation reason)",
+                "request_id": "string (optional, auto-generated UUID if not provided)"
+            },
+            "returns": {
+                "message": "string (success message)",
+                "client_id": "string",
+                "client_name": "string",
+                "revoked_at": "string (ISO datetime)",
+                "request_id": "string (tracking ID)"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 200,
+                "requires_session": true,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "check_user_limit",
+            "description": "Check if a client can register more users based on user_limits configuration",
+            "security": "admin",
+            "parameters": {
+                "client_id": {
+                    "type": "string",
+                    "required": true,
+                    "ui_type": "text",
+                    "label": "Client ID",
+                    "description": "UUID del client"
+                }
+            },
+            "returns": {
+                "client_id": "string",
+                "client_name": "string",
+                "can_add_user": "boolean",
+                "max_users": "integer",
+                "current_users": "integer",
+                "available_slots": "integer",
+                "message": "string"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": true,
+                "category": "admin"
+            },
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "ingest_to_client_kb",
+            "description": "Ingest document to client's knowledge base with authorization - Fixes GAP-INGEST-001",
+            "security": "authenticated",
+            "parameters": {
+                "client_id": {
+                    "type": "string",
+                    "required": true,
+                    "ui_type": "text",
+                    "label": "Client ID",
+                    "description": "Client ID performing the ingestion"
+                },
+                "collection_id": {
+                    "type": "string",
+                    "required": true,
+                    "ui_type": "text",
+                    "label": "Collection ID",
+                    "description": "Target knowledge base collection"
+                },
+                "text": {
+                    "type": "string",
+                    "required": true,
+                    "ui_type": "textarea",
+                    "label": "Document Text",
+                    "description": "Text content to ingest"
+                },
+                "metadata": {
+                    "type": "object",
+                    "required": false,
+                    "ui_type": "json",
+                    "label": "Metadata",
+                    "description": "Optional document metadata"
+                },
+                "request_id": {
+                    "type": "string",
+                    "required": false,
+                    "ui_type": "text",
+                    "label": "Request ID",
+                    "description": "Optional request tracking ID"
+                }
+            },
+            "returns": {
+                "document_id": "string (generated document ID)",
+                "chunks_count": "integer (number of chunks created)",
+                "status": "string (success/error)",
+                "message": "string (status message)",
+                "request_id": "string (tracking ID)"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 500,
+                "requires_session": true,
+                "category": "admin"
+            },
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "get_client_users",
+            "description": "Get all users registered via this client",
+            "security": "admin",
+            "parameters": {
+                "client_id": {
+                    "type": "string",
+                    "required": true,
+                    "ui_type": "text",
+                    "label": "Client ID",
+                    "description": "UUID del client"
+                },
+                "filter": {
+                    "type": "object",
+                    "required": false,
+                    "description": "Optional filters: {is_active: bool, roles: [str]}"
+                },
+                "limit": {
+                    "type": "integer",
+                    "required": false,
+                    "default": 100
+                },
+                "offset": {
+                    "type": "integer",
+                    "required": false,
+                    "default": 0
+                }
+            },
+            "returns": {
+                "users": "array of user objects",
+                "total": "integer (total users for this client)",
+                "client_id": "string"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 75,
+                "requires_session": true,
+                "category": "admin"
+            },
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "test_client",
+            "description": "Test client configuration by verifying all settings are operational",
+            "security": "admin",
+            "parameters": {
+                "client_id": {
+                    "type": "string",
+                    "required": true,
+                    "ui_type": "text",
+                    "label": "Client ID",
+                    "description": "UUID del client da testare"
+                }
+            },
+            "returns": {
+                "client_id": "string",
+                "client_name": "string",
+                "test_results": {
+                    "authentication": "object (test result)",
+                    "kb_access": "object (test result)",
+                    "model_access": "object (test result)",
+                    "user_limits": "object (test result)",
+                    "endpoint_authorization": "object (test result)"
+                },
+                "overall_status": "string (pass/fail/partial)",
+                "tested_at": "string (ISO datetime)"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": true,
+                "estimated_latency_ms": 300,
+                "requires_session": true,
+                "category": "admin"
+            },
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "get_client_stats",
+            "description": "Get client management statistics and metrics",
+            "parameters": {},
+            "returns": {
+                "module": "string (module name)",
+                "total_clients": "integer (total client count)",
+                "active_clients": "integer (active client count)",
+                "revoked_clients": "integer (revoked client count)",
+                "clients_by_type": "object (client type -> client count)",
+                "clients_by_tenant": "object (tenant ID -> client count)",
+                "storage": "string (storage backend)",
+                "security": "object (security features)"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": true,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "health_check",
+            "description": "Health check for client management module",
+            "parameters": {},
+            "returns": {
+                "module": "string (module name)",
+                "status": "string (healthy/degraded/unhealthy)",
+                "initialized": "boolean",
+                "redis": "object (connection status and health)"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 50,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "none",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "assign_kb_to_user",
+            "description": "GAP-003: Assign a Knowledge Base to a specific user with custom access level. Allows clients to grant KB access to individual users, overriding inheritance.",
+            "security": "authenticated",
+            "parameters": {
+                "client_id": {
+                    "type": "string",
+                    "required": true,
+                    "ui_type": "text",
+                    "label": "Client ID",
+                    "description": "Client ID owning the user"
+                },
+                "user_id": {
+                    "type": "string",
+                    "required": true,
+                    "ui_type": "text",
+                    "label": "User ID",
+                    "description": "User ID to grant KB access"
+                },
+                "kb_name": {
+                    "type": "string",
+                    "required": true,
+                    "ui_type": "text",
+                    "label": "KB Name",
+                    "description": "Knowledge base name to assign"
+                },
+                "access_level": {
+                    "type": "string",
+                    "required": false,
+                    "ui_type": "select",
+                    "label": "Access Level",
+                    "description": "Access level (read, write). Defaults to client's default.",
+                    "options": [
+                        {
+                            "label": "Read",
+                            "value": "read"
+                        },
+                        {
+                            "label": "Write",
+                            "value": "write"
+                        }
+                    ]
+                },
+                "request_id": {
+                    "type": "string",
+                    "required": false,
+                    "ui_type": "text",
+                    "label": "Request ID",
+                    "description": "Optional request tracking ID"
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "client_id": "string",
+                "user_id": "string",
+                "kb_name": "string",
+                "access_level": "string",
+                "error": "string (only if success=false)",
+                "request_id": "string (tracking ID)"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": true,
+                "estimated_latency_ms": 200,
+                "requires_session": true,
+                "category": "admin"
+            },
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "revoke_kb_from_user",
+            "description": "GAP-004: Revoke a user's custom KB access, reverting to client-level inheritance. After revocation, the user's access reverts to client-level ACL.",
+            "security": "authenticated",
+            "parameters": {
+                "client_id": {
+                    "type": "string",
+                    "required": true,
+                    "ui_type": "text",
+                    "label": "Client ID",
+                    "description": "Client ID owning the user"
+                },
+                "user_id": {
+                    "type": "string",
+                    "required": true,
+                    "ui_type": "text",
+                    "label": "User ID",
+                    "description": "User ID to revoke KB access from"
+                },
+                "kb_name": {
+                    "type": "string",
+                    "required": true,
+                    "ui_type": "text",
+                    "label": "KB Name",
+                    "description": "Knowledge base name to revoke"
+                },
+                "request_id": {
+                    "type": "string",
+                    "required": false,
+                    "ui_type": "text",
+                    "label": "Request ID",
+                    "description": "Optional request tracking ID"
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "client_id": "string",
+                "user_id": "string",
+                "kb_name": "string",
+                "reverted_to": "string (client_level_acl)",
+                "error": "string (only if success=false)",
+                "request_id": "string (tracking ID)"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": true,
+                "estimated_latency_ms": 150,
+                "requires_session": true,
+                "category": "admin"
+            },
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "get_user_kb_assignments",
+            "description": "Get all KB assignments for a user including inherited (from client universal_kbs_assigned) and custom assignments. Returns effective access levels.",
+            "security": "authenticated",
+            "parameters": {
+                "client_id": {
+                    "type": "string",
+                    "required": true,
+                    "ui_type": "text",
+                    "label": "Client ID",
+                    "description": "Client ID owning the user"
+                },
+                "user_id": {
+                    "type": "string",
+                    "required": true,
+                    "ui_type": "text",
+                    "label": "User ID",
+                    "description": "User ID to query assignments for"
+                },
+                "request_id": {
+                    "type": "string",
+                    "required": false,
+                    "ui_type": "text",
+                    "label": "Request ID",
+                    "description": "Optional request tracking ID"
+                }
+            },
+            "returns": {
+                "success": "boolean",
+                "client_id": "string",
+                "user_id": "string",
+                "inherited_kbs": "array of {kb_name, access_level, source}",
+                "custom_kbs": "array of {kb_name, access_level, source}",
+                "effective_kbs": "array of {kb_name, access_level, source} (merged, custom overrides inherited)",
+                "personal_kb_enabled": "boolean",
+                "error": "string (only if success=false)",
+                "request_id": "string (tracking ID)"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 75,
+                "requires_session": true,
+                "category": "admin"
+            },
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "bulk_assign_kb_to_users",
+            "description": "GAP-BULK-001: Assign a KB to multiple users in a single operation. Iterates and aggregates results.",
+            "security": "authenticated",
+            "parameters": {
+                "client_id": {
+                    "type": "string",
+                    "required": true,
+                    "ui_type": "text",
+                    "label": "Client ID",
+                    "description": "Client ID owning the users"
+                },
+                "assignments": {
+                    "type": "array",
+                    "required": true,
+                    "ui_type": "json",
+                    "label": "Assignments",
+                    "description": "List of {user_id, kb_name, access_level?} objects"
+                },
+                "request_id": {
+                    "type": "string",
+                    "required": false,
+                    "ui_type": "text",
+                    "label": "Request ID",
+                    "description": "Optional request tracking ID"
+                }
+            },
+            "returns": {
+                "success": "boolean (true if all succeeded)",
+                "success_count": "integer (number of successful assignments)",
+                "failure_count": "integer (number of failed assignments)",
+                "total_count": "integer (total assignments attempted)",
+                "results": "array of individual assignment results",
+                "request_id": "string (tracking ID)"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": true,
+                "estimated_latency_ms": 400,
+                "requires_session": true,
+                "category": "admin"
+            },
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "bulk_revoke_kb_from_users",
+            "description": "GAP-BULK-001: Revoke KB access from multiple users in a single operation. Iterates and aggregates results.",
+            "security": "authenticated",
+            "parameters": {
+                "client_id": {
+                    "type": "string",
+                    "required": true,
+                    "ui_type": "text",
+                    "label": "Client ID",
+                    "description": "Client ID owning the users"
+                },
+                "revocations": {
+                    "type": "array",
+                    "required": true,
+                    "ui_type": "json",
+                    "label": "Revocations",
+                    "description": "List of {user_id, kb_name} objects"
+                },
+                "request_id": {
+                    "type": "string",
+                    "required": false,
+                    "ui_type": "text",
+                    "label": "Request ID",
+                    "description": "Optional request tracking ID"
+                }
+            },
+            "returns": {
+                "success": "boolean (true if all succeeded)",
+                "success_count": "integer (number of successful revocations)",
+                "failure_count": "integer (number of failed revocations)",
+                "total_count": "integer (total revocations attempted)",
+                "results": "array of individual revocation results",
+                "request_id": "string (tracking ID)"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": true,
+                "estimated_latency_ms": 350,
+                "requires_session": true,
+                "category": "admin"
+            },
+            "scope": "free",
+            "client_types": []
+        }
+    ],
+    "event_subscriptions": [],
+    "event_publications": [
+        "admin.client.created",
+        "admin.client.updated",
+        "admin.client.deleted",
+        "admin.client.secret_rotated",
+        "admin.client.revoked",
+        "admin.client.user_limit_reached",
+        "admin.client.kb_assigned",
+        "admin.client.user_kb_assigned",
+        "admin.client.user_kb_revoked"
+    ],
+    "config_file": "config.json",
+    "test_suite": "test_admin_clients.py",
+    "production_ready": true
+}

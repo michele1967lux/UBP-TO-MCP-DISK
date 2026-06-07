@@ -1,0 +1,410 @@
+{
+    "name": "rag_qdrant",
+    "version": "1.1.0",
+    "description": "Sistema RAG con database vettoriale Qdrant. Gestisce indicizzazione, ricerca semantica e storage dei documenti per le knowledge base del tenant.",
+    "author": "UBP Team",
+    "module_type": "rag",
+    "requires_redis": false,
+    "requires_postgres": false,
+    "requires_event_bus": true,
+    "operations": [
+        {
+            "name": "initialize",
+            "description": "Inizializza il client Qdrant e il gestore degli embedding. Deve essere chiamato prima di qualsiasi altra operazione del modulo.",
+            "parameters": {},
+            "returns": {
+                "type": "object",
+                "description": "Stato dell'inizializzazione con informazioni sulle dipendenze"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": true,
+                "estimated_latency_ms": 500,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "none",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "add_document",
+            "description": "Aggiunge un documento alla collezione Qdrant specificata. Il documento viene automaticamente suddiviso in chunk e indicizzato con i relativi embedding. Usa questa operazione per inserire nuovi contenuti nella knowledge base.",
+            "parameters": {
+                "doc_id": {
+                    "type": "string",
+                    "required": true,
+                    "description": "Identificativo univoco del documento"
+                },
+                "text": {
+                    "type": "string",
+                    "required": true,
+                    "description": "Contenuto testuale del documento da indicizzare"
+                },
+                "metadata": {
+                    "type": "object",
+                    "required": false,
+                    "description": "Metadati aggiuntivi da associare al documento (es. autore, data, tags)"
+                },
+                "collection": {
+                    "type": "string",
+                    "required": false,
+                    "default": "documents",
+                    "description": "Nome della collezione di destinazione"
+                }
+            },
+            "returns": {
+                "type": "object",
+                "description": "Risultato dell'operazione con status, chunks creati e ID documento"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 1000,
+                "requires_session": false,
+                "category": "knowledge",
+                "side_effect_trigger": "When the admin explicitly asks to add a document to the knowledge base (e.g. 'aggiungi un documento', 'add document', 'carica nella KB').",
+                "proactive": false
+            },
+            "security": "client_admin",
+            "scope": "general",
+            "client_types": []
+        },
+        {
+            "name": "query",
+            "description": "Cerca nella knowledge base i documenti più rilevanti per la query fornita. Restituisce chunk ordinati per similarità semantica. Usa questa operazione per recuperare informazioni contestuali prima di generare risposte.",
+            "parameters": {
+                "query_text": {
+                    "type": "string",
+                    "required": true,
+                    "description": "La domanda o il tema da cercare nella knowledge base"
+                },
+                "top_k": {
+                    "type": "integer",
+                    "required": false,
+                    "default": 5,
+                    "description": "Numero massimo di risultati da restituire (1-20)"
+                },
+                "collection": {
+                    "type": "string",
+                    "required": false,
+                    "description": "Collezione specifica in cui cercare, se non specificata cerca in tutte"
+                },
+                "filter": {
+                    "type": "object",
+                    "required": false,
+                    "description": "Filtri sui metadati per restringere la ricerca"
+                }
+            },
+            "returns": {
+                "type": "object",
+                "description": "Lista di chunk con campi: content, score, metadata, source, collection"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 200,
+                "requires_session": false,
+                "category": "knowledge",
+                "priority": 1
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "create_collection",
+            "description": "Crea una nuova collezione nel database vettoriale con la configurazione specificata. Usa questa operazione per creare knowledge base separate per diversi scopi o tenant.",
+            "parameters": {
+                "collection_name": {
+                    "type": "string",
+                    "required": true,
+                    "description": "Nome univoco della collezione da creare"
+                },
+                "vector_size": {
+                    "type": "integer",
+                    "required": false,
+                    "description": "Dimensione dei vettori (auto-derivata dal modello di embedding se non specificata)"
+                },
+                "distance": {
+                    "type": "string",
+                    "required": false,
+                    "default": "cosine",
+                    "description": "Metrica di distanza: cosine, euclid, dot"
+                },
+                "description": {
+                    "type": "string",
+                    "required": false,
+                    "description": "Descrizione human-readable della collezione"
+                },
+                "embedding_model": {
+                    "type": "string",
+                    "required": false,
+                    "description": "Modello di embedding da usare (es. nomic-embed-text, all-MiniLM-L6-v2)"
+                },
+                "kb_type": {
+                    "type": "string",
+                    "required": false,
+                    "default": "universal",
+                    "description": "Tipo di knowledge base: universal, client, personal"
+                }
+            },
+            "returns": {
+                "type": "object",
+                "description": "Stato della creazione con metadata della collezione"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 300,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "delete_collection",
+            "description": "Elimina una collezione e tutti i suoi documenti dal database vettoriale. Operazione irreversibile. Usa con cautela solo quando necessario rimuovere completamente una knowledge base.",
+            "parameters": {
+                "collection_name": {
+                    "type": "string",
+                    "required": true,
+                    "description": "Nome della collezione da eliminare"
+                }
+            },
+            "returns": {
+                "type": "object",
+                "description": "Conferma dell'eliminazione con status"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": true,
+                "estimated_latency_ms": 200,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "list_collections",
+            "description": "Elenca tutte le collezioni presenti nel database Qdrant con le relative informazioni di base. Utile per visualizzare le knowledge base disponibili nel sistema.",
+            "parameters": {},
+            "returns": {
+                "type": "array",
+                "description": "Lista delle collezioni con nome, conteggio documenti e metadati"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "knowledge"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "list_documents",
+            "description": "Elenca i documenti presenti in una collezione con supporto alla paginazione. Usa fast-path Redis quando disponibile con healing automatico da Qdrant.",
+            "parameters": {
+                "collection": {
+                    "type": "string",
+                    "required": false,
+                    "default": "documents",
+                    "description": "Nome della collezione da interrogare"
+                },
+                "limit": {
+                    "type": "integer",
+                    "required": false,
+                    "default": 100,
+                    "description": "Numero massimo di documenti da restituire"
+                },
+                "offset": {
+                    "type": "integer",
+                    "required": false,
+                    "default": 0,
+                    "description": "Offset per la paginazione"
+                }
+            },
+            "returns": {
+                "type": "object",
+                "description": "Lista documenti con metadati, totale, paginazione e sorgente dati"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 150,
+                "requires_session": false,
+                "category": "knowledge"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "delete_document",
+            "description": "Elimina un documento e tutti i suoi chunk dalla collezione e dal registro Redis. Usa questa operazione per rimuovere contenuti obsoleti o errati dalla knowledge base.",
+            "parameters": {
+                "doc_id": {
+                    "type": "string",
+                    "required": true,
+                    "description": "ID del documento da eliminare"
+                },
+                "collection": {
+                    "type": "string",
+                    "required": false,
+                    "description": "Collezione da cui eliminare il documento"
+                }
+            },
+            "returns": {
+                "type": "object",
+                "description": "Risultato con status, chunks eliminati, conferma registro"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": true,
+                "estimated_latency_ms": 300,
+                "requires_session": false,
+                "category": "knowledge",
+                "side_effect_trigger": "When the admin explicitly asks to delete a document from the knowledge base (e.g. 'elimina il documento', 'delete document', 'rimuovi dalla KB').",
+                "proactive": false
+            },
+            "security": "client_admin",
+            "scope": "general",
+            "client_types": []
+        },
+        {
+            "name": "get_collection_details",
+            "description": "Ottiene una vista unificata di una collezione con statistiche dettagliate. Supporta tre modalità: A (solo impostazioni), B (statistiche filtrate), C (documenti paginati). Utile per monitoraggio e diagnostica.",
+            "parameters": {
+                "collection_name": {
+                    "type": "string",
+                    "required": true,
+                    "description": "Nome della collezione da analizzare"
+                },
+                "include_documents": {
+                    "type": "boolean",
+                    "required": false,
+                    "default": false,
+                    "description": "Se true, include la lista paginata dei documenti (Mode C)"
+                },
+                "uploader_filter": {
+                    "type": "string",
+                    "required": false,
+                    "description": "Filtra statistiche per uploader_id specifico (Mode B)"
+                },
+                "limit": {
+                    "type": "integer",
+                    "required": false,
+                    "default": 500,
+                    "description": "Limite documenti per Mode C"
+                },
+                "offset": {
+                    "type": "integer",
+                    "required": false,
+                    "default": 0,
+                    "description": "Offset paginazione per Mode C"
+                }
+            },
+            "returns": {
+                "type": "object",
+                "description": "Oggetto con settings, stats, documents (opzionale), pagination"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 300,
+                "requires_session": false,
+                "category": "knowledge"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "list_embedding_models",
+            "description": "Elenca tutti i modelli di embedding disponibili da tutti i provider configurati (Local, Ollama, OpenAI, Cohere). Utile per scegliere il modello più adatto per le proprie esigenze.",
+            "parameters": {},
+            "returns": {
+                "type": "object",
+                "description": "Lista modelli con id, nome, dimensioni, provider, disponibilità e descrizione"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 500,
+                "requires_session": false,
+                "category": "knowledge"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        }
+    ],
+    "event_subscriptions": [
+        "document.added",
+        "rag.query"
+    ],
+    "event_publications": [
+        "rag.query.completed",
+        "document.indexed",
+        "collection.created"
+    ],
+    "config_file": "config.json",
+    "tools": [
+        {
+            "name": "retrieve",
+            "module": "rag_orchestrator",
+            "operation": "retrieve_with_acl",
+            "tool_type": "both",
+            "description": "Cerca nella knowledge base del tenant i documenti più rilevanti per rispondere a una domanda. Restituisce chunk ordinati per rilevanza semantica con score e metadati. Usa questo tool quando il cliente chiede informazioni sul ristorante, i suoi servizi, le sue politiche, o qualsiasi dato presente nella base di conoscenza.",
+            "providers": [],
+            "input_schema": {
+                "query_text": {
+                    "type": "string",
+                    "required": true,
+                    "description": "La domanda o il tema da cercare nella knowledge base"
+                },
+                "top_k": {
+                    "type": "integer",
+                    "required": false,
+                    "default": 5,
+                    "description": "Numero massimo di risultati da restituire (1-20)"
+                },
+                "collection": {
+                    "type": "string",
+                    "required": false,
+                    "description": "Collezione specifica in cui cercare"
+                }
+            },
+            "output_schema": {
+                "chunks": {
+                    "type": "array",
+                    "description": "Lista di chunk con content, score, metadata"
+                },
+                "collections_used": {
+                    "type": "array",
+                    "description": "Collezioni consultate"
+                },
+                "total": {
+                    "type": "integer",
+                    "description": "Numero totale di risultati"
+                }
+            },
+            "timeout": 15.0,
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 200,
+                "requires_session": false,
+                "category": "knowledge",
+                "priority": 1
+            }
+        }
+    ]
+}

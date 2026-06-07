@@ -1,0 +1,157 @@
+{
+  "module": {
+    "name": "query_expansion_pipeline",
+    "version": "1.0.0",
+    "description": "Advanced Query Expansion for RAG systems"
+  },
+
+  "expansion": {
+    "default_strategy": "${UBP_QEXP__DEFAULT_STRATEGY:-semantic}",
+    "max_expansions": "${UBP_QEXP__MAX_EXPANSIONS:-10}",
+    "min_expansion_length": "${UBP_QEXP__MIN_LENGTH:-3}",
+    "max_expansion_length": "${UBP_QEXP__MAX_LENGTH:-200}",
+    "deduplicate_results": "${UBP_QEXP__DEDUPLICATE:-true}",
+    "preserve_original": "${UBP_QEXP__PRESERVE_ORIGINAL:-true}",
+    "language_detection": "${UBP_QEXP__DETECT_LANGUAGE:-true}",
+    "default_language": "${UBP_QEXP__DEFAULT_LANGUAGE:-en}"
+  },
+
+  "strategies": {
+    "semantic": {
+      "enabled": "${UBP_QEXP__SEMANTIC_ENABLED:-true}",
+      "num_variants": "${UBP_QEXP__SEMANTIC_VARIANTS:-3}",
+      "temperature": "${UBP_QEXP__SEMANTIC_TEMPERATURE:-0.7}",
+      "diversity_penalty": "${UBP_QEXP__SEMANTIC_DIVERSITY:-0.3}"
+    },
+    "synonym": {
+      "enabled": "${UBP_QEXP__SYNONYM_ENABLED:-true}",
+      "max_synonyms_per_term": "${UBP_QEXP__SYNONYM_MAX:-3}",
+      "include_hypernyms": "${UBP_QEXP__SYNONYM_HYPERNYMS:-true}",
+      "include_hyponyms": "${UBP_QEXP__SYNONYM_HYPONYMS:-false}",
+      "pos_filter": ["NOUN", "VERB", "ADJ"]
+    },
+    "decompose": {
+      "enabled": "${UBP_QEXP__DECOMPOSE_ENABLED:-true}",
+      "max_subqueries": "${UBP_QEXP__DECOMPOSE_MAX:-5}",
+      "min_complexity_threshold": "${UBP_QEXP__DECOMPOSE_THRESHOLD:-2}",
+      "preserve_dependencies": "${UBP_QEXP__DECOMPOSE_DEPS:-true}"
+    },
+    "reformulate": {
+      "enabled": "${UBP_QEXP__REFORMULATE_ENABLED:-true}",
+      "question_types": ["what", "how", "why", "when", "where", "who"],
+      "include_statements": "${UBP_QEXP__REFORMULATE_STATEMENTS:-true}"
+    },
+    "keywords": {
+      "enabled": "${UBP_QEXP__KEYWORDS_ENABLED:-true}",
+      "extraction_method": "${UBP_QEXP__KEYWORDS_METHOD:-tfidf}",
+      "max_keywords": "${UBP_QEXP__KEYWORDS_MAX:-5}",
+      "expand_keywords": "${UBP_QEXP__KEYWORDS_EXPAND:-true}"
+    },
+    "contextual": {
+      "enabled": "${UBP_QEXP__CONTEXTUAL_ENABLED:-true}",
+      "max_history_messages": "${UBP_QEXP__CONTEXTUAL_HISTORY:-5}",
+      "context_weight": "${UBP_QEXP__CONTEXTUAL_WEIGHT:-0.3}",
+      "resolve_pronouns": "${UBP_QEXP__CONTEXTUAL_PRONOUNS:-true}"
+    },
+    "hybrid": {
+      "enabled": "${UBP_QEXP__HYBRID_ENABLED:-true}",
+      "strategies": ["semantic", "synonym", "keywords"],
+      "combination_method": "${UBP_QEXP__HYBRID_METHOD:-weighted}",
+      "weights": {
+        "semantic": 0.5,
+        "synonym": 0.3,
+        "keywords": 0.2
+      }
+    }
+  },
+
+  "intent_detection": {
+    "enabled": "${UBP_QEXP__INTENT_ENABLED:-true}",
+    "model": "${UBP_QEXP__INTENT_MODEL:-rule_based}",
+    "intents": [
+      "informational",
+      "navigational", 
+      "transactional",
+      "comparison",
+      "definition",
+      "procedural",
+      "factual",
+      "opinion"
+    ],
+    "adapt_strategy_to_intent": "${UBP_QEXP__INTENT_ADAPT:-true}"
+  },
+
+  "entity_extraction": {
+    "enabled": "${UBP_QEXP__ENTITY_ENABLED:-true}",
+    "entity_types": ["PERSON", "ORG", "PRODUCT", "TECH", "LOCATION", "DATE"],
+    "expand_entities": "${UBP_QEXP__ENTITY_EXPAND:-true}",
+    "use_knowledge_base": "${UBP_QEXP__ENTITY_KB:-false}"
+  },
+
+  "quality": {
+    "scoring_enabled": "${UBP_QEXP__QUALITY_SCORING:-true}",
+    "min_score_threshold": "${UBP_QEXP__QUALITY_THRESHOLD:-0.3}",
+    "diversity_check": "${UBP_QEXP__QUALITY_DIVERSITY:-true}",
+    "relevance_check": "${UBP_QEXP__QUALITY_RELEVANCE:-true}",
+    "filter_duplicates": "${UBP_QEXP__QUALITY_FILTER_DUPS:-true}",
+    "filter_too_similar": "${UBP_QEXP__QUALITY_FILTER_SIMILAR:-true}",
+    "similarity_threshold": "${UBP_QEXP__QUALITY_SIM_THRESHOLD:-0.9}"
+  },
+
+  "ensemble": {
+    "enabled": "${UBP_QEXP__ENSEMBLE_ENABLED:-false}",
+    "method": "${UBP_QEXP__ENSEMBLE_METHOD:-voting}",
+    "min_agreement": "${UBP_QEXP__ENSEMBLE_MIN_AGREE:-2}",
+    "strategies": ["semantic", "decompose", "reformulate"]
+  },
+
+  "normalization": {
+    "enabled": "${UBP_QEXP__NORMALIZE_ENABLED:-true}",
+    "lowercase": "${UBP_QEXP__NORMALIZE_LOWER:-false}",
+    "remove_punctuation": "${UBP_QEXP__NORMALIZE_PUNCT:-false}",
+    "remove_stopwords": "${UBP_QEXP__NORMALIZE_STOPWORDS:-false}",
+    "stem_words": "${UBP_QEXP__NORMALIZE_STEM:-false}",
+    "spell_check": "${UBP_QEXP__NORMALIZE_SPELL:-false}",
+    "expand_abbreviations": "${UBP_QEXP__NORMALIZE_ABBREV:-true}"
+  },
+
+  "llm": {
+    "module": "${UBP_QEXP__LLM_MODULE:-inference_ollama_grok}",
+    "operation": "${UBP_QEXP__LLM_OPERATION:-generate}",
+    "provider": "${UBP_QEXP__LLM_PROVIDER:-grok}",
+    "timeout_seconds": "${UBP_QEXP__LLM_TIMEOUT:-30}",
+    "max_retries": "${UBP_QEXP__LLM_RETRIES:-2}",
+    "temperature": "${UBP_QEXP__LLM_TEMPERATURE:-0.7}",
+    "max_tokens": "${UBP_QEXP__LLM_MAX_TOKENS:-300}"
+  },
+
+  "cache": {
+    "enabled": "${UBP_QEXP__CACHE_ENABLED:-true}",
+    "ttl_seconds": "${UBP_QEXP__CACHE_TTL:-3600}",
+    "redis_prefix": "ubp:query_expansion:cache",
+    "cache_llm_results": "${UBP_QEXP__CACHE_LLM:-true}",
+    "cache_synonyms": "${UBP_QEXP__CACHE_SYNONYMS:-true}"
+  },
+
+  "output": {
+    "format": "${UBP_QEXP__OUTPUT_FORMAT:-list}",
+    "include_scores": "${UBP_QEXP__OUTPUT_SCORES:-true}",
+    "include_metadata": "${UBP_QEXP__OUTPUT_METADATA:-true}",
+    "include_strategy_source": "${UBP_QEXP__OUTPUT_SOURCE:-true}",
+    "combine_method": "${UBP_QEXP__OUTPUT_COMBINE:-union}",
+    "max_combined_length": "${UBP_QEXP__OUTPUT_MAX_COMBINED:-500}"
+  },
+
+  "logging": {
+    "log_expansions": "${UBP_QEXP__LOG_EXPANSIONS:-true}",
+    "log_timings": "${UBP_QEXP__LOG_TIMINGS:-true}",
+    "log_level": "${UBP_QEXP__LOG_LEVEL:-INFO}"
+  },
+
+  "metrics": {
+    "enabled": "${UBP_QEXP__METRICS_ENABLED:-true}",
+    "track_strategy_usage": "${UBP_QEXP__METRICS_STRATEGY:-true}",
+    "track_expansion_counts": "${UBP_QEXP__METRICS_COUNTS:-true}",
+    "track_quality_scores": "${UBP_QEXP__METRICS_QUALITY:-true}"
+  }
+}

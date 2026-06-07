@@ -1,0 +1,291 @@
+{
+  "hyde": {
+    "enabled": "${UBP_HYDE__ENABLED:-true}",
+    "default_format": "${UBP_HYDE__DEFAULT_FORMAT:-answer}",
+    "default_domain": "${UBP_HYDE__DEFAULT_DOMAIN:-auto}",
+    "default_length": "${UBP_HYDE__DEFAULT_LENGTH:-300}",
+    "min_length": "${UBP_HYDE__MIN_LENGTH:-100}",
+    "max_length": "${UBP_HYDE__MAX_LENGTH:-1000}",
+    "temperature": "${UBP_HYDE__TEMPERATURE:-0.5}",
+    "max_tokens": "${UBP_HYDE__MAX_TOKENS:-600}",
+    "timeout_seconds": "${UBP_HYDE__TIMEOUT_SECONDS:-30}",
+    "retry_enabled": "${UBP_HYDE__RETRY_ENABLED:-true}",
+    "max_retries": "${UBP_HYDE__MAX_RETRIES:-2}",
+    "retry_delay_seconds": "${UBP_HYDE__RETRY_DELAY_SECONDS:-1}"
+  },
+
+  "formats": {
+    "answer": {
+      "enabled": "${UBP_HYDE__FORMAT_ANSWER_ENABLED:-true}",
+      "weight": "${UBP_HYDE__FORMAT_ANSWER_WEIGHT:-1.0}",
+      "temperature": "${UBP_HYDE__FORMAT_ANSWER_TEMP:-0.5}",
+      "max_length": "${UBP_HYDE__FORMAT_ANSWER_MAX_LEN:-400}",
+      "description": "Direct answer format simulating knowledge base response"
+    },
+    "technical_doc": {
+      "enabled": "${UBP_HYDE__FORMAT_TECHDOC_ENABLED:-true}",
+      "weight": "${UBP_HYDE__FORMAT_TECHDOC_WEIGHT:-0.95}",
+      "temperature": "${UBP_HYDE__FORMAT_TECHDOC_TEMP:-0.3}",
+      "max_length": "${UBP_HYDE__FORMAT_TECHDOC_MAX_LEN:-600}",
+      "description": "Technical documentation style with sections and details"
+    },
+    "faq": {
+      "enabled": "${UBP_HYDE__FORMAT_FAQ_ENABLED:-true}",
+      "weight": "${UBP_HYDE__FORMAT_FAQ_WEIGHT:-0.9}",
+      "temperature": "${UBP_HYDE__FORMAT_FAQ_TEMP:-0.4}",
+      "max_length": "${UBP_HYDE__FORMAT_FAQ_MAX_LEN:-350}",
+      "description": "FAQ entry format with clear Q&A structure"
+    },
+    "code_snippet": {
+      "enabled": "${UBP_HYDE__FORMAT_CODE_ENABLED:-true}",
+      "weight": "${UBP_HYDE__FORMAT_CODE_WEIGHT:-0.85}",
+      "temperature": "${UBP_HYDE__FORMAT_CODE_TEMP:-0.2}",
+      "max_length": "${UBP_HYDE__FORMAT_CODE_MAX_LEN:-500}",
+      "description": "Code-focused with examples and comments"
+    },
+    "tutorial": {
+      "enabled": "${UBP_HYDE__FORMAT_TUTORIAL_ENABLED:-true}",
+      "weight": "${UBP_HYDE__FORMAT_TUTORIAL_WEIGHT:-0.8}",
+      "temperature": "${UBP_HYDE__FORMAT_TUTORIAL_TEMP:-0.4}",
+      "max_length": "${UBP_HYDE__FORMAT_TUTORIAL_MAX_LEN:-700}",
+      "description": "Step-by-step tutorial format"
+    },
+    "troubleshooting": {
+      "enabled": "${UBP_HYDE__FORMAT_TROUBLESHOOT_ENABLED:-true}",
+      "weight": "${UBP_HYDE__FORMAT_TROUBLESHOOT_WEIGHT:-0.9}",
+      "temperature": "${UBP_HYDE__FORMAT_TROUBLESHOOT_TEMP:-0.3}",
+      "max_length": "${UBP_HYDE__FORMAT_TROUBLESHOOT_MAX_LEN:-500}",
+      "description": "Problem-solution format for debugging"
+    },
+    "article": {
+      "enabled": "${UBP_HYDE__FORMAT_ARTICLE_ENABLED:-true}",
+      "weight": "${UBP_HYDE__FORMAT_ARTICLE_WEIGHT:-0.75}",
+      "temperature": "${UBP_HYDE__FORMAT_ARTICLE_TEMP:-0.6}",
+      "max_length": "${UBP_HYDE__FORMAT_ARTICLE_MAX_LEN:-800}",
+      "description": "Article excerpt format with narrative flow"
+    }
+  },
+
+  "domains": {
+    "ai_ml": {
+      "enabled": "${UBP_HYDE__DOMAIN_AIML_ENABLED:-true}",
+      "weight": "${UBP_HYDE__DOMAIN_AIML_WEIGHT:-1.3}",
+      "keywords": ["machine learning", "deep learning", "neural network", "llm", "rag", "embedding", "transformer", "training", "inference", "model", "pytorch", "tensorflow"],
+      "preferred_formats": ["technical_doc", "code_snippet", "answer"],
+      "terminology_boost": true
+    },
+    "devops": {
+      "enabled": "${UBP_HYDE__DOMAIN_DEVOPS_ENABLED:-true}",
+      "weight": "${UBP_HYDE__DOMAIN_DEVOPS_WEIGHT:-1.2}",
+      "keywords": ["docker", "kubernetes", "k8s", "ci/cd", "pipeline", "deploy", "container", "helm", "terraform", "ansible", "jenkins", "github actions"],
+      "preferred_formats": ["tutorial", "troubleshooting", "code_snippet"],
+      "terminology_boost": true
+    },
+    "api_integration": {
+      "enabled": "${UBP_HYDE__DOMAIN_API_ENABLED:-true}",
+      "weight": "${UBP_HYDE__DOMAIN_API_WEIGHT:-1.15}",
+      "keywords": ["rest api", "graphql", "webhook", "oauth", "jwt", "endpoint", "request", "response", "http", "authentication", "swagger", "openapi"],
+      "preferred_formats": ["code_snippet", "technical_doc", "faq"],
+      "terminology_boost": true
+    },
+    "database": {
+      "enabled": "${UBP_HYDE__DOMAIN_DB_ENABLED:-true}",
+      "weight": "${UBP_HYDE__DOMAIN_DB_WEIGHT:-1.1}",
+      "keywords": ["sql", "nosql", "postgresql", "mongodb", "redis", "query", "index", "transaction", "schema", "migration", "orm", "qdrant", "vector"],
+      "preferred_formats": ["code_snippet", "technical_doc", "troubleshooting"],
+      "terminology_boost": true
+    },
+    "security": {
+      "enabled": "${UBP_HYDE__DOMAIN_SECURITY_ENABLED:-true}",
+      "weight": "${UBP_HYDE__DOMAIN_SECURITY_WEIGHT:-1.2}",
+      "keywords": ["authentication", "authorization", "encryption", "ssl", "tls", "certificate", "vulnerability", "penetration", "firewall", "rbac", "oauth"],
+      "preferred_formats": ["technical_doc", "troubleshooting", "faq"],
+      "terminology_boost": true
+    },
+    "cloud": {
+      "enabled": "${UBP_HYDE__DOMAIN_CLOUD_ENABLED:-true}",
+      "weight": "${UBP_HYDE__DOMAIN_CLOUD_WEIGHT:-1.1}",
+      "keywords": ["aws", "azure", "gcp", "cloud", "serverless", "lambda", "s3", "ec2", "vpc", "load balancer", "cdn", "cloudflare"],
+      "preferred_formats": ["tutorial", "technical_doc", "troubleshooting"],
+      "terminology_boost": true
+    },
+    "general": {
+      "enabled": "${UBP_HYDE__DOMAIN_GENERAL_ENABLED:-true}",
+      "weight": "${UBP_HYDE__DOMAIN_GENERAL_WEIGHT:-1.0}",
+      "keywords": [],
+      "preferred_formats": ["answer", "faq", "article"],
+      "terminology_boost": false
+    }
+  },
+
+  "query_classification": {
+    "enabled": "${UBP_HYDE__CLASSIFICATION_ENABLED:-true}",
+    "language_detection": "${UBP_HYDE__LANG_DETECTION_ENABLED:-true}",
+    "supported_languages": ["en", "it"],
+    "default_language": "${UBP_HYDE__DEFAULT_LANGUAGE:-en}",
+    "min_confidence": "${UBP_HYDE__CLASSIFICATION_MIN_CONFIDENCE:-0.3}"
+  },
+
+  "ensemble": {
+    "enabled": "${UBP_HYDE__ENSEMBLE_ENABLED:-true}",
+    "default_count": "${UBP_HYDE__ENSEMBLE_COUNT:-3}",
+    "max_count": "${UBP_HYDE__ENSEMBLE_MAX_COUNT:-5}",
+    "fusion_strategy": "${UBP_HYDE__ENSEMBLE_FUSION:-weighted_concat}",
+    "diversity_penalty": "${UBP_HYDE__ENSEMBLE_DIVERSITY_PENALTY:-0.1}",
+    "parallel_generation": "${UBP_HYDE__ENSEMBLE_PARALLEL:-true}",
+    "temperature_spread": "${UBP_HYDE__ENSEMBLE_TEMP_SPREAD:-0.2}",
+    "format_diversity": "${UBP_HYDE__ENSEMBLE_FORMAT_DIVERSITY:-true}"
+  },
+
+  "refinement": {
+    "enabled": "${UBP_HYDE__REFINEMENT_ENABLED:-true}",
+    "max_iterations": "${UBP_HYDE__REFINEMENT_MAX_ITER:-2}",
+    "quality_threshold": "${UBP_HYDE__REFINEMENT_QUALITY_THRESHOLD:-6.0}",
+    "improvement_min": "${UBP_HYDE__REFINEMENT_MIN_IMPROVEMENT:-0.5}",
+    "strategies": {
+      "expand": "${UBP_HYDE__REFINEMENT_EXPAND_ENABLED:-true}",
+      "focus": "${UBP_HYDE__REFINEMENT_FOCUS_ENABLED:-true}",
+      "technical": "${UBP_HYDE__REFINEMENT_TECHNICAL_ENABLED:-true}",
+      "simplify": "${UBP_HYDE__REFINEMENT_SIMPLIFY_ENABLED:-true}"
+    }
+  },
+
+  "quality_assurance": {
+    "enabled": "${UBP_HYDE__QA_ENABLED:-true}",
+    "scoring": {
+      "weights": {
+        "relevance": "${UBP_HYDE__QA_WEIGHT_RELEVANCE:-0.35}",
+        "coherence": "${UBP_HYDE__QA_WEIGHT_COHERENCE:-0.25}",
+        "informativeness": "${UBP_HYDE__QA_WEIGHT_INFO:-0.20}",
+        "format_adherence": "${UBP_HYDE__QA_WEIGHT_FORMAT:-0.10}",
+        "terminology": "${UBP_HYDE__QA_WEIGHT_TERMINOLOGY:-0.10}"
+      },
+      "thresholds": {
+        "excellent": "${UBP_HYDE__QA_THRESHOLD_EXCELLENT:-8.0}",
+        "good": "${UBP_HYDE__QA_THRESHOLD_GOOD:-6.0}",
+        "acceptable": "${UBP_HYDE__QA_THRESHOLD_ACCEPTABLE:-4.0}"
+      }
+    }
+  },
+
+  "hallucination_detection": {
+    "enabled": "${UBP_HYDE__HALLUCINATION_DETECTION_ENABLED:-true}",
+    "check_unknown_terms": "${UBP_HYDE__HALLUCINATION_CHECK_TERMS:-true}",
+    "check_invented_apis": "${UBP_HYDE__HALLUCINATION_CHECK_APIS:-true}",
+    "check_fake_versions": "${UBP_HYDE__HALLUCINATION_CHECK_VERSIONS:-true}",
+    "confidence_penalty": "${UBP_HYDE__HALLUCINATION_CONFIDENCE_PENALTY:-0.2}",
+    "max_unknown_ratio": "${UBP_HYDE__HALLUCINATION_MAX_UNKNOWN_RATIO:-0.15}"
+  },
+
+  "chunking": {
+    "enabled": "${UBP_HYDE__CHUNKING_ENABLED:-true}",
+    "strategy": "${UBP_HYDE__CHUNKING_STRATEGY:-semantic}",
+    "chunk_size": "${UBP_HYDE__CHUNK_SIZE:-256}",
+    "chunk_overlap": "${UBP_HYDE__CHUNK_OVERLAP:-50}",
+    "min_chunk_size": "${UBP_HYDE__CHUNK_MIN_SIZE:-100}",
+    "preserve_sentences": "${UBP_HYDE__CHUNK_PRESERVE_SENTENCES:-true}",
+    "preserve_code_blocks": "${UBP_HYDE__CHUNK_PRESERVE_CODE:-true}"
+  },
+
+  "cache": {
+    "enabled": "${UBP_HYDE__CACHE_ENABLED:-true}",
+    "ttl_seconds": "${UBP_HYDE__CACHE_TTL:-3600}",
+    "cache_documents": "${UBP_HYDE__CACHE_DOCUMENTS:-true}",
+    "cache_chunks": "${UBP_HYDE__CACHE_CHUNKS:-true}",
+    "cache_qa_results": "${UBP_HYDE__CACHE_QA:-true}",
+    "semantic_matching": "${UBP_HYDE__CACHE_SEMANTIC_MATCHING:-true}",
+    "semantic_threshold": "${UBP_HYDE__CACHE_SEMANTIC_THRESHOLD:-0.92}"
+  },
+
+  "session_management": {
+    "enabled": "${UBP_HYDE__SESSION_ENABLED:-true}",
+    "ttl_seconds": "${UBP_HYDE__SESSION_TTL:-3600}",
+    "max_history_size": "${UBP_HYDE__SESSION_MAX_HISTORY:-30}",
+    "persist_documents": "${UBP_HYDE__SESSION_PERSIST_DOCS:-true}",
+    "auto_cleanup": "${UBP_HYDE__SESSION_AUTO_CLEANUP:-true}"
+  },
+
+  "worker_pool": {
+    "enabled": "${UBP_HYDE__WORKERS_ENABLED:-true}",
+    "pool_size": "${UBP_HYDE__WORKER_POOL_SIZE:-4}",
+    "max_pool_size": "${UBP_HYDE__WORKER_MAX_POOL_SIZE:-8}",
+    "task_timeout_seconds": "${UBP_HYDE__WORKER_TASK_TIMEOUT:-30}",
+    "queue_max_size": "${UBP_HYDE__WORKER_QUEUE_SIZE:-100}",
+    "retry_on_failure": "${UBP_HYDE__WORKER_RETRY:-true}",
+    "max_task_retries": "${UBP_HYDE__WORKER_MAX_RETRIES:-2}",
+    "backoff_multiplier": "${UBP_HYDE__WORKER_BACKOFF:-1.5}",
+    "enable_priorities": "${UBP_HYDE__WORKER_PRIORITIES:-true}"
+  },
+
+  "metrics": {
+    "enabled": "${UBP_HYDE__METRICS_ENABLED:-true}",
+    "collect_timings": "${UBP_HYDE__METRICS_TIMINGS:-true}",
+    "collect_format_distribution": "${UBP_HYDE__METRICS_FORMAT_DIST:-true}",
+    "collect_domain_distribution": "${UBP_HYDE__METRICS_DOMAIN_DIST:-true}",
+    "collect_qa_scores": "${UBP_HYDE__METRICS_QA_SCORES:-true}",
+    "collect_hallucination_rates": "${UBP_HYDE__METRICS_HALLUCINATION:-true}",
+    "collect_refinement_stats": "${UBP_HYDE__METRICS_REFINEMENT:-true}",
+    "retention_hours": "${UBP_HYDE__METRICS_RETENTION:-24}"
+  },
+
+  "debug": {
+    "enabled": "${UBP_HYDE__DEBUG_ENABLED:-false}",
+    "log_prompts": "${UBP_HYDE__DEBUG_LOG_PROMPTS:-false}",
+    "log_responses": "${UBP_HYDE__DEBUG_LOG_RESPONSES:-false}",
+    "log_qa_scores": "${UBP_HYDE__DEBUG_LOG_QA_SCORES:-true}",
+    "log_hallucination_checks": "${UBP_HYDE__DEBUG_LOG_HALLUCINATION:-true}",
+    "log_refinement_steps": "${UBP_HYDE__DEBUG_LOG_REFINEMENT:-true}",
+    "log_ensemble_details": "${UBP_HYDE__DEBUG_LOG_ENSEMBLE:-true}",
+    "log_chunking": "${UBP_HYDE__DEBUG_LOG_CHUNKING:-false}",
+    "trace_execution": "${UBP_HYDE__DEBUG_TRACE:-false}"
+  },
+
+  "delegation": {
+    "llm_module": "${UBP_HYDE__LLM_MODULE:-inference_ollama_grok}",
+    "llm_operation": "${UBP_HYDE__LLM_OPERATION:-generate}",
+    "timeout_seconds": "${UBP_HYDE__LLM_TIMEOUT:-30}",
+    "max_retries": "${UBP_HYDE__LLM_MAX_RETRIES:-2}",
+    "fallback_enabled": "${UBP_HYDE__FALLBACK_ENABLED:-true}",
+    "fallback_chain": ["answer", "technical_doc", "faq"],
+    "provider": "${UBP_HYDE__LLM_PROVIDER:-}"
+  },
+
+  "pipeline": {
+    "default_timeout_seconds": "${UBP_HYDE__PIPELINE_TIMEOUT:-60}",
+    "fail_fast": "${UBP_HYDE__PIPELINE_FAIL_FAST:-false}",
+    "steps": {
+      "classify_query": {
+        "enabled": "${UBP_HYDE__STEP_CLASSIFY_ENABLED:-true}",
+        "timeout": "${UBP_HYDE__STEP_CLASSIFY_TIMEOUT:-5}"
+      },
+      "select_format": {
+        "enabled": "${UBP_HYDE__STEP_FORMAT_ENABLED:-true}",
+        "timeout": "${UBP_HYDE__STEP_FORMAT_TIMEOUT:-2}"
+      },
+      "generate_document": {
+        "enabled": "${UBP_HYDE__STEP_GENERATE_ENABLED:-true}",
+        "timeout": "${UBP_HYDE__STEP_GENERATE_TIMEOUT:-30}"
+      },
+      "quality_assurance": {
+        "enabled": "${UBP_HYDE__STEP_QA_ENABLED:-true}",
+        "timeout": "${UBP_HYDE__STEP_QA_TIMEOUT:-10}"
+      },
+      "hallucination_check": {
+        "enabled": "${UBP_HYDE__STEP_HALLUCINATION_ENABLED:-true}",
+        "timeout": "${UBP_HYDE__STEP_HALLUCINATION_TIMEOUT:-5}"
+      },
+      "refinement": {
+        "enabled": "${UBP_HYDE__STEP_REFINEMENT_ENABLED:-true}",
+        "timeout": "${UBP_HYDE__STEP_REFINEMENT_TIMEOUT:-20}"
+      },
+      "chunking": {
+        "enabled": "${UBP_HYDE__STEP_CHUNKING_ENABLED:-true}",
+        "timeout": "${UBP_HYDE__STEP_CHUNKING_TIMEOUT:-5}"
+      },
+      "format_output": {
+        "enabled": "${UBP_HYDE__STEP_OUTPUT_ENABLED:-true}",
+        "timeout": "${UBP_HYDE__STEP_OUTPUT_TIMEOUT:-2}"
+      }
+    }
+  }
+}

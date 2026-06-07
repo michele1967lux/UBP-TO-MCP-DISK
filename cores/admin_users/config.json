@@ -1,0 +1,42 @@
+{
+  "redis": {
+    "keys": {
+      "users_index": "ubp:admin:users",
+      "user_prefix": "ubp:admin:user:",
+      "username_index_prefix": "ubp:admin:username_index:"
+    }
+  },
+  "security": {
+    "password_hashing": {
+      "algorithm": "pbkdf2_sha256",
+      "rounds": 12,
+      "note": "Actual rounds for PBKDF2: rounds * 1000 = 12000 iterations. Primary algorithm for cross-platform compatibility (no C++ dependencies). Bcrypt available as fallback."
+    },
+    "password_policy": {
+      "min_length": 6,
+      "require_uppercase": false,
+      "require_lowercase": false,
+      "require_numbers": false,
+      "require_special": false
+    },
+    "mfa_enabled": false
+  },
+  "defaults": {
+    "roles": [],
+    "is_active": true,
+    "mfa_enabled": false
+  },
+  "validation": {
+    "username": {
+      "min_length": 3,
+      "max_length": 50,
+      "pattern": "^[a-zA-Z0-9_-]+$"
+    },
+    "email": {
+      "max_length": 100
+    },
+    "full_name": {
+      "max_length": 100
+    }
+  }
+}

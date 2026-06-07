@@ -1,0 +1,278 @@
+{
+    "name": "adaptive_budget_manager",
+    "version": "1.0.0",
+    "description": "Modulo universale per gestione adattiva del budget di token in contesti di chat (RAG, Pure LLM, multi-turn)",
+    "author": "UBP Team",
+    "module_type": "utility",
+    "architecture": "3-file-pattern",
+    "requires_redis": false,
+    "requires_postgres": false,
+    "requires_event_bus": false,
+    "operations": [
+        {
+            "name": "adjust_budget",
+            "description": "Adjust token budget dynamically for RAG pipeline (with document retrieval)",
+            "parameters": {
+                "query": "string (required, user query)",
+                "conversation_context": "string (optional, formatted conversation history)",
+                "retrieved_docs": "array (required, documents from retrieval)",
+                "turn_count": "integer (required, conversation turn number)",
+                "config": "object (required, RAG configuration with model info)"
+            },
+            "returns": {
+                "conversation_context": "string (potentially compressed)",
+                "filtered_docs": "array (documents filtered by adjusted threshold)",
+                "doc_budget_tokens": "integer (available tokens for documents)",
+                "tightness": "float (0-1, measure of context pressure)",
+                "adjusted_min_score": "float (adapted similarity threshold)",
+                "memory_tokens": "integer (tokens allocated to memory)",
+                "compression_applied": "boolean"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 150,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "adjust_for_pure_chat",
+            "description": "Adjust memory budget for pure chat scenarios (without RAG retrieval)",
+            "parameters": {
+                "query": "string (required, user query)",
+                "conversation_context": "string (optional, formatted conversation history)",
+                "turn_count": "integer (required, conversation turn number)",
+                "chat_config": "object (required, chat configuration with model info)"
+            },
+            "returns": {
+                "conversation_context": "string (potentially compressed)",
+                "memory_tokens": "integer (tokens allocated to memory)",
+                "response_budget_tokens": "integer (available tokens for response)",
+                "tightness": "float (0-1, measure of context pressure)",
+                "compression_applied": "boolean",
+                "utilization_pct": "float (context window utilization percentage)"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 150,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "calculate_tightness",
+            "description": "Calculate tightness factor based on token usage and conversation turns",
+            "parameters": {
+                "total_tokens": "integer (required, model context window)",
+                "current_overhead_tokens": "integer (required, current token usage)",
+                "turn_count": "integer (required, conversation turn number)"
+            },
+            "returns": {
+                "tightness": "float (0-1, where 0=ample space, 1=very tight)"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 50,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "summarize_context",
+            "description": "Compress context using LLM-based summarization",
+            "parameters": {
+                "text": "string (required, text to summarize)",
+                "target_tokens": "integer (required, target token count)",
+                "config": "object (optional, summarization config)"
+            },
+            "returns": {
+                "summary": "string (compressed text)",
+                "original_tokens": "integer",
+                "summary_tokens": "integer",
+                "compression_ratio": "float"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 2000,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "recalculate_after_delta",
+            "description": "DCBL: ricalcola budget dopo ogni tool result nel loop agent_loop. Riceve conteggi numerici pre-calcolati, restituisce BudgetState con tightness, response_budget, compression flag/target.",
+            "security": "authenticated",
+            "scope": "system",
+            "client_types": [],
+            "parameters": {
+                "cumulative_history_tokens": {
+                    "type": "integer",
+                    "required": true,
+                    "description": "Token totali dei messages (calcolati lato MCP)"
+                },
+                "delta_tokens": {
+                    "type": "integer",
+                    "required": false,
+                    "description": "Token aggiunti dall ultimo tool result"
+                },
+                "message_count": {
+                    "type": "integer",
+                    "required": false,
+                    "description": "Numero di messages nel contesto"
+                },
+                "synopsis_tokens": {
+                    "type": "integer",
+                    "required": false,
+                    "description": "Token della tool synopsis (non in messages)"
+                },
+                "previous_budget": {
+                    "type": "object",
+                    "required": false,
+                    "description": "Dict dal ricalcolo precedente"
+                },
+                "model": {
+                    "type": "string",
+                    "required": false,
+                    "description": "Nome modello per TokenCounter"
+                },
+                "provider": {
+                    "type": "string",
+                    "required": false,
+                    "description": "Nome provider"
+                },
+                "system_prompt_tokens": {
+                    "type": "integer",
+                    "required": false,
+                    "description": "Overhead reale system prompt"
+                },
+                "tool_overhead_tokens": {
+                    "type": "integer",
+                    "required": false,
+                    "description": "Overhead reale tool definitions"
+                },
+                "structured_memory_tokens": {
+                    "type": "integer",
+                    "required": false,
+                    "description": "Overhead reale memory injection"
+                }
+            },
+            "returns": {
+                "tightness": "float",
+                "response_budget_tokens": "integer",
+                "compression_needed": "boolean",
+                "compression_mode": "string",
+                "compression_target": "integer",
+                "is_critical": "boolean"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 5,
+                "requires_session": false,
+                "category": "admin"
+            }
+        },
+        {
+            "name": "health_check",
+            "description": "Check module health status",
+            "parameters": {},
+            "returns": {
+                "module": "string (module name)",
+                "status": "string (healthy/unhealthy)",
+                "config": "object (current configuration)"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 50,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "none",
+            "scope": "system",
+            "client_types": []
+        }
+    ],
+    "event_subscriptions": [],
+    "event_publications": [
+        "adaptive_budget.budget_adjusted",
+        "adaptive_budget.context_compressed",
+        "adaptive_budget.threshold_scaled"
+    ],
+    "config_file": "config.json",
+    "config_schema": {
+        "enabled": {
+            "type": "boolean",
+            "required": true,
+            "default": true
+        },
+        "base_min_score": {
+            "type": "number",
+            "min": 0.0,
+            "max": 1.0,
+            "default": 0.4,
+            "description": "Base similarity threshold for RAG retrieval"
+        },
+        "max_threshold": {
+            "type": "number",
+            "min": 0.0,
+            "max": 1.0,
+            "default": 0.7,
+            "description": "Maximum similarity threshold when context is tight"
+        },
+        "min_memory_fraction": {
+            "type": "number",
+            "min": 0.1,
+            "max": 0.5,
+            "default": 0.2,
+            "description": "Minimum fraction of context window for memory (20%)"
+        },
+        "max_memory_fraction": {
+            "type": "number",
+            "min": 0.2,
+            "max": 0.6,
+            "default": 0.4,
+            "description": "Maximum fraction of context window for memory when tight (40%)"
+        },
+        "turn_penalty_factor": {
+            "type": "number",
+            "min": 0.0,
+            "max": 1.0,
+            "default": 0.05,
+            "description": "Penalty factor per turn for tightness calculation"
+        },
+        "compression_enabled": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable automatic context compression when needed"
+        },
+        "compression_threshold": {
+            "type": "number",
+            "min": 0.3,
+            "max": 0.8,
+            "default": 0.5,
+            "description": "Tightness threshold to trigger compression (0.5 = 50%)"
+        },
+        "support_llm_provider": {
+            "type": "string",
+            "default": "ollama",
+            "description": "Provider for summarization LLM (ollama, openai, etc.)"
+        }
+    }
+}

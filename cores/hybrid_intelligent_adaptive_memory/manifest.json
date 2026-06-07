@@ -1,0 +1,160 @@
+{
+  "name": "hybrid_intelligent_adaptive_memory",
+  "version": "1.0.0",
+  "description": "Hybrid Intelligent Adaptive Memory System with structured protected slots, adaptive episodic memory, query-aware projection and conservative compression",
+  "author": "UBP Team",
+  "module_type": "memory",
+  "architecture": "3-file-pattern",
+  "requires_redis": false,
+  "requires_postgres": false,
+  "requires_event_bus": false,
+  "operations": [
+    {
+      "name": "process_turn",
+      "description": "Process a full conversation turn, update structured slots, adaptive episodic memory and return projected context",
+      "parameters": {
+        "session_id": {"type": "string", "required": true},
+        "turn_number": {"type": "integer", "required": true},
+        "query": {"type": "string", "required": true},
+        "response": {"type": "string", "required": true},
+        "profile": {"type": "string", "required": false, "description": "chat or agent_loop"},
+        "auto_compress": {"type": "boolean", "required": false}
+      },
+      "returns": {
+        "structured_slots": "object",
+        "snapshot": "object",
+        "compression_result": "object or null",
+        "projected_context": "object"
+      },
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 1500,
+        "requires_session": true,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "system"
+    },
+    {
+      "name": "get_projected_context",
+      "description": "Build query-aware projected context under token budget",
+      "parameters": {
+        "session_id": {"type": "string", "required": true},
+        "query": {"type": "string", "required": true},
+        "profile": {"type": "string", "required": false}
+      },
+      "returns": {
+        "intent": "string",
+        "rendered_context": "string",
+        "token_estimate": "integer"
+      },
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 50,
+        "requires_session": true,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "system"
+    },
+    {
+      "name": "compress",
+      "description": "Trigger adaptive compression manually",
+      "parameters": {
+        "session_id": {"type": "string", "required": true},
+        "profile": {"type": "string", "required": false},
+        "force": {"type": "boolean", "required": false}
+      },
+      "returns": {
+        "success": "boolean",
+        "compression_triggered": "boolean",
+        "layer1_block": "object or null",
+        "layer2": "object or null"
+      },
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 2500,
+        "requires_session": true,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "system"
+    },
+    {
+      "name": "should_compress",
+      "description": "Check if adaptive compression should run",
+      "parameters": {
+        "session_id": {"type": "string", "required": true},
+        "profile": {"type": "string", "required": false}
+      },
+      "returns": {
+        "needs_compression": "boolean",
+        "reason": "string"
+      },
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 10,
+        "requires_session": true,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "system"
+    },
+    {
+      "name": "get_session_state",
+      "description": "Return the full HIAMS state for a session",
+      "parameters": {
+        "session_id": {"type": "string", "required": true}
+      },
+      "returns": {
+        "found": "boolean",
+        "structured_slots": "object",
+        "layer0": "array",
+        "layer1_blocks": "array",
+        "layer2": "object"
+      },
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 50,
+        "requires_session": true,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "system"
+    },
+    {
+      "name": "delete_session",
+      "description": "Delete HIAMS state for a session",
+      "parameters": {
+        "session_id": {"type": "string", "required": true}
+      },
+      "returns": {
+        "session_id": "string",
+        "deleted": "boolean"
+      },
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": true,
+        "estimated_latency_ms": 10,
+        "requires_session": false,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "system"
+    }
+  ],
+  "event_subscriptions": [],
+  "event_publications": [
+    "hiams.slots_updated",
+    "hiams.snapshot_created",
+    "hiams.compression_completed",
+    "hiams.projection_built",
+    "hiams.session_deleted"
+  ],
+  "config_file": "config.json"
+}

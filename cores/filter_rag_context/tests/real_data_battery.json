@@ -1,0 +1,730 @@
+{
+  "T03": {
+    "query": "Effetti collaterali della metformina",
+    "collection": "medical",
+    "route": "rag",
+    "confidence": 0.4,
+    "pipeline": "rag_chat_standard",
+    "elapsed_ms": 11158,
+    "chunk_count": 10,
+    "chunks": [
+      {
+        "chunk_id": "a4001e8b-4a7f-5f59-9722-f9f26981ba0c",
+        "collection": "medical",
+        "text": "Tale desincroniz-\nzazione circadiana influenza il controllo glicemico, pertur-bando la funzionalità delle β-cellule e l’insulino-sensibilità,\ncon conseguente aumento di rischio di sviluppo di diabeted",
+        "rerank_score": 2.6274772608303465e-05,
+        "cosine_score": 0.3425,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "42acda92-3597-5244-be13-60e3d82ff8cd",
+        "collection": "medical",
+        "text": "Side ef fects of \nthe drug include a potential for seizures and withdrawal reactions. Indicators Associated with Disorders of Mood: Anxiety \nObsessiv e-compulsiv e Disorder ( OCD ) \nKey Points for Car",
+        "rerank_score": 1.270582197321346e-05,
+        "cosine_score": 0.3391,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "7541161e-c823-508b-a76f-e6d26a01c3d4",
+        "collection": "medical",
+        "text": "Indicate the effects on the eye resulting from paralysis of \neach of the extraocular muscles. Muscle Primary Effect Secondary Effect\n a. lateral rectus ____________ \n b. medial rectus ____________ \n c",
+        "rerank_score": 1.1212865501875058e-05,
+        "cosine_score": 0.3473,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "7b274705-4a37-5cc4-97d2-997f648a82f6",
+        "collection": "medical",
+        "text": "Such interactions may produce, \namong other possibilities, sedation, confusion, constipation, balance dif ficulties and falls, incontinence, \nweight gain, impairments in epilepsy management, metabolic",
+        "rerank_score": 1.1125607670692261e-05,
+        "cosine_score": 0.3864,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "9d7f9922-e954-5d1d-8364-81d0b7566c0d",
+        "collection": "medical",
+        "text": "The secondary outcomes included \nall-cause mortality, cardiovascular mortality, acute myocardial infarc -\ntion, acute stroke and hospitalizations for angina. Outcomes were re-\nported at the longest fo",
+        "rerank_score": 1.1039028322556987e-05,
+        "cosine_score": 0.3629,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "f3a2a0d0-4cae-5df7-88d2-b850c6e1fff4",
+        "collection": "medical",
+        "text": "Are the visual axes of both eyes parallel? \n _____________________________________________________________\n If not, describe the malalignment.\n ________________________________________________________",
+        "rerank_score": 1.1039028322556987e-05,
+        "cosine_score": 0.3572,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "94868e4e-fac8-54e5-bbf0-ceaca3f0776a",
+        "collection": "medical",
+        "text": "Laboratory indicators of the included participants\nFurthermore, we compared the common laboratory indicators between the two groups.",
+        "rerank_score": 1.086788597604027e-05,
+        "cosine_score": 0.3515,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "1769be36-d647-57ea-a4bc-a4d63e8a6bbd",
+        "collection": "medical",
+        "text": "A \nbroad spectrum of comorbidities was identified, captur -\ning conditions such as hypertensive diseases, diabetes \nmellitus, hyperlipidemia, overweight, and obesity.",
+        "rerank_score": 1.086788597604027e-05,
+        "cosine_score": 0.3421,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "dd00ee9c-4c4e-5a4f-ad01-8bf64fe58ae3",
+        "collection": "medical",
+        "text": "The flashbacks 31 Elizabeth Athens, Ph.D\n\nmay seem so real that clients feel they are being traumatized again and again (Byrne, Hurley , & \nJames, 2007). Conversely , flashbacks may be reported as add",
+        "rerank_score": 1.053351934388047e-05,
+        "cosine_score": 0.3361,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "ecc37a2d-987b-5fb7-a6b8-006f3b48e3d1",
+        "collection": "medical",
+        "text": "14 \nThe Impact of Names Beyond the Hurt Feelings: Implications for Service and Support 16 \nConclusion 18 \nRefer ences 19 10 \n\nCHAPTER 3: AN OVER VIEW OF MENT AL ILLNESS \nCommon psychiatric disorders \n",
+        "rerank_score": 1.0370214113208931e-05,
+        "cosine_score": 0.3394,
+        "source_id": "batch_ingest"
+      }
+    ]
+  },
+  "T04": {
+    "query": "Cos'è il diabete di tipo 2?",
+    "collection": "medical",
+    "route": "rag",
+    "confidence": 0.4,
+    "pipeline": "rag_chat_standard",
+    "elapsed_ms": 12726,
+    "chunk_count": 10,
+    "chunks": [
+      {
+        "chunk_id": "a4001e8b-4a7f-5f59-9722-f9f26981ba0c",
+        "collection": "medical",
+        "text": "Tale desincroniz-\nzazione circadiana influenza il controllo glicemico, pertur-bando la funzionalità delle β-cellule e l’insulino-sensibilità,\ncon conseguente aumento di rischio di sviluppo di diabeted",
+        "rerank_score": 0.994594156742096,
+        "cosine_score": 0.3428,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "5e542130-14e8-5d2a-be9c-c6ca14a54bd3",
+        "collection": "medical",
+        "text": "L’associazione tra perturbazione circadiana e sviluppo di\ninsulino-resistenza e diabete mellito di tipo 2 è supportatada diverse osservazioni, che includono lo sviluppo di sindro-me metabolica in topi",
+        "rerank_score": 0.9936364889144897,
+        "cosine_score": 0.3479,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "6348f23b-06d6-546f-b64c-2af3a8f02760",
+        "collection": "medical",
+        "text": "Gli adipociti sono funzionalmente distinti in due tipi: adi-\npociti bianchi e bruni, strutturalmente e funzionalmente dif-ferenti.",
+        "rerank_score": 0.028007520362734795,
+        "cosine_score": 0.3421,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "6d438b31-c8f0-5445-8da6-7ae0c61272bd",
+        "collection": "medical",
+        "text": "Katsiki, N.; Mikhailidis, D.P .; Theodorakis, M.J. Sodium-glucose Cotransporter 2 Inhibitors (SGLT2i): Their Role in Car-\ndiometabolic Risk Management. Curr. Pharm. Des. 2017 ,23, 1522–1532. [CrossRef",
+        "rerank_score": 0.00034599160426296294,
+        "cosine_score": 0.3883,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "62d4abdf-fc44-594d-9504-c6fb1ccb432f",
+        "collection": "medical",
+        "text": "SGLT2 Inhibitors in Diabetic Patients with Cardiovascular Disease or at High\nCardiovascular Risk: A Systematic Review and Meta-Analysis of Randomized Controlled Trials. Front. Cardiovasc. Med. 2022 ,9",
+        "rerank_score": 2.229919846286066e-05,
+        "cosine_score": 0.3788,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "5efe613b-bdab-5fb6-b4d5-ad9f4f91b1e9",
+        "collection": "medical",
+        "text": "What are the two layers of the serous pericardium? \n a. __________________________________________________________ \n b. __________________________________________________________ \n5. Which layer of th",
+        "rerank_score": 1.32119585032342e-05,
+        "cosine_score": 0.354,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "0cda052b-9304-550e-a8fa-1cf15883797e",
+        "collection": "medical",
+        "text": "Diabetes \nThe likelihood of developing diabetes appears to be greater for people with intellectual disabilities than \nfor the general population. This seems to be the case even more for people with Do",
+        "rerank_score": 1.2606946256710216e-05,
+        "cosine_score": 0.3373,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "884c2ec2-551c-5d0f-b0a9-14928511ae38",
+        "collection": "medical",
+        "text": "Supporting Individuals with Intellectual Disabilities &Mental Illness 22\n\nDiagnosis \nThroughout history , the process of classifying dif ferent types of mental illness and finding ways to \nconsistentl",
+        "rerank_score": 1.1125607670692261e-05,
+        "cosine_score": 0.3396,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "39eca623-86e9-5260-aa52-b9b25315cf1e",
+        "collection": "medical",
+        "text": "What is the numerical value of the angle of inclination in the adult? \n __________________________________________________________\n32. Define the angle of declination. \n ______________________________",
+        "rerank_score": 1.0699396625568625e-05,
+        "cosine_score": 0.3699,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "f3a2a0d0-4cae-5df7-88d2-b850c6e1fff4",
+        "collection": "medical",
+        "text": "Are the visual axes of both eyes parallel? \n _____________________________________________________________\n If not, describe the malalignment.\n ________________________________________________________",
+        "rerank_score": 1.0451547495904379e-05,
+        "cosine_score": 0.3701,
+        "source_id": "batch_ingest"
+      }
+    ]
+  },
+  "T05": {
+    "query": "Cos'è il GDPR?",
+    "collection": "legal",
+    "route": "rag",
+    "confidence": 0.4,
+    "pipeline": "rag_chat_standard",
+    "elapsed_ms": 12177,
+    "chunk_count": 10,
+    "chunks": [
+      {
+        "chunk_id": "760e1eab-783b-519f-8163-40b40d8cb0fd",
+        "collection": "legal",
+        "text": "Art. 6 Diritto al nome \nOgni persona hadiritto alnome cheleèperlegge at-\ntribuito. Nel nome si comprendono il prenome e il cognome. Non sono ammessi cambiamenti, aggiunte orettifi -\nchealnome, senonne",
+        "rerank_score": 0.00011323437502142042,
+        "cosine_score": 0.3466,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "2b26d436-35f4-55a0-b0e6-66503203985e",
+        "collection": "legal",
+        "text": "Con uno o più decreti non aventi natura regolamentare del Ministro della\ngiustizia, di concerto con il Ministro dell'economia e delle nanze, il Ministro per\nla pubblica amministrazione e l'innovazione",
+        "rerank_score": 3.9135655242716894e-05,
+        "cosine_score": 0.3701,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "35dfab93-e9cf-5f56-b3d2-bdf26814600b",
+        "collection": "legal",
+        "text": "89 - Ordinamento del notariato e degli archivi notarili - Preambolo\nhttps://app.notaria.cloud/documento/it/documentazione/stato/legge/1913/89/art1/comma1?v=2022-05-19 38/116 Con uno o più decreti del ",
+        "rerank_score": 3.9135655242716894e-05,
+        "cosine_score": 0.3509,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "8e1b4111-07ae-5d58-b4fe-2484af16e2c7",
+        "collection": "legal",
+        "text": "Aglieffetti della disposizione dicuialprimo comma è\nconsiderato documento anche qualunque supporto\ninformatico contenente dati, informazioni oprogram -\nmi (1). Il delitto è punibile a querela della pe",
+        "rerank_score": 1.9525885363691486e-05,
+        "cosine_score": 0.3265,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "2128f609-881b-5e0e-883b-e0ef81cab3ca",
+        "collection": "legal",
+        "text": "89 - Ordinamento del notariato e degli archivi notarili - Preambolo\nhttps://app.notaria.cloud/documento/it/documentazione/stato/legge/1913/89/art1/comma1?v=2022-05-19 67/116AGGIORNAMENTO Il D.Lgs. 1o ",
+        "rerank_score": 1.7917987861437723e-05,
+        "cosine_score": 0.3294,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "c5750fce-6705-5c7d-bc19-7ffc6ca98520",
+        "collection": "legal",
+        "text": "7.L'archivio ècompletamente informatizzato; è\npopolato edaggiornato con idati raccolti dalla\nDirezione generale della M.C.T.C., dalP.R.A., dagli\norgani addetti all'espletamento deiservizi dipolizia\nst",
+        "rerank_score": 1.373825580230914e-05,
+        "cosine_score": 0.3313,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "b2e5541b-32c5-57cc-816f-443c351dcae8",
+        "collection": "legal",
+        "text": "5.Nelregolamento sono stabiliti, perciascun gruppo,\nisingoli segnali, idispositivi oimezzi segnaletici,\nnonché lalorodenominazione, ilsignificato, itipi,le\ncaratteristiche tecniche (forma, dimensioni,",
+        "rerank_score": 1.250883906322997e-05,
+        "cosine_score": 0.3325,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "e14e5f50-056d-5e85-b265-396dcbe6b044",
+        "collection": "legal",
+        "text": "Salvo cheilfatto costituisca piùgrave reato, lastes-\nsapena siapplica achiunque rivela, mediante qual-\nsiasi mezzo diinformazione alpubblico, intutto oin\nparte, ilcontenuto delle comunicazioni odelle ",
+        "rerank_score": 1.221907587023452e-05,
+        "cosine_score": 0.3364,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "b0ba7e64-1a53-5fa6-bdf2-a3d62422a08d",
+        "collection": "legal",
+        "text": "Art. 23 \nIlregistro consta didueparti, l'una generale el'altra\nanalitica. Nella prima parte delregistro sono iscritte lepersone\ngiuridiche conlasola indicazione della lorodenomi -\nnazione.",
+        "rerank_score": 1.1936024748138152e-05,
+        "cosine_score": 0.3595,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "a2aa5bf8-d4f6-5ebf-81e0-0663709c92b7",
+        "collection": "legal",
+        "text": "Fino ataledata la\ndestinazione el'uso delle varie categorie diveicoli\nsono disciplinate dalle norme gi in vigore.",
+        "rerank_score": 1.1568796253413893e-05,
+        "cosine_score": 0.3325,
+        "source_id": "batch_ingest"
+      }
+    ]
+  },
+  "T06": {
+    "query": "Effetti collaterali della metformina",
+    "collection": null,
+    "route": "rag",
+    "confidence": 0.8,
+    "pipeline": "rag_chat_standard",
+    "elapsed_ms": 16112,
+    "chunk_count": 10,
+    "chunks": [
+      {
+        "chunk_id": "fc929e80-6011-5c75-8d93-1de119dddb4a",
+        "collection": "legal",
+        "text": "Art. 1415 Effetti della simulazione rispetto ai terzi \nLa simulazione (164) non può essere opposta né dal -\nleparti contraenti, nédagli aventi causa odaicredito -\nridelsimulato alienante, aiterzi chei",
+        "rerank_score": 0.7304821610450745,
+        "cosine_score": 0.3657,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "a75e10f5-058f-54ac-8d7e-15bb761ff81e",
+        "collection": "legal",
+        "text": "Laconvalida nonhaeffetto, sechil'esegue nonèin\ncondizione diconcludere validamente ilcontratto\n(1423,1451). Art. 1445 Effetti dell'annullamento neiconfronti\ndei terzi \nL'annullamento chenondipende dai",
+        "rerank_score": 0.5989574790000916,
+        "cosine_score": 0.3509,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "8bffb209-20a0-539c-85e6-fd302bc8fad7",
+        "collection": "legal",
+        "text": "Art. 104 Effetti dell'opposizione \nL'opposizione fatta dachinehafacoltà, percausa\nammessa dalla legge, sospende lacelebrazione del\nmatrimonio sino acheconsentenza passata ingiudi -\ncato sia rimossa l'",
+        "rerank_score": 0.06656918674707413,
+        "cosine_score": 0.3532,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "7b2c60e2-1c2f-5bcb-8bc8-2763f4769512",
+        "collection": "legal",
+        "text": "11.Èvietato ilsorpasso diunveicolo che nestia\nsorpassando unaltro, nonché ilsuperamento di\nveicoli fermi oinlento movimento aipassaggi a\nlivello, aisemafori operaltre cause dicongestione\n\ndella circol",
+        "rerank_score": 4.006369272246957e-05,
+        "cosine_score": 0.3525,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "5c23a178-87d8-5c4a-963b-d04b9b4ec5a3",
+        "collection": "ubp_system_docs",
+        "text": "Diabete tipo 2 — sintomi principali\n2. Inibitori pompa protonica — meccanismo d'azione\n3. Ipertensione resistente — definizione e prevalenza\n4. Denervazione renale — procedura interventistica\n5. Reflu",
+        "rerank_score": 1.9525885363691486e-05,
+        "cosine_score": 0.3454,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "7541161e-c823-508b-a76f-e6d26a01c3d4",
+        "collection": "medical",
+        "text": "Indicate the effects on the eye resulting from paralysis of \neach of the extraocular muscles. Muscle Primary Effect Secondary Effect\n a. lateral rectus ____________ \n b. medial rectus ____________ \n c",
+        "rerank_score": 1.1212865501875058e-05,
+        "cosine_score": 0.3422,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "7b274705-4a37-5cc4-97d2-997f648a82f6",
+        "collection": "medical",
+        "text": "Such interactions may produce, \namong other possibilities, sedation, confusion, constipation, balance dif ficulties and falls, incontinence, \nweight gain, impairments in epilepsy management, metabolic",
+        "rerank_score": 1.1125607670692261e-05,
+        "cosine_score": 0.3786,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "f3a2a0d0-4cae-5df7-88d2-b850c6e1fff4",
+        "collection": "medical",
+        "text": "Are the visual axes of both eyes parallel? \n _____________________________________________________________\n If not, describe the malalignment.\n ________________________________________________________",
+        "rerank_score": 1.1039028322556987e-05,
+        "cosine_score": 0.3503,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "9d7f9922-e954-5d1d-8364-81d0b7566c0d",
+        "collection": "medical",
+        "text": "The secondary outcomes included \nall-cause mortality, cardiovascular mortality, acute myocardial infarc -\ntion, acute stroke and hospitalizations for angina. Outcomes were re-\nported at the longest fo",
+        "rerank_score": 1.1039028322556987e-05,
+        "cosine_score": 0.3443,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "94868e4e-fac8-54e5-bbf0-ceaca3f0776a",
+        "collection": "medical",
+        "text": "Laboratory indicators of the included participants\nFurthermore, we compared the common laboratory indicators between the two groups.",
+        "rerank_score": 1.086788597604027e-05,
+        "cosine_score": 0.3535,
+        "source_id": "batch_ingest"
+      }
+    ]
+  },
+  "T07": {
+    "query": "Come funziona il sistema UBP?",
+    "collection": null,
+    "route": "rag",
+    "confidence": 0.3,
+    "pipeline": "rag_chat_standard",
+    "elapsed_ms": 4444,
+    "chunk_count": 10,
+    "chunks": [
+      {
+        "chunk_id": "9a56d66c-f388-57e9-ba56-e5fb2de622e2",
+        "collection": "ubp_system_docs",
+        "text": "Panoramica\n\nQuesto manuale descrive come esporre il sistema UBP Enterprise Hybrid sulla rete locale (LAN) per consentire l'accesso da altri dispositivi sulla stessa rete (PC, tablet, smartphone).\n\n###",
+        "rerank_score": 0.9902538657188416,
+        "cosine_score": 0.4309,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "96c2dbc8-1b15-5579-aea5-37350d1cfff4",
+        "collection": "ubp_system_docs",
+        "text": "DI Container e Dipendenze\n\n### 6.1 Come Funziona il DI Container\n\n```\n+===========================================================================+\n| DEPENDENCY INJECTION FLOW |\n+=====================",
+        "rerank_score": 0.40650850534439087,
+        "cosine_score": 0.4281,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "54495d02-c093-5c5f-977d-a6b7469669b1",
+        "collection": "ubp_system_docs",
+        "text": "[Catalogo Eventi di Sistema](#6-catalogo-eventi-di-sistema)\n7. [Pattern e Best Practices](#7-pattern-e-best-practices)\n8. [Dead Letter Queue](#8-dead-letter-queue)\n9. [Debugging e Troubleshooting](#9-",
+        "rerank_score": 0.34367209672927856,
+        "cosine_score": 0.4831,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "73d74780-2613-5c8f-9afe-47f2bfebbfb0",
+        "collection": "ubp_system_docs",
+        "text": "[Gestione Modelli](#9-gestione-modelli)\n10. [Cost Tracking](#10-cost-tracking)\n11. [Fallback e Resilienza (v1.10.1)](#11-fallback-e-resilienza-v1101)\n12. [Health Check e Monitoring](#12-health-check-e",
+        "rerank_score": 0.12189465761184692,
+        "cosine_score": 0.4642,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "4cdf4336-8a27-53ca-9014-3cacfac9bb78",
+        "collection": "ubp_system_docs",
+        "text": "[Troubleshooting](#9-troubleshooting)\n\n---\n\n## 1. Panoramica del Sistema\n\n### 1.1 Cos'è il Sistema di Override?",
+        "rerank_score": 0.003172682598233223,
+        "cosine_score": 0.4325,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "3f607071-26ec-5c1c-bc52-d021f5cacbbc",
+        "collection": "ubp_system_docs",
+        "text": "Gerarchia delle Configurazioni\n\n### 1.1 Ordine di Priorita' (Override)\n\n```\n+===========================================================================+\n| GERARCHIA CONFIGURAZIONI UBP |\n| (Priorita' ",
+        "rerank_score": 0.0007293288363143802,
+        "cosine_score": 0.4232,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "c9381089-3952-5c6e-adce-7af1b933cfb4",
+        "collection": "ubp_system_docs",
+        "text": "Esportare il computo dal software in formato XLSX\n2. Caricare nella KB del client\n3. Chiedere a UBP di verificare, completare o analizzare\n4. Esportare le modifiche e reimportare nel software\n\n---\n\n##",
+        "rerank_score": 0.00022167809947859496,
+        "cosine_score": 0.4289,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "60ba817d-1551-5317-8a78-35a03656b3d1",
+        "collection": "ubp_system_docs",
+        "text": "# Manuale Deploy UBP su Cloudflare Tunnel (Linux)\n\nDeploy delle webapp UBP (User + Admin) su internet tramite Cloudflare Tunnel.",
+        "rerank_score": 9.535461140330881e-05,
+        "cosine_score": 0.4687,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "500367cb-5cdc-5193-932b-6ad3beac5c0d",
+        "collection": "ubp_system_docs",
+        "text": "Panoramica Architettura Modulare\n\n### 1.1 Principi Fondamentali\n\n```\n+===========================================================================+\n| PRINCIPI ARCHITETTURA MODULARE UBP |\n+=============",
+        "rerank_score": 6.302758993115276e-05,
+        "cosine_score": 0.4933,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "f3e0a8d8-2317-50eb-ab96-fa794b1b5b35",
+        "collection": "ubp_system_docs",
+        "text": "Vedi [Sezione 8](#8-cambio-ip-di-rete).\n\n---\n\n## 3.",
+        "rerank_score": 1.1212865501875058e-05,
+        "cosine_score": 0.4702,
+        "source_id": "batch_ingest"
+      }
+    ]
+  },
+  "T10": {
+    "query": "Genera un report sul paracetamolo",
+    "collection": "medical",
+    "route": "rag",
+    "confidence": 0.4,
+    "pipeline": "rag_chat_standard",
+    "elapsed_ms": 17824,
+    "chunk_count": 10,
+    "chunks": [
+      {
+        "chunk_id": "46b3fdfd-c807-5fc8-8754-9ab66e13ca2a",
+        "collection": "medical",
+        "text": "Pronate the supinated forearm.\n a. ___________________ ___________________\n b. ___________________ ___________________\n11. Supinate the pronated forearm.\n a. ___________________ ___________________\n b",
+        "rerank_score": 1.7366719475830905e-05,
+        "cosine_score": 0.3322,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "94868e4e-fac8-54e5-bbf0-ceaca3f0776a",
+        "collection": "medical",
+        "text": "Laboratory indicators of the included participants\nFurthermore, we compared the common laboratory indicators between the two groups.",
+        "rerank_score": 1.1212865501875058e-05,
+        "cosine_score": 0.3866,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "2af52beb-b7cb-5f79-a42c-40f5fc07710e",
+        "collection": "medical",
+        "text": "Answers to those questions are included at the end of the book.” – Preface.",
+        "rerank_score": 1.1212865501875058e-05,
+        "cosine_score": 0.3352,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "92ddb83f-64e8-5777-b742-d9945e4afe2f",
+        "collection": "medical",
+        "text": "Learning Objectiv es \nIn this case, learners have an opportunity to: \n1.",
+        "rerank_score": 1.1039028322556987e-05,
+        "cosine_score": 0.3486,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "0f847aa4-c331-5e02-8a44-18cc2a6cf46d",
+        "collection": "medical",
+        "text": "Coronaviruses –Drug discovery and therapeutic options.",
+        "rerank_score": 1.086788597604027e-05,
+        "cosine_score": 0.3449,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "530c7d0f-996f-532f-9beb-66f1843e8eeb",
+        "collection": "medical",
+        "text": "Publisher ’s note\nAll claims expressed in this article are solely those of the authors\nand do not necessarily represent those of their af filiated\norganizations, or those of the publisher, the editors",
+        "rerank_score": 1.086788597604027e-05,
+        "cosine_score": 0.3325,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "6dc1629e-cfc9-5391-bd11-54706621ccc3",
+        "collection": "medical",
+        "text": "Reporting bias assessment\nThe potential for reporting bias was evaluated by exam -\nining whether unpublished studies or missing data could \nhave influenced the synthesis. Effect measures\nFor each outc",
+        "rerank_score": 1.0783312063722406e-05,
+        "cosine_score": 0.3733,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "13c4c377-19d5-5abd-abe2-0d0496563ed2",
+        "collection": "medical",
+        "text": "Description of the case-based simulation context\nAlthough there are systematic efforts to document diagnostic rationale post-hoc in case \nreports, little is known about how the process of diagnosis un",
+        "rerank_score": 1.0699396625568625e-05,
+        "cosine_score": 0.3544,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "1196f5dd-7193-5869-a088-74c6dcaf11e8",
+        "collection": "medical",
+        "text": "The setup \ncommonly occurs as follows: an unknown case with aliquots of information, sub-divided \nportions of a case, are provided to a discussant (or a group of learners). The information \npresented ",
+        "rerank_score": 1.0451547495904379e-05,
+        "cosine_score": 0.357,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "f70f4482-e33a-59f1-8369-cf5e8c6fdd8d",
+        "collection": "medical",
+        "text": "After a seizure, record the conditions under which the seizure occurred, along with a \ndescription of the seizure activity . Describe how long the seizure lasted and emer gency \nmeasures if needed. De",
+        "rerank_score": 1.0451547495904379e-05,
+        "cosine_score": 0.3491,
+        "source_id": "batch_ingest"
+      }
+    ]
+  },
+  "T11": {
+    "query": "metformina",
+    "collection": "medical",
+    "route": "rag",
+    "confidence": 0.4,
+    "pipeline": "rag_chat_standard",
+    "elapsed_ms": 17899,
+    "chunk_count": 10,
+    "chunks": [
+      {
+        "chunk_id": "9884b1b5-fc8a-56af-9e78-bb8197bb0b98",
+        "collection": "medical",
+        "text": "References \nAlzheimer Society of Canada (201 1). What is dementia? [Fact sheet]. T oronto ON. Retrieved from \nhttp://www .alzheimer .ca/en/About-dementia/Dementias/What-is-dementia \nAustralian Associa",
+        "rerank_score": 3.822911094175652e-05,
+        "cosine_score": 0.3541,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "4fbfd6e8-2bc0-5c10-a321-ff945bec3a98",
+        "collection": "medical",
+        "text": "As is well \nknown, there are a number of types of anti-inflammatory \nmedications, including non-steroidal anti-inflammatory \ndrugs, chloroquine/hydroxychloroquine, immunosup -\npressant’s, glucocortico",
+        "rerank_score": 1.7097478121286258e-05,
+        "cosine_score": 0.3763,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "ec7b0dcd-9102-524c-96ad-2a68ad92c5bb",
+        "collection": "medical",
+        "text": "Thisarticledoesnotcontainanystudieswithhuman\nparticipantsoranimalsperformedbyanyoftheau-thors. Thesupplementcontainingthisarticleisnotspon-\nsoredbyindustry. Open Access.",
+        "rerank_score": 1.581260221428238e-05,
+        "cosine_score": 0.3765,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "d4a09f18-b48e-5b4d-a01a-818796675d6e",
+        "collection": "medical",
+        "text": "REVIEW ARTICLE\nAnnAls of Medicine\n2024, Vol. 56, no .",
+        "rerank_score": 1.221907587023452e-05,
+        "cosine_score": 0.3441,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "2af52beb-b7cb-5f79-a42c-40f5fc07710e",
+        "collection": "medical",
+        "text": "Answers to those questions are included at the end of the book.” – Preface.",
+        "rerank_score": 1.1750976227631327e-05,
+        "cosine_score": 0.3655,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "727442f7-7016-5c00-92e3-8dd943019634",
+        "collection": "medical",
+        "text": "Postoperative monitoring protocol for patients with OSA.",
+        "rerank_score": 1.1568796253413893e-05,
+        "cosine_score": 0.3283,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "0f847aa4-c331-5e02-8a44-18cc2a6cf46d",
+        "collection": "medical",
+        "text": "Coronaviruses –Drug discovery and therapeutic options.",
+        "rerank_score": 1.1389440260245465e-05,
+        "cosine_score": 0.3803,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "5e92e5c3-ec5d-57b3-bee3-91029e4238f2",
+        "collection": "medical",
+        "text": "[CrossRef] [PubMed]\nDisclaimer/Publisher’s Note: The statements, opinions and data contained in all publications are solely those of the individual\nauthor(s) and contributor(s) and not of MDPI and/or ",
+        "rerank_score": 1.1389440260245465e-05,
+        "cosine_score": 0.3607,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "94868e4e-fac8-54e5-bbf0-ceaca3f0776a",
+        "collection": "medical",
+        "text": "Laboratory indicators of the included participants\nFurthermore, we compared the common laboratory indicators between the two groups.",
+        "rerank_score": 1.1212865501875058e-05,
+        "cosine_score": 0.3508,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "2df1f664-94cf-559b-b89f-9c82fe31a72b",
+        "collection": "medical",
+        "text": "Information sources\nA comprehensive search was conducted in the follow -\ning databases: PubMed/MEDLINE, Cochrane Library, \nGoogle Scholar, and ScienceDirect. The search was lim -\nited to English-langu",
+        "rerank_score": 1.1212865501875058e-05,
+        "cosine_score": 0.3375,
+        "source_id": "batch_ingest"
+      }
+    ]
+  },
+  "T12": {
+    "query": "ok",
+    "collection": null,
+    "route": "rag",
+    "confidence": 0.3,
+    "pipeline": "rag_chat_standard",
+    "elapsed_ms": 5075,
+    "chunk_count": 10,
+    "chunks": [
+      {
+        "chunk_id": "442afbd2-ec24-5563-a0bb-48955f17b4b7",
+        "collection": "ubp_system_docs",
+        "text": "# TECHNICAL MANUAL – VLLM PROVIDER STACK (v1.0.0)\n\nTags: #vllm #inference #gpu #concurrency #memory #context-window #settings #hot-reload #reranker #embeddings #diagnostics\n\nManuale bilingue focalizza",
+        "rerank_score": 0.9403530955314636,
+        "cosine_score": 0.4835,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "2e492a58-42b2-5b34-a8b5-bd58e62d0c42",
+        "collection": "personal_ea93470d",
+        "text": "vLLM\nthe vLLM Team\nMay 30, 2024\n\nGETTING STARTED\n1 Documentation 3\n2 Indices and tables 93\nPython Module Index 95\nIndex 97\ni\n\nii\n\nvLLM\nvLLM is a fast and easy-to-use library for LLM inference and serv",
+        "rerank_score": 0.09739039838314056,
+        "cosine_score": 0.4834,
+        "source_id": "0a3179a4-8a6c-4549-ace1-f15cde8d8dd0"
+      },
+      {
+        "chunk_id": "4ee622a8-0fb1-5196-8f72-a76ffefc2352",
+        "collection": "ubp_system_docs",
+        "text": "Verificare che il servizio vLLM sia in esecuzione.\n\n### 9.3 Performance\n\n| Configurazione | Chiamate LLM per 100 file | Note |\n|---------------|--------------------------|------|\n| `BATCH_SIZE=1` | 10",
+        "rerank_score": 0.02149176597595215,
+        "cosine_score": 0.4382,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "50cda035-bbf2-5bc3-b2a8-b9d46837bf3c",
+        "collection": "personal_ea93470d",
+        "text": "Together, these contributions establish vLLM as a comprehensive solution to LLM inference,\ndelivering high performance, architectural flexibility, and the strength of a rapidly growing\nopen-source eco",
+        "rerank_score": 0.010986942797899246,
+        "cosine_score": 0.5044,
+        "source_id": "411e3198-6223-46b1-9d5c-9d57c6cbab90"
+      },
+      {
+        "chunk_id": "26111c05-bb23-554f-ae1f-71b7f0427a46",
+        "collection": "ubp_system_docs",
+        "text": "Come Funziona Internamente\n\n### 5.1 Registrazione Provider\n\n```\nVLLMRemoteProviderSettings (config.py)\n ├─ env_prefix: UBP_PROVIDER_VLLM_REMOTE__\n ├─ Registrato in ProviderInventory come campo \"vllm_r",
+        "rerank_score": 0.0075479233637452126,
+        "cosine_score": 0.4468,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "5bbaa5f7-d3a7-5bed-9649-495a531b1649",
+        "collection": "ubp_system_docs",
+        "text": "# MANUAL 19 — vLLM Remote LAN Provider\n\n**Versione**: 1.0.0 \n**Data**: 2026-02-09 \n**Componente**: Provider `vllm_remote` \n**Scope**: Offloading inferenza LLM su host LAN separato\n\n---\n\n## 1.",
+        "rerank_score": 0.0074030146934092045,
+        "cosine_score": 0.44,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "d6a39629-4974-5d19-a836-ef705b42e00c",
+        "collection": "ubp_system_docs",
+        "text": "Integrazione RAG\n\n### 6.1 Architettura RAG con vLLM\n\n```\n+===========================================================================+\n| RAG FLOW CON inference_vllm |\n+================================",
+        "rerank_score": 0.003039649687707424,
+        "cosine_score": 0.5387,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "51e55f7c-9d6d-5f5b-96ff-3eb7afb5b727",
+        "collection": "ubp_system_docs",
+        "text": "Modulo inference_vllm\n\n### 3.1 Overview\n\nIl modulo `inference_vllm` e' il provider ad alte prestazioni per inference GPU-based.",
+        "rerank_score": 0.0008426423300988972,
+        "cosine_score": 0.4614,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "b4a1451d-efb5-5813-8f44-81ea98efe797",
+        "collection": "ubp_system_docs",
+        "text": "PROMPT BUILD | System prompt + context + history + query\n +--------------------+\n |\n v\n +--------------------+\n | 5. LLM GENERATE | vLLM inference\n +--------------------+\n |\n v\n +--------------------+",
+        "rerank_score": 0.0002611903182696551,
+        "cosine_score": 0.4358,
+        "source_id": "batch_ingest"
+      },
+      {
+        "chunk_id": "f0dbe3c5-628e-5e89-994b-539c29d37596",
+        "collection": "personal_ea93470d",
+        "text": "1.1.3 Build from source\nYou can also build and install vLLM from source:\n$git clone https://github.com/vllm-project/vllm.git\n$cd vllm\n$pip install -e . # This may take 5-10 minutes. Tip:To avoid your ",
+        "rerank_score": 0.00020662983297370374,
+        "cosine_score": 0.4802,
+        "source_id": "0a3179a4-8a6c-4549-ace1-f15cde8d8dd0"
+      }
+    ]
+  }
+}

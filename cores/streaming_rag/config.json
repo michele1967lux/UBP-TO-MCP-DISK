@@ -1,0 +1,138 @@
+{
+  "streaming_rag": {
+    "enabled": "${UBP_STREAMING__ENABLED:-true}",
+    "default_format": "${UBP_STREAMING__DEFAULT_FORMAT:-sse}",
+    "buffer_size": "${UBP_STREAMING__BUFFER_SIZE:-100}",
+    "max_concurrent_streams": "${UBP_STREAMING__MAX_CONCURRENT:-50}"
+  },
+
+  "token_streaming": {
+    "enabled": "${UBP_STREAMING__TOKEN_ENABLED:-true}",
+    "chunk_size": "${UBP_STREAMING__CHUNK_SIZE:-1}",
+    "min_chunk_tokens": "${UBP_STREAMING__MIN_CHUNK_TOKENS:-1}",
+    "max_chunk_tokens": "${UBP_STREAMING__MAX_CHUNK_TOKENS:-50}",
+    "flush_interval_ms": "${UBP_STREAMING__FLUSH_INTERVAL:-50}",
+    "word_boundary_flush": "${UBP_STREAMING__WORD_BOUNDARY:-true}"
+  },
+
+  "buffering": {
+    "enabled": "${UBP_STREAMING__BUFFERING_ENABLED:-true}",
+    "buffer_tokens": "${UBP_STREAMING__BUFFER_TOKENS:-5}",
+    "buffer_timeout_ms": "${UBP_STREAMING__BUFFER_TIMEOUT:-100}",
+    "max_buffer_size": "${UBP_STREAMING__MAX_BUFFER_SIZE:-1000}",
+    "overflow_strategy": "${UBP_STREAMING__OVERFLOW:-drop_oldest}"
+  },
+
+  "rate_limiting": {
+    "enabled": "${UBP_STREAMING__RATE_LIMIT_ENABLED:-false}",
+    "tokens_per_second": "${UBP_STREAMING__TOKENS_PER_SEC:-100}",
+    "burst_size": "${UBP_STREAMING__BURST_SIZE:-50}",
+    "delay_between_chunks_ms": "${UBP_STREAMING__CHUNK_DELAY:-0}"
+  },
+
+  "sse": {
+    "enabled": "${UBP_STREAMING__SSE_ENABLED:-true}",
+    "event_prefix": "${UBP_STREAMING__SSE_PREFIX:-rag}",
+    "keep_alive_interval_ms": "${UBP_STREAMING__SSE_KEEPALIVE:-15000}",
+    "retry_timeout_ms": "${UBP_STREAMING__SSE_RETRY:-3000}",
+    "include_id": "${UBP_STREAMING__SSE_INCLUDE_ID:-true}",
+    "compress": "${UBP_STREAMING__SSE_COMPRESS:-false}"
+  },
+
+  "websocket": {
+    "enabled": "${UBP_STREAMING__WS_ENABLED:-true}",
+    "ping_interval_ms": "${UBP_STREAMING__WS_PING_INTERVAL:-30000}",
+    "pong_timeout_ms": "${UBP_STREAMING__WS_PONG_TIMEOUT:-10000}",
+    "max_message_size": "${UBP_STREAMING__WS_MAX_MSG_SIZE:-65536}",
+    "close_timeout_ms": "${UBP_STREAMING__WS_CLOSE_TIMEOUT:-5000}"
+  },
+
+  "events": {
+    "emit_retrieval_events": "${UBP_STREAMING__EMIT_RETRIEVAL:-true}",
+    "emit_source_events": "${UBP_STREAMING__EMIT_SOURCES:-true}",
+    "emit_progress_events": "${UBP_STREAMING__EMIT_PROGRESS:-true}",
+    "emit_metadata_events": "${UBP_STREAMING__EMIT_METADATA:-true}",
+    "emit_timing_events": "${UBP_STREAMING__EMIT_TIMING:-true}",
+    "event_batching": "${UBP_STREAMING__EVENT_BATCHING:-false}",
+    "batch_interval_ms": "${UBP_STREAMING__BATCH_INTERVAL:-50}"
+  },
+
+  "progress": {
+    "enabled": "${UBP_STREAMING__PROGRESS_ENABLED:-true}",
+    "report_retrieval_progress": "${UBP_STREAMING__PROGRESS_RETRIEVAL:-true}",
+    "report_generation_progress": "${UBP_STREAMING__PROGRESS_GENERATION:-true}",
+    "progress_interval_tokens": "${UBP_STREAMING__PROGRESS_INTERVAL:-50}",
+    "include_token_count": "${UBP_STREAMING__INCLUDE_TOKEN_COUNT:-true}"
+  },
+
+  "backpressure": {
+    "enabled": "${UBP_STREAMING__BACKPRESSURE_ENABLED:-true}",
+    "high_watermark": "${UBP_STREAMING__HIGH_WATERMARK:-80}",
+    "low_watermark": "${UBP_STREAMING__LOW_WATERMARK:-20}",
+    "pause_on_pressure": "${UBP_STREAMING__PAUSE_ON_PRESSURE:-true}",
+    "drop_on_overflow": "${UBP_STREAMING__DROP_ON_OVERFLOW:-false}"
+  },
+
+  "error_handling": {
+    "emit_error_events": "${UBP_STREAMING__EMIT_ERRORS:-true}",
+    "include_error_details": "${UBP_STREAMING__ERROR_DETAILS:-true}",
+    "retry_on_error": "${UBP_STREAMING__RETRY_ON_ERROR:-true}",
+    "max_retries": "${UBP_STREAMING__MAX_RETRIES:-3}",
+    "partial_results_on_error": "${UBP_STREAMING__PARTIAL_ON_ERROR:-true}",
+    "graceful_degradation": "${UBP_STREAMING__GRACEFUL_DEGRADE:-true}"
+  },
+
+  "timeouts": {
+    "stream_timeout_seconds": "${UBP_STREAMING__STREAM_TIMEOUT:-300}",
+    "idle_timeout_seconds": "${UBP_STREAMING__IDLE_TIMEOUT:-60}",
+    "first_token_timeout_seconds": "${UBP_STREAMING__FIRST_TOKEN_TIMEOUT:-30}",
+    "retrieval_timeout_seconds": "${UBP_STREAMING__RETRIEVAL_TIMEOUT:-30}"
+  },
+
+  "output_formats": {
+    "json_lines": "${UBP_STREAMING__JSONL_ENABLED:-true}",
+    "ndjson": "${UBP_STREAMING__NDJSON_ENABLED:-true}",
+    "text_stream": "${UBP_STREAMING__TEXT_STREAM_ENABLED:-true}",
+    "binary_stream": "${UBP_STREAMING__BINARY_ENABLED:-false}"
+  },
+
+  "llm_integration": {
+    "passthrough_streaming": "${UBP_STREAMING__LLM_PASSTHROUGH:-true}",
+    "llm_module": "${UBP_STREAMING__LLM_MODULE:-inference_ollama_grok}",
+    "llm_operation": "${UBP_STREAMING__LLM_OPERATION:-stream_generate}",
+    "aggregate_before_stream": "${UBP_STREAMING__AGGREGATE_FIRST:-false}"
+  },
+
+  "retrieval_integration": {
+    "stream_retrieval_results": "${UBP_STREAMING__STREAM_RETRIEVAL:-true}",
+    "retrieval_module": "${UBP_STREAMING__RETRIEVAL_MODULE:-retrieval_strategy}",
+    "parallel_retrieval_generation": "${UBP_STREAMING__PARALLEL_RG:-false}"
+  },
+
+  "metrics": {
+    "enabled": "${UBP_STREAMING__METRICS_ENABLED:-true}",
+    "track_token_latency": "${UBP_STREAMING__TRACK_TOKEN_LATENCY:-true}",
+    "track_ttft": "${UBP_STREAMING__TRACK_TTFT:-true}",
+    "track_throughput": "${UBP_STREAMING__TRACK_THROUGHPUT:-true}",
+    "histogram_buckets": "${UBP_STREAMING__HISTOGRAM_BUCKETS:-10}"
+  },
+
+  "cache": {
+    "cache_complete_responses": "${UBP_STREAMING__CACHE_RESPONSES:-false}",
+    "cache_retrieval_results": "${UBP_STREAMING__CACHE_RETRIEVAL:-true}",
+    "cache_ttl_seconds": "${UBP_STREAMING__CACHE_TTL:-300}"
+  },
+
+  "debug": {
+    "enabled": "${UBP_STREAMING__DEBUG_ENABLED:-false}",
+    "log_events": "${UBP_STREAMING__DEBUG_LOG_EVENTS:-true}",
+    "log_tokens": "${UBP_STREAMING__DEBUG_LOG_TOKENS:-false}",
+    "log_timing": "${UBP_STREAMING__DEBUG_LOG_TIMING:-true}",
+    "trace_streams": "${UBP_STREAMING__DEBUG_TRACE:-false}"
+  },
+
+  "delegation": {
+    "llm_timeout": "${UBP_STREAMING__LLM_TIMEOUT:-120}",
+    "retrieval_timeout": "${UBP_STREAMING__RETRIEVAL_TIMEOUT:-30}"
+  }
+}

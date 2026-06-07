@@ -1,0 +1,541 @@
+# =============================================================================
+# Layer B - Keyword Scoring Patterns
+# =============================================================================
+# The core of the heuristic system. Each pattern unit contributes to
+# capability scores through weighted keyword matching.
+#
+# Structure of each pattern:
+#   id: unique identifier
+#   tokens: keywords that trigger this pattern
+#   weight: base score contribution (0.0 - 2.0, default 1.0)
+#   scope: which capabilities are affected
+#   boosts: context words that multiply the effect
+#   boost_multiplier: multiplier when boost word present (default 1.3)
+#   negations: context words that PREVENT this pattern from matching (v2.0)
+#
+# v2.0 CHANGES:
+# - Added shopping_patterns for commercial/purchase intent
+# - Added tech_products for product recognition
+# - Made search verbs NEUTRAL (context-dependent)
+# - Added negations support for context disambiguation
+#
+# ROADMAP v1.7.x - FEAT-ROUTER-002 / FEAT-ROUTER-003
+# =============================================================================
+
+version: "2.0"
+
+# Default settings
+defaults:
+  weight: 1.0
+  boost_multiplier: 1.3
+
+# =============================================================================
+# FRESHNESS CAPABILITY (needs_fresh_info) -> Suggests WEB route
+# =============================================================================
+freshness_patterns:
+  
+  - id: weather_it
+    tokens: ["meteo", "tempo atmosferico", "previsioni", "temperatura", "pioggia", "sole", "neve"]
+    weight: 1.5
+    scope: ["needs_fresh_info"]
+    boosts: ["oggi", "ora", "adesso", "domani", "attuale"]
+    description: "Weather queries in Italian"
+  
+  - id: weather_en
+    tokens: ["weather", "forecast", "temperature", "rain", "sunny", "snow", "climate"]
+    weight: 1.5
+    scope: ["needs_fresh_info"]
+    boosts: ["today", "now", "current", "tomorrow", "right now"]
+    description: "Weather queries in English"
+  
+  - id: prices_crypto
+    tokens: ["bitcoin", "btc", "ethereum", "eth", "crypto", "criptovaluta", "cryptocurrency"]
+    weight: 1.4
+    scope: ["needs_fresh_info", "commercial_info"]
+    boosts: ["prezzo", "price", "valore", "value", "quotazione", "oggi", "now"]
+    description: "Cryptocurrency price queries"
+  
+  - id: prices_stock
+    tokens: ["azioni", "stock", "borsa", "market", "nasdaq", "dow jones", "ftse", "quotazione"]
+    weight: 1.4
+    scope: ["needs_fresh_info", "commercial_info"]
+    boosts: ["prezzo", "price", "oggi", "today", "apertura", "chiusura"]
+    description: "Stock market queries"
+  
+  - id: news_it
+    tokens: ["notizie", "news", "ultime", "breaking", "cronaca", "attualità"]
+    weight: 1.3
+    scope: ["needs_fresh_info"]
+    boosts: ["oggi", "ora", "recenti", "ultime", "latest"]
+    description: "News queries Italian"
+  
+  - id: news_en
+    tokens: ["news", "headlines", "breaking", "latest", "current events"]
+    weight: 1.3
+    scope: ["needs_fresh_info"]
+    boosts: ["today", "now", "recent", "latest", "breaking"]
+    description: "News queries English"
+  
+  - id: events_sports
+    tokens: ["partita", "match", "risultato", "score", "classifica", "campionato", "serie a", "champions"]
+    weight: 1.3
+    scope: ["needs_fresh_info"]
+    boosts: ["oggi", "ieri", "domani", "live", "diretta"]
+    description: "Sports events and scores"
+  
+  - id: traffic_transport
+    tokens: ["traffico", "traffic", "treno", "train", "volo", "flight", "ritardo", "delay"]
+    weight: 1.2
+    scope: ["needs_fresh_info"]
+    boosts: ["ora", "now", "oggi", "today", "attuale", "current"]
+    description: "Real-time transport info"
+
+# =============================================================================
+# INTERNAL KNOWLEDGE (internal_knowledge) -> Suggests RAG route
+# =============================================================================
+internal_patterns:
+  
+  - id: document_ref_it
+    tokens: ["documento", "documentazione", "manuale", "guida", "procedura", "istruzioni"]
+    weight: 1.4
+    scope: ["internal_knowledge"]
+    boosts: ["interno", "aziendale", "nostro", "company"]
+    description: "Document references Italian"
+  
+  - id: document_ref_en
+    tokens: ["document", "documentation", "manual", "guide", "procedure", "instructions"]
+    weight: 1.4
+    scope: ["internal_knowledge"]
+    boosts: ["internal", "company", "our", "corporate"]
+    description: "Document references English"
+  
+  - id: policy_ref
+    tokens: ["policy", "regolamento", "normativa", "regulation", "compliance", "standard"]
+    weight: 1.3
+    scope: ["internal_knowledge"]
+    boosts: ["aziendale", "interno", "company", "internal"]
+    description: "Policy and regulation references"
+  
+  - id: knowledge_query_it
+    tokens: ["cosa dice", "secondo", "in base a", "come da", "riferimento a"]
+    weight: 1.2
+    scope: ["internal_knowledge"]
+    boosts: ["documento", "documentazione", "manuale", "procedura"]
+    description: "Knowledge query patterns Italian"
+  
+  - id: knowledge_query_en
+    tokens: ["what does", "according to", "based on", "as per", "reference to"]
+    weight: 1.2
+    scope: ["internal_knowledge"]
+    boosts: ["document", "documentation", "manual", "procedure", "policy"]
+    description: "Knowledge query patterns English"
+  
+  # v2.0: search_internal ora richiede ESPLICITO contesto documentale
+  # Il verbo "cerca" da solo NON attiva più internal_knowledge
+  - id: search_internal_explicit
+    tokens: ["cerca nel documento", "cerca nei documenti", "cerca nella documentazione", 
+             "cerca nel manuale", "cerca nella guida", "cerca nella procedura",
+             "search in document", "search in documents", "search in docs",
+             "find in manual", "find in documentation", "look in the docs"]
+    weight: 1.4
+    scope: ["internal_knowledge"]
+    boosts: ["interno", "aziendale", "internal", "company", "nostro", "our"]
+    description: "Explicit internal document search - requires document context"
+  
+  - id: summary_explain
+    tokens: ["riassumi", "spiega", "summarize", "explain", "descrivi", "describe"]
+    weight: 1.1
+    scope: ["internal_knowledge", "technical_depth"]
+    boosts: ["documento", "sezione", "capitolo", "section", "chapter"]
+    description: "Summarization/explanation requests"
+
+# =============================================================================
+# CONVERSATIONAL (pure_conversation) -> Suggests CHAT route
+# =============================================================================
+conversational_patterns:
+  
+  - id: greetings_it
+    tokens: ["ciao", "salve", "buongiorno", "buonasera", "buonanotte"]
+    weight: 1.5
+    scope: ["pure_conversation"]
+    boosts: ["come stai", "come va", "tutto bene"]
+    description: "Italian greetings"
+  
+  - id: greetings_en
+    tokens: ["hi", "hello", "hey", "good morning", "good afternoon", "good evening"]
+    weight: 1.5
+    scope: ["pure_conversation"]
+    boosts: ["how are you", "how's it going"]
+    description: "English greetings"
+  
+  - id: thanks_it
+    tokens: ["grazie", "ringrazio", "gentilissimo", "molto gentile"]
+    weight: 1.4
+    scope: ["pure_conversation"]
+    boosts: ["mille", "molto", "tanto", "infinite"]
+    description: "Italian thanks"
+  
+  - id: thanks_en
+    tokens: ["thanks", "thank you", "appreciate", "grateful"]
+    weight: 1.4
+    scope: ["pure_conversation"]
+    boosts: ["very much", "a lot", "so much"]
+    description: "English thanks"
+  
+  - id: farewells_it
+    tokens: ["arrivederci", "addio", "a presto", "alla prossima", "ci vediamo"]
+    weight: 1.4
+    scope: ["pure_conversation"]
+    boosts: []
+    description: "Italian farewells"
+  
+  - id: farewells_en
+    tokens: ["bye", "goodbye", "see you", "talk later", "take care"]
+    weight: 1.4
+    scope: ["pure_conversation"]
+    boosts: ["later", "soon", "tomorrow"]
+    description: "English farewells"
+  
+  - id: acknowledgments
+    tokens: ["ok", "okay", "va bene", "perfetto", "bene", "ottimo", "capito", "inteso"]
+    weight: 1.3
+    scope: ["pure_conversation"]
+    boosts: []
+    description: "Acknowledgment phrases"
+  
+  - id: simple_responses
+    tokens: ["sì", "si", "no", "yes", "yeah", "nope", "forse", "maybe"]
+    weight: 1.2
+    scope: ["pure_conversation"]
+    boosts: []
+    description: "Simple yes/no responses"
+  
+  - id: personal_questions
+    tokens: ["chi sei", "come ti chiami", "cosa sei", "who are you", "what are you", "your name"]
+    weight: 1.3
+    scope: ["pure_conversation"]
+    boosts: []
+    description: "Questions about the assistant"
+
+# =============================================================================
+# COMMERCIAL (commercial_info) -> Context-dependent
+# =============================================================================
+commercial_patterns:
+  
+  - id: pricing_it
+    tokens: ["prezzo", "costo", "quanto costa", "preventivo", "listino", "tariffa"]
+    weight: 1.2
+    scope: ["commercial_info", "needs_fresh_info"]
+    boosts: ["oggi", "attuale", "aggiornato", "azioni", "stock", "bitcoin", "crypto"]
+    description: "Pricing queries Italian"
+  
+  - id: pricing_en
+    tokens: ["price", "cost", "how much", "quote", "pricing", "rate", "fee"]
+    weight: 1.2
+    scope: ["commercial_info", "needs_fresh_info"]
+    boosts: ["current", "today", "updated", "latest", "stock", "bitcoin", "crypto"]
+    description: "Pricing queries English"
+  
+  - id: product_info
+    tokens: ["prodotto", "product", "servizio", "service", "offerta", "offer", "promozione", "promo"]
+    weight: 1.0
+    scope: ["commercial_info"]
+    boosts: ["nuovo", "new", "ultimo", "latest"]
+    description: "Product/service info"
+
+# =============================================================================
+# TECHNICAL (technical_depth) -> Context-dependent
+# =============================================================================
+technical_patterns:
+  
+  - id: technical_it
+    tokens: ["come funziona", "come si fa", "spiegami", "cos'è", "definizione"]
+    weight: 1.1
+    scope: ["technical_depth"]
+    boosts: ["tecnicamente", "nel dettaglio", "in profondità"]
+    description: "Technical questions Italian"
+  
+  - id: technical_en
+    tokens: ["how does", "how to", "explain", "what is", "definition", "meaning"]
+    weight: 1.1
+    scope: ["technical_depth"]
+    boosts: ["technically", "in detail", "in depth"]
+    description: "Technical questions English"
+  
+  - id: code_programming
+    tokens: ["codice", "code", "programma", "script", "funzione", "function", "api", "bug", "errore", "error"]
+    weight: 1.2
+    scope: ["technical_depth"]
+    boosts: ["python", "javascript", "java", "debug", "fix"]
+    description: "Programming-related queries"
+  
+  - id: architecture
+    tokens: ["architettura", "architecture", "design", "pattern", "sistema", "system", "infrastruttura"]
+    weight: 1.1
+    scope: ["technical_depth", "internal_knowledge"]
+    boosts: ["nostro", "our", "aziendale", "company"]
+    description: "Architecture/design queries"
+
+# =============================================================================
+# SHOPPING / COMMERCIAL INTENT (needs_fresh_info + commercial_info) -> WEB
+# =============================================================================
+# v2.0 NEW: Queries related to purchasing, offers, deals, used products
+# These should ALWAYS route to WEB, never to RAG
+shopping_patterns:
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # BUY/PURCHASE INTENT
+  # ─────────────────────────────────────────────────────────────────────────────
+  - id: buy_intent_it
+    tokens: ["comprare", "acquistare", "acquisto", "compro", "vorrei comprare", 
+             "voglio comprare", "devo comprare", "mi serve", "ho bisogno di"]
+    weight: 1.5
+    scope: ["needs_fresh_info", "commercial_info"]
+    boosts: ["online", "offerta", "offerte", "sconto", "sconti", "miglior prezzo", 
+             "usato", "nuovo", "economico", "conveniente"]
+    boost_multiplier: 1.4
+    description: "Purchase intent Italian"
+
+  - id: buy_intent_en
+    tokens: ["buy", "purchase", "buying", "want to buy", "looking to buy", 
+             "need to buy", "shop", "shopping", "i need", "i want"]
+    weight: 1.5
+    scope: ["needs_fresh_info", "commercial_info"]
+    boosts: ["online", "deal", "deals", "discount", "best price", "cheap", 
+             "used", "new", "affordable", "budget"]
+    boost_multiplier: 1.4
+    description: "Purchase intent English"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # SELL INTENT
+  # ─────────────────────────────────────────────────────────────────────────────
+  - id: sell_intent_it
+    tokens: ["vendere", "vendo", "in vendita", "mettere in vendita", "voglio vendere"]
+    weight: 1.3
+    scope: ["needs_fresh_info", "commercial_info"]
+    boosts: ["usato", "online", "prezzo", "quanto vale"]
+    description: "Selling intent Italian"
+
+  - id: sell_intent_en
+    tokens: ["sell", "selling", "for sale", "want to sell", "put up for sale"]
+    weight: 1.3
+    scope: ["needs_fresh_info", "commercial_info"]
+    boosts: ["used", "online", "price", "how much is worth"]
+    description: "Selling intent English"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # OFFERS / DEALS / DISCOUNTS
+  # ─────────────────────────────────────────────────────────────────────────────
+  - id: offers_deals_it
+    tokens: ["offerta", "offerte", "promozione", "promozioni", "sconto", "sconti", 
+             "affare", "affari", "occasione", "occasioni", "saldi", "black friday",
+             "sottocosto", "outlet", "svendita"]
+    weight: 1.6
+    scope: ["needs_fresh_info", "commercial_info"]
+    boosts: ["oggi", "ora", "migliore", "best", "super", "mega", "imperdibile"]
+    boost_multiplier: 1.3
+    description: "Offers and deals Italian"
+
+  - id: offers_deals_en
+    tokens: ["offer", "offers", "deal", "deals", "discount", "discounts", 
+             "sale", "sales", "bargain", "bargains", "clearance", "black friday",
+             "outlet", "special offer", "limited time"]
+    weight: 1.6
+    scope: ["needs_fresh_info", "commercial_info"]
+    boosts: ["today", "now", "best", "top", "amazing", "incredible", "limited"]
+    boost_multiplier: 1.3
+    description: "Offers and deals English"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # USED / SECOND-HAND / REFURBISHED
+  # ─────────────────────────────────────────────────────────────────────────────
+  - id: used_secondhand_it
+    tokens: ["usato", "usati", "usata", "usate", "seconda mano", "ricondizionato", 
+             "ricondizionati", "rigenerato", "rigenerati", "come nuovo", "seminuovo"]
+    weight: 1.5
+    scope: ["needs_fresh_info", "commercial_info"]
+    boosts: ["comprare", "acquistare", "cerco", "offerta", "prezzo", "dove trovare"]
+    boost_multiplier: 1.4
+    description: "Used/refurbished products Italian"
+
+  - id: used_secondhand_en
+    tokens: ["used", "second hand", "secondhand", "pre-owned", "preowned", 
+             "refurbished", "renewed", "like new", "certified pre-owned", "cpo"]
+    weight: 1.5
+    scope: ["needs_fresh_info", "commercial_info"]
+    boosts: ["buy", "purchase", "looking for", "deal", "price", "where to find"]
+    boost_multiplier: 1.4
+    description: "Used/refurbished products English"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # PRICE COMPARISON / WHERE TO BUY
+  # ─────────────────────────────────────────────────────────────────────────────
+  - id: price_comparison_it
+    tokens: ["confronta", "confronto", "comparare", "miglior prezzo", "prezzo migliore",
+             "dove costa meno", "più economico", "più conveniente", "risparmio"]
+    weight: 1.4
+    scope: ["needs_fresh_info", "commercial_info"]
+    boosts: ["online", "amazon", "ebay", "subito"]
+    description: "Price comparison Italian"
+
+  - id: price_comparison_en
+    tokens: ["compare", "comparison", "best price", "lowest price", "cheapest",
+             "most affordable", "budget", "save money", "best deal"]
+    weight: 1.4
+    scope: ["needs_fresh_info", "commercial_info"]
+    boosts: ["online", "amazon", "ebay"]
+    description: "Price comparison English"
+
+  - id: where_to_buy_it
+    tokens: ["dove comprare", "dove acquistare", "dove trovo", "dove posso trovare",
+             "dove vendono", "chi vende", "negozi che vendono"]
+    weight: 1.4
+    scope: ["needs_fresh_info", "commercial_info"]
+    boosts: ["online", "vicino", "roma", "milano", "napoli"]
+    description: "Where to buy Italian"
+
+  - id: where_to_buy_en
+    tokens: ["where to buy", "where can i buy", "where to find", "where can i find",
+             "who sells", "stores that sell", "shops selling"]
+    weight: 1.4
+    scope: ["needs_fresh_info", "commercial_info"]
+    boosts: ["online", "near me", "nearby"]
+    description: "Where to buy English"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # PRODUCT SEARCH (NEUTRAL -> WEB when commercial context)
+  # ─────────────────────────────────────────────────────────────────────────────
+  - id: product_search_it
+    tokens: ["cerco", "sto cercando", "cercando"]
+    weight: 1.3
+    scope: ["needs_fresh_info", "commercial_info"]
+    boosts: ["comprare", "acquistare", "offerta", "offerte", "usato", "usata",
+             "online", "prezzo", "sconto", "economico"]
+    boost_multiplier: 1.5
+    negations: ["documento", "documentazione", "file", "manuale", "procedura", 
+                "interno", "internal", "aziendale", "company", "policy"]
+    description: "Product search Italian - routes to WEB unless internal context"
+
+  - id: product_search_en
+    tokens: ["looking for", "searching for", "i'm looking for", "i am looking for"]
+    weight: 1.3
+    scope: ["needs_fresh_info", "commercial_info"]
+    boosts: ["buy", "purchase", "deal", "deals", "used", "online", "price", "discount"]
+    boost_multiplier: 1.5
+    negations: ["document", "documentation", "file", "manual", "procedure", 
+                "internal", "company", "policy"]
+    description: "Product search English - routes to WEB unless internal context"
+
+# =============================================================================
+# TECH PRODUCTS (needs_fresh_info + commercial_info) -> WEB for product queries
+# =============================================================================
+# v2.0 NEW: Recognition of tech product names and brands
+# When combined with commercial intent, routes to WEB for current prices/availability
+tech_products:
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # APPLE PRODUCTS
+  # ─────────────────────────────────────────────────────────────────────────────
+  - id: apple_mac
+    tokens: ["mac", "macbook", "macbook pro", "macbook air", "imac", "mac mini", 
+             "mac studio", "mac pro", "apple silicon", "m1", "m2", "m3", "m4"]
+    weight: 1.2
+    scope: ["needs_fresh_info", "commercial_info"]
+    boosts: ["prezzo", "price", "comprare", "buy", "usato", "used", "offerta", 
+             "deal", "nuovo", "new", "ricondizionato", "refurbished"]
+    boost_multiplier: 1.4
+    description: "Apple Mac product queries"
+
+  - id: apple_mobile
+    tokens: ["iphone", "ipad", "ipad pro", "ipad air", "ipad mini", "apple watch",
+             "airpods", "airpods pro", "airpods max", "apple tv", "homepod"]
+    weight: 1.2
+    scope: ["needs_fresh_info", "commercial_info"]
+    boosts: ["prezzo", "price", "comprare", "buy", "usato", "used", "offerta", 
+             "deal", "nuovo", "new", "ricondizionato", "refurbished"]
+    boost_multiplier: 1.4
+    description: "Apple mobile/accessory product queries"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # OTHER TECH BRANDS
+  # ─────────────────────────────────────────────────────────────────────────────
+  - id: tech_brands_computers
+    tokens: ["samsung galaxy", "google pixel", "microsoft surface", "surface pro",
+             "dell xps", "dell inspiron", "hp pavilion", "hp spectre", "hp envy",
+             "lenovo thinkpad", "lenovo ideapad", "lenovo yoga",
+             "asus zenbook", "asus rog", "acer swift", "acer predator",
+             "razer blade", "msi", "alienware"]
+    weight: 1.1
+    scope: ["needs_fresh_info", "commercial_info"]
+    boosts: ["prezzo", "price", "comprare", "buy", "usato", "used", "offerta", "deal"]
+    boost_multiplier: 1.4
+    description: "PC/Laptop brand queries"
+
+  - id: tech_brands_components
+    tokens: ["nvidia", "nvidia rtx", "geforce", "amd radeon", "intel core",
+             "intel i5", "intel i7", "intel i9", "ryzen", "ryzen 5", "ryzen 7", "ryzen 9"]
+    weight: 1.0
+    scope: ["needs_fresh_info", "commercial_info"]
+    boosts: ["prezzo", "price", "comprare", "buy", "benchmark", "performance"]
+    boost_multiplier: 1.3
+    description: "Hardware component brand queries"
+
+  - id: gaming_consoles
+    tokens: ["playstation", "ps5", "ps4", "xbox", "xbox series x", "xbox series s",
+             "nintendo switch", "switch oled", "steam deck"]
+    weight: 1.2
+    scope: ["needs_fresh_info", "commercial_info"]
+    boosts: ["prezzo", "price", "comprare", "buy", "usato", "used", "offerta", 
+             "deal", "disponibilità", "availability", "in stock"]
+    boost_multiplier: 1.4
+    description: "Gaming console queries"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # TECH CATEGORIES (generic)
+  # ─────────────────────────────────────────────────────────────────────────────
+  - id: tech_categories
+    tokens: ["laptop", "notebook", "portatile", "computer", "pc", "desktop",
+             "smartphone", "cellulare", "telefono", "tablet",
+             "monitor", "schermo", "display", "tastiera", "keyboard", 
+             "mouse", "cuffie", "headphones", "auricolari", "earbuds",
+             "webcam", "microfono", "microphone", "speaker", "altoparlante",
+             "stampante", "printer", "scanner", "router", "modem"]
+    weight: 0.9
+    scope: ["needs_fresh_info"]
+    boosts: ["comprare", "buy", "prezzo", "price", "migliore", "best", 
+             "consiglio", "recommend", "recensione", "review"]
+    boost_multiplier: 1.3
+    description: "Generic tech category queries"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # E-COMMERCE PLATFORMS (signals web search intent)
+  # ─────────────────────────────────────────────────────────────────────────────
+  - id: ecommerce_platforms
+    tokens: ["amazon", "ebay", "subito", "subito.it", "facebook marketplace",
+             "aliexpress", "wish", "zalando", "mediaworld", "unieuro", "euronics",
+             "expert", "trony", "apple store", "samsung store"]
+    weight: 1.3
+    scope: ["needs_fresh_info", "commercial_info"]
+    boosts: ["offerta", "offerte", "deal", "deals", "sconto", "sconti"]
+    description: "E-commerce platform mentions - strong WEB signal"
+
+# =============================================================================
+# NEUTRAL SEARCH VERBS (v2.0 - Context-dependent, NO default scope)
+# =============================================================================
+# These verbs alone do NOT determine routing. They gain scope from context.
+# If no commercial/internal context is detected, the Smart Router will decide.
+neutral_search_verbs:
+
+  - id: search_neutral_it
+    tokens: ["cerca", "trova", "trovare", "ricerca", "ricercare"]
+    weight: 0.0  # ZERO weight - does not influence routing alone
+    scope: []    # NO default scope - context-dependent
+    boosts: []
+    description: "Neutral search verbs Italian - scoring depends entirely on context"
+
+  - id: search_neutral_en
+    tokens: ["search", "find", "look for", "look up", "lookup"]
+    weight: 0.0
+    scope: []
+    boosts: []
+    description: "Neutral search verbs English - scoring depends entirely on context"

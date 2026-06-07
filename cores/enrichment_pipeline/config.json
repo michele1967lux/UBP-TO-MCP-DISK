@@ -1,0 +1,98 @@
+{
+  "reranker": {
+    "model": "${UBP_ENRICHMENT__RERANK_MODEL:-BAAI/bge-reranker-v2-m3}",
+    "device": "${UBP_ENRICHMENT__RERANK_DEVICE:-auto}",
+    "batch_size": "${UBP_ENRICHMENT__RERANK_BATCH_SIZE:-32}",
+    "max_length": "${UBP_ENRICHMENT__RERANK_MAX_LENGTH:-512}",
+    "normalize_scores": "${UBP_ENRICHMENT__RERANK_NORMALIZE:-true}",
+    "cache_model": "${UBP_ENRICHMENT__RERANK_CACHE:-true}",
+    "enabled": "${UBP_ENRICHMENT__RERANK_ENABLED:-true}"
+  },
+  "medical_reranker": {
+    "model": "${UBP_ENRICHMENT__MEDICAL_RERANK_MODEL:-ncbi/MedCPT-Cross-Encoder}",
+    "device": "${UBP_ENRICHMENT__MEDICAL_RERANK_DEVICE:-auto}",
+    "batch_size": "${UBP_ENRICHMENT__MEDICAL_RERANK_BATCH_SIZE:-64}",
+    "max_length": "${UBP_ENRICHMENT__MEDICAL_RERANK_MAX_LENGTH:-512}",
+    "normalize_scores": "${UBP_ENRICHMENT__MEDICAL_RERANK_NORMALIZE:-true}",
+    "cache_model": "${UBP_ENRICHMENT__MEDICAL_RERANK_CACHE:-true}",
+    "enabled": "${UBP_ENRICHMENT__MEDICAL_RERANK_ENABLED:-false}"
+  },
+  "query_expansion": {
+    "enabled": "${UBP_ENRICHMENT__QUERY_EXPANSION_ENABLED:-false}",
+    "num_variants": "${UBP_ENRICHMENT__QUERY_EXPANSION_VARIANTS:-3}",
+    "llm_module": "${UBP_ENRICHMENT__LLM_MODULE:-inference_ollama_grok}",
+    "llm_operation": "generate",
+    "temperature": "${UBP_ENRICHMENT__QUERY_EXPANSION_TEMPERATURE:-0.7}",
+    "max_tokens": "${UBP_ENRICHMENT__QUERY_EXPANSION_MAX_TOKENS:-200}",
+    "prompt_template": "Generate {num_variants} semantic variations of this search query. Return only the variations, one per line.\n\nOriginal query: {query}\n\nVariations:"
+  },
+  "hyde": {
+    "enabled": "${UBP_ENRICHMENT__HYDE_ENABLED:-false}",
+    "llm_module": "${UBP_ENRICHMENT__LLM_MODULE:-inference_ollama_grok}",
+    "llm_operation": "generate",
+    "temperature": "${UBP_ENRICHMENT__HYDE_TEMPERATURE:-0.5}",
+    "max_tokens": "${UBP_ENRICHMENT__HYDE_MAX_TOKENS:-300}",
+    "document_type": "${UBP_ENRICHMENT__HYDE_DOCUMENT_TYPE:-answer}",
+    "prompt_templates": {
+      "answer": "Write a detailed answer to this question as if you were an expert. The answer should be factual and informative.\n\nQuestion: {query}\n\nAnswer:",
+      "technical": "Write a technical documentation excerpt that would answer this query. Be precise and detailed.\n\nQuery: {query}\n\nDocumentation:",
+      "faq": "Write an FAQ entry that answers this question. Include both the question and a comprehensive answer.\n\nQuestion: {query}\n\nFAQ Entry:",
+      "article": "Write a short article excerpt that addresses this topic. Be informative and well-structured.\n\nTopic: {query}\n\nExcerpt:"
+    }
+  },
+  "compression": {
+    "enabled": "${UBP_ENRICHMENT__COMPRESSION_ENABLED:-false}",
+    "default_ratio": "${UBP_ENRICHMENT__COMPRESSION_RATIO:-0.5}",
+    "method": "${UBP_ENRICHMENT__COMPRESSION_METHOD:-extractive}",
+    "min_chunk_length": "${UBP_ENRICHMENT__COMPRESSION_MIN_LENGTH:-50}",
+    "preserve_sentences": "${UBP_ENRICHMENT__COMPRESSION_PRESERVE_SENTENCES:-true}",
+    "llm_module": "${UBP_ENRICHMENT__LLM_MODULE:-inference_ollama_grok}",
+    "abstractive_prompt": "Summarize the following text concisely while preserving all key information relevant to the query.\n\nQuery: {query}\n\nText: {text}\n\nConcise summary:"
+  },
+  "fusion": {
+    "enabled": "${UBP_ENRICHMENT__FUSION_ENABLED:-false}",
+    "overlap_threshold": "${UBP_ENRICHMENT__FUSION_OVERLAP_THRESHOLD:-0.3}",
+    "semantic_threshold": "${UBP_ENRICHMENT__FUSION_SEMANTIC_THRESHOLD:-0.93}",
+    "max_fused_length": "${UBP_ENRICHMENT__FUSION_MAX_LENGTH:-1000}",
+    "strategies": ["overlap", "adjacent", "semantic"]
+  },
+  "deduplication": {
+    "enabled": "${UBP_ENRICHMENT__DEDUP_ENABLED:-false}",
+    "similarity_threshold": "${UBP_ENRICHMENT__DEDUP_THRESHOLD:-0.95}",
+    "method": "${UBP_ENRICHMENT__DEDUP_METHOD:-semantic}"
+  },
+  "metadata": {
+    "enabled": "${UBP_ENRICHMENT__METADATA_ENABLED:-true}",
+    "default_types": "${UBP_ENRICHMENT__METADATA_TYPES:-source,relevance,position,tokens}"
+  },
+  "pipeline": {
+    "default_steps": [
+      {"step": "query_expansion", "enabled": "${UBP_ENRICHMENT__QUERY_EXPANSION_ENABLED:-false}"},
+      {"step": "hyde", "enabled": "${UBP_ENRICHMENT__HYDE_ENABLED:-false}"},
+      {"step": "rerank", "enabled": "${UBP_ENRICHMENT__RERANK_ENABLED:-true}"},
+      {"step": "fusion", "enabled": "${UBP_ENRICHMENT__FUSION_ENABLED:-false}"},
+      {"step": "deduplication", "enabled": "${UBP_ENRICHMENT__DEDUP_ENABLED:-false}"},
+      {"step": "compression", "enabled": "${UBP_ENRICHMENT__COMPRESSION_ENABLED:-false}"},
+      {"step": "metadata", "enabled": "${UBP_ENRICHMENT__METADATA_ENABLED:-true}"}
+    ],
+    "timeout_seconds": "${UBP_ENRICHMENT__PIPELINE_TIMEOUT_SECONDS:-60}",
+    "fail_fast": "${UBP_ENRICHMENT__FAIL_FAST:-false}",
+    "enable_parallel_execution": "${UBP_ENRICHMENT__PARALLEL_EXECUTION:-true}"
+  },
+  "cache": {
+    "enabled": "${UBP_ENRICHMENT__CACHE_ENABLED:-true}",
+    "ttl_seconds": "${UBP_ENRICHMENT__CACHE_TTL_SECONDS:-3600}",
+    "redis_prefix": "ubp:enrichment:cache",
+    "cache_rerank": "${UBP_ENRICHMENT__CACHE_RERANK:-true}",
+    "cache_hyde": "${UBP_ENRICHMENT__CACHE_HYDE:-true}"
+  },
+  "delegation": {
+    "llm_module": "${UBP_ENRICHMENT__LLM_MODULE:-inference_ollama_grok}",
+    "timeout_seconds": 30
+  },
+  "logging": {
+    "log_requests": "${UBP_ENRICHMENT__LOG_REQUESTS:-true}",
+    "log_timings": "${UBP_ENRICHMENT__LOG_TIMINGS:-true}",
+    "log_level": "INFO"
+  }
+}

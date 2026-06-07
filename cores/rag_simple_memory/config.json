@@ -1,0 +1,35 @@
+{
+  "embedding": {
+    "provider": "simple",
+    "model": "tfidf",
+    "dimension": 300,
+    "normalize": true
+  },
+  "chunking": {
+    "enabled": true,
+    "chunk_size": 500,
+    "chunk_overlap": 50,
+    "split_by": "sentence"
+  },
+  "retrieval": {
+    "default_top_k": 5,
+    "min_similarity_threshold": 0.3,
+    "algorithm": "cosine_similarity"
+  },
+  "storage": {
+    "max_documents": 10000,
+    "max_memory_mb": 512,
+    "auto_cleanup": true
+  },
+  "limits": {
+    "max_documents": 10000,
+    "max_document_size": 1000000,
+    "max_memory_mb": 500
+  },
+  "preprocessing": {
+    "lowercase": true,
+    "remove_punctuation": false,
+    "remove_stopwords": true,
+    "stemming": false
+  }
+}

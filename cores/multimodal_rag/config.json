@@ -1,0 +1,322 @@
+{
+  "module": {
+    "name": "multimodal_rag",
+    "version": "1.0.0",
+    "description": "Multi-Modal RAG with image, text, and document understanding"
+  },
+
+  "embeddings": {
+    "default_model": "${UBP_MMRAG__EMBED_MODEL:-openai/clip-vit-base-patch32}",
+    "device": "${UBP_MMRAG__DEVICE:-auto}",
+    "batch_size": "${UBP_MMRAG__EMBED_BATCH_SIZE:-16}",
+    "normalize": "${UBP_MMRAG__EMBED_NORMALIZE:-true}",
+    "cache_embeddings": "${UBP_MMRAG__EMBED_CACHE:-true}",
+    
+    "models": {
+      "clip": {
+        "name": "openai/clip-vit-base-patch32",
+        "dimension": 512,
+        "max_text_length": 77,
+        "image_size": 224
+      },
+      "clip_large": {
+        "name": "openai/clip-vit-large-patch14",
+        "dimension": 768,
+        "max_text_length": 77,
+        "image_size": 224
+      },
+      "blip": {
+        "name": "Salesforce/blip-image-captioning-base",
+        "dimension": 768,
+        "supports_captioning": true
+      },
+      "blip2": {
+        "name": "Salesforce/blip2-opt-2.7b",
+        "dimension": 768,
+        "supports_vqa": true,
+        "supports_captioning": true
+      },
+      "siglip": {
+        "name": "google/siglip-base-patch16-224",
+        "dimension": 768,
+        "image_size": 224
+      },
+      "openclip": {
+        "name": "laion/CLIP-ViT-H-14-laion2B-s32B-b79K",
+        "dimension": 1024,
+        "image_size": 224
+      }
+    },
+    
+    "text_embedding": {
+      "enabled": "${UBP_MMRAG__TEXT_EMBED_ENABLED:-true}",
+      "model": "${UBP_MMRAG__TEXT_EMBED_MODEL:-auto}",
+      "fallback_to_clip": "${UBP_MMRAG__TEXT_EMBED_FALLBACK:-true}"
+    }
+  },
+
+  "image_processing": {
+    "default_size": "${UBP_MMRAG__IMG_SIZE:-224}",
+    "max_size": "${UBP_MMRAG__IMG_MAX_SIZE:-1024}",
+    "min_size": "${UBP_MMRAG__IMG_MIN_SIZE:-32}",
+    "preserve_aspect_ratio": "${UBP_MMRAG__IMG_PRESERVE_ASPECT:-true}",
+    "normalize": "${UBP_MMRAG__IMG_NORMALIZE:-true}",
+    "color_mode": "${UBP_MMRAG__IMG_COLOR:-RGB}",
+    
+    "preprocessing": {
+      "auto_orient": "${UBP_MMRAG__IMG_AUTO_ORIENT:-true}",
+      "remove_exif": "${UBP_MMRAG__IMG_REMOVE_EXIF:-true}",
+      "convert_to_rgb": "${UBP_MMRAG__IMG_CONVERT_RGB:-true}"
+    },
+    
+    "augmentation": {
+      "enabled": "${UBP_MMRAG__IMG_AUGMENT:-false}",
+      "horizontal_flip": "${UBP_MMRAG__IMG_HFLIP:-false}",
+      "rotation_range": "${UBP_MMRAG__IMG_ROTATION:-0}",
+      "brightness_range": "${UBP_MMRAG__IMG_BRIGHTNESS:-0.1}"
+    },
+    
+    "supported_formats": ["jpg", "jpeg", "png", "gif", "webp", "bmp", "tiff"]
+  },
+
+  "ocr": {
+    "enabled": "${UBP_MMRAG__OCR_ENABLED:-true}",
+    "engine": "${UBP_MMRAG__OCR_ENGINE:-tesseract}",
+    "languages": "${UBP_MMRAG__OCR_LANGUAGES:-eng,ita}",
+    "confidence_threshold": "${UBP_MMRAG__OCR_CONFIDENCE:-0.6}",
+    "preprocess_image": "${UBP_MMRAG__OCR_PREPROCESS:-true}",
+    
+    "engines": {
+      "tesseract": {
+        "path": "${UBP_MMRAG__TESSERACT_PATH:-}",
+        "config": "--oem 3 --psm 3"
+      },
+      "easyocr": {
+        "gpu": "${UBP_MMRAG__EASYOCR_GPU:-true}",
+        "languages": ["en", "it"]
+      },
+      "paddleocr": {
+        "use_angle_cls": true,
+        "lang": "en"
+      }
+    },
+    
+    "post_processing": {
+      "remove_noise": "${UBP_MMRAG__OCR_DENOISE:-true}",
+      "merge_lines": "${UBP_MMRAG__OCR_MERGE_LINES:-true}",
+      "min_text_length": "${UBP_MMRAG__OCR_MIN_LENGTH:-3}"
+    }
+  },
+
+  "document_processing": {
+    "enabled": "${UBP_MMRAG__DOC_ENABLED:-true}",
+    "extract_images": "${UBP_MMRAG__DOC_EXTRACT_IMAGES:-true}",
+    "extract_tables": "${UBP_MMRAG__DOC_EXTRACT_TABLES:-true}",
+    "extract_diagrams": "${UBP_MMRAG__DOC_EXTRACT_DIAGRAMS:-true}",
+    "ocr_scanned_pages": "${UBP_MMRAG__DOC_OCR_SCANNED:-true}",
+    "dpi": "${UBP_MMRAG__DOC_DPI:-150}",
+    
+    "pdf": {
+      "extract_images": true,
+      "min_image_size": 50,
+      "max_images_per_page": 10,
+      "render_pages_as_images": "${UBP_MMRAG__PDF_RENDER:-false}"
+    },
+    
+    "image_text_association": {
+      "enabled": "${UBP_MMRAG__DOC_ASSOCIATE:-true}",
+      "proximity_threshold": "${UBP_MMRAG__DOC_PROXIMITY:-100}",
+      "caption_detection": "${UBP_MMRAG__DOC_CAPTION_DETECT:-true}"
+    }
+  },
+
+  "vqa": {
+    "enabled": "${UBP_MMRAG__VQA_ENABLED:-true}",
+    "model": "${UBP_MMRAG__VQA_MODEL:-blip2}",
+    "max_answer_length": "${UBP_MMRAG__VQA_MAX_LENGTH:-100}",
+    "temperature": "${UBP_MMRAG__VQA_TEMPERATURE:-0.7}",
+    "num_beams": "${UBP_MMRAG__VQA_BEAMS:-5}",
+    
+    "models": {
+      "blip2": {
+        "name": "Salesforce/blip2-opt-2.7b",
+        "supports_chat": false
+      },
+      "llava": {
+        "name": "llava-hf/llava-1.5-7b-hf",
+        "supports_chat": true
+      },
+      "qwen_vl": {
+        "name": "Qwen/Qwen-VL-Chat",
+        "supports_chat": true
+      },
+      "florence": {
+        "name": "microsoft/Florence-2-base",
+        "supports_grounding": true
+      }
+    },
+    
+    "prompts": {
+      "default": "Answer the question based on the image.",
+      "detailed": "Analyze the image carefully and provide a detailed answer to the question.",
+      "concise": "Provide a brief, direct answer."
+    }
+  },
+
+  "captioning": {
+    "enabled": "${UBP_MMRAG__CAPTION_ENABLED:-true}",
+    "model": "${UBP_MMRAG__CAPTION_MODEL:-blip}",
+    "max_length": "${UBP_MMRAG__CAPTION_MAX_LENGTH:-75}",
+    "min_length": "${UBP_MMRAG__CAPTION_MIN_LENGTH:-5}",
+    "num_beams": "${UBP_MMRAG__CAPTION_BEAMS:-3}",
+    
+    "styles": {
+      "descriptive": "Describe the image in detail.",
+      "concise": "Briefly describe what you see.",
+      "technical": "Provide a technical description of the image content.",
+      "creative": "Describe the image creatively."
+    }
+  },
+
+  "retrieval": {
+    "default_strategy": "${UBP_MMRAG__RETRIEVAL_STRATEGY:-hybrid}",
+    "top_k": "${UBP_MMRAG__RETRIEVAL_TOP_K:-10}",
+    "similarity_threshold": "${UBP_MMRAG__RETRIEVAL_THRESHOLD:-0.5}",
+    
+    "strategies": {
+      "text_to_image": {
+        "enabled": true,
+        "weight": 1.0
+      },
+      "image_to_text": {
+        "enabled": true,
+        "weight": 1.0
+      },
+      "image_to_image": {
+        "enabled": true,
+        "weight": 1.0
+      },
+      "text_to_text": {
+        "enabled": true,
+        "weight": 1.0
+      },
+      "hybrid": {
+        "enabled": true,
+        "combine_method": "weighted_sum",
+        "weights": {
+          "visual": 0.5,
+          "textual": 0.5
+        }
+      }
+    },
+    
+    "reranking": {
+      "enabled": "${UBP_MMRAG__RERANK_ENABLED:-true}",
+      "model": "${UBP_MMRAG__RERANK_MODEL:-cross_modal}",
+      "top_k_rerank": "${UBP_MMRAG__RERANK_TOP_K:-20}"
+    }
+  },
+
+  "fusion": {
+    "default_method": "${UBP_MMRAG__FUSION_METHOD:-late}",
+    
+    "methods": {
+      "early": {
+        "description": "Concatenate features before similarity",
+        "normalize": true
+      },
+      "late": {
+        "description": "Combine scores after retrieval",
+        "combine": "weighted_average"
+      },
+      "hybrid": {
+        "description": "Multi-stage fusion",
+        "stages": ["early_filter", "late_rerank"]
+      },
+      "attention": {
+        "description": "Cross-modal attention fusion",
+        "num_heads": 8
+      }
+    },
+    
+    "score_combination": {
+      "method": "${UBP_MMRAG__FUSION_COMBINE:-weighted_average}",
+      "weights": {
+        "text_similarity": 0.4,
+        "image_similarity": 0.4,
+        "cross_modal": 0.2
+      }
+    }
+  },
+
+  "indexing": {
+    "unified_index": "${UBP_MMRAG__UNIFIED_INDEX:-true}",
+    "separate_modality_indices": "${UBP_MMRAG__SEPARATE_INDICES:-false}",
+    "store_thumbnails": "${UBP_MMRAG__STORE_THUMBNAILS:-true}",
+    "thumbnail_size": "${UBP_MMRAG__THUMBNAIL_SIZE:-128}",
+    
+    "vector_store": {
+      "type": "${UBP_MMRAG__VECTOR_STORE:-qdrant}",
+      "collection_prefix": "ubp_multimodal",
+      "distance_metric": "cosine"
+    },
+    
+    "metadata": {
+      "store_modality": true,
+      "store_dimensions": true,
+      "store_source": true,
+      "store_timestamp": true
+    }
+  },
+
+  "chunking": {
+    "strategy": "${UBP_MMRAG__CHUNK_STRATEGY:-semantic}",
+    "preserve_image_context": "${UBP_MMRAG__CHUNK_PRESERVE_IMG:-true}",
+    "max_chunk_size": "${UBP_MMRAG__CHUNK_MAX_SIZE:-1000}",
+    "overlap": "${UBP_MMRAG__CHUNK_OVERLAP:-100}",
+    
+    "image_handling": {
+      "include_caption_in_chunk": true,
+      "include_ocr_in_chunk": true,
+      "max_images_per_chunk": 3
+    }
+  },
+
+  "cache": {
+    "enabled": "${UBP_MMRAG__CACHE_ENABLED:-true}",
+    "ttl_seconds": "${UBP_MMRAG__CACHE_TTL:-7200}",
+    "redis_prefix": "ubp:multimodal:cache",
+    "cache_embeddings": "${UBP_MMRAG__CACHE_EMBEDDINGS:-true}",
+    "cache_captions": "${UBP_MMRAG__CACHE_CAPTIONS:-true}",
+    "cache_ocr": "${UBP_MMRAG__CACHE_OCR:-true}"
+  },
+
+  "llm_integration": {
+    "enabled": "${UBP_MMRAG__LLM_ENABLED:-true}",
+    "module": "${UBP_MMRAG__LLM_MODULE:-inference_ollama_grok}",
+    "use_for_caption_enhancement": "${UBP_MMRAG__LLM_CAPTION:-false}",
+    "use_for_query_understanding": "${UBP_MMRAG__LLM_QUERY:-true}",
+    "timeout_seconds": "${UBP_MMRAG__LLM_TIMEOUT:-60}"
+  },
+
+  "performance": {
+    "max_concurrent_embeddings": "${UBP_MMRAG__MAX_CONCURRENT:-4}",
+    "image_processing_workers": "${UBP_MMRAG__IMG_WORKERS:-2}",
+    "prefetch_images": "${UBP_MMRAG__PREFETCH:-true}",
+    "lazy_load_models": "${UBP_MMRAG__LAZY_LOAD:-true}"
+  },
+
+  "logging": {
+    "log_embeddings": "${UBP_MMRAG__LOG_EMBEDDINGS:-false}",
+    "log_retrievals": "${UBP_MMRAG__LOG_RETRIEVALS:-true}",
+    "log_timings": "${UBP_MMRAG__LOG_TIMINGS:-true}",
+    "log_level": "${UBP_MMRAG__LOG_LEVEL:-INFO}"
+  },
+
+  "metrics": {
+    "enabled": "${UBP_MMRAG__METRICS_ENABLED:-true}",
+    "track_modality_distribution": true,
+    "track_retrieval_accuracy": true,
+    "track_latency_by_modality": true
+  }
+}

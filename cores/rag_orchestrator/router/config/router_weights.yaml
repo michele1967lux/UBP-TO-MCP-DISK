@@ -1,0 +1,51 @@
+# Router Weights Configuration
+# FIX-008 v1.8.2: Externalized magic numbers for router scoring
+#
+# All weights and thresholds are configurable for tuning routing behavior.
+# Changes to this file take effect on module reload.
+
+# =============================================================================
+# SCORE CALCULATION WEIGHTS
+# =============================================================================
+weights:
+  # Commercial intent boosts for WEB routing
+  commercial_fresh_boost: 0.8       # When both commercial + fresh signals present
+  commercial_standalone_boost: 0.5  # Commercial alone (prices, availability)
+
+  # RAG score adjustments
+  technical_depth_rag_boost: 0.3    # Technical depth only boosts RAG with internal context
+
+# =============================================================================
+# ROUTING THRESHOLDS
+# =============================================================================
+thresholds:
+  # Fallback behavior for low-signal queries
+  unknown_query_fallback: 0.3       # If max_score < this, route to WEB
+  rag_web_tiebreaker: 0.2           # If RAG-WEB gap < this, prefer WEB
+
+  # Strong signal thresholds for confidence calculation
+  high_fresh_threshold: 0.8         # needs_fresh_info threshold for high confidence
+  high_commercial_with_fresh: 0.5   # commercial_info threshold when fresh is high
+  high_commercial_threshold: 0.8    # commercial_info alone for high confidence
+  very_high_fresh_threshold: 1.0    # Maximum fresh signal
+  internal_knowledge_high: 1.0      # Strong internal knowledge signal
+  pure_conversation_high: 1.0       # Strong conversation signal
+  strong_signal_threshold: 0.7      # Threshold for bonus confidence
+
+# =============================================================================
+# CONFIDENCE VALUES
+# =============================================================================
+confidence:
+  # Fixed confidence for specific conditions
+  hard_flag_confidence: 0.95        # When hard flags (explicit_source) present
+  shopping_query_confidence: 0.88   # Commercial + fresh = shopping query
+  high_capability_confidence: 0.85  # High single capability score
+  commercial_only_confidence: 0.82  # Strong commercial without fresh
+  uncertain_confidence: 0.5         # No signals detected
+
+  # Confidence formula parameters
+  base_start: 0.5                   # Starting confidence value
+  gap_weight: 0.3                   # Weight for score gap in formula
+  max_score_weight: 0.4             # Weight for max score in formula
+  strong_signal_bonus: 0.1          # Bonus for signals >= strong_signal_threshold
+  ambiguity_penalty_factor: 0.3     # Multiplier for ambiguity reduction

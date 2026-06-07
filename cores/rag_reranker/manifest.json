@@ -1,0 +1,268 @@
+{
+    "name": "rag_reranker",
+    "version": "1.0.0",
+    "description": "Document reranking with cross-encoder models (local and API-based)",
+    "author": "UBP Team",
+    "module_type": "search",
+    "architecture": "3-file-pattern",
+    "requires_redis": false,
+    "requires_postgres": false,
+    "requires_event_bus": false,
+    "operations": [
+        {
+            "name": "rerank",
+            "description": "Rerank documents by relevance to query",
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 500,
+                "requires_session": false,
+                "category": "knowledge"
+            },
+            "parameters": {
+                "query": {
+                    "type": "string",
+                    "required": true,
+                    "description": "Search query"
+                },
+                "documents": {
+                    "type": "array",
+                    "required": true,
+                    "description": "List of documents with 'content' field"
+                },
+                "top_k": {
+                    "type": "integer",
+                    "required": false,
+                    "default": 10,
+                    "description": "Number of top results to return"
+                }
+            },
+            "returns": {
+                "query": "string",
+                "results": "array of RerankResult objects",
+                "count": "integer",
+                "original_count": "integer",
+                "backend": "string",
+                "request_id": "string"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "rerank_search_results",
+            "description": "Perform search and rerank in one operation",
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 650,
+                "requires_session": false,
+                "category": "knowledge"
+            },
+            "parameters": {
+                "query": {
+                    "type": "string",
+                    "required": true,
+                    "description": "Search query"
+                },
+                "collection_name": {
+                    "type": "string",
+                    "required": true,
+                    "description": "Target collection name"
+                },
+                "initial_top_k": {
+                    "type": "integer",
+                    "required": false,
+                    "default": 50,
+                    "description": "Number of results to retrieve initially"
+                },
+                "final_top_k": {
+                    "type": "integer",
+                    "required": false,
+                    "default": 10,
+                    "description": "Number of results after reranking"
+                },
+                "search_type": {
+                    "type": "string",
+                    "required": false,
+                    "default": "hybrid",
+                    "enum": [
+                        "hybrid",
+                        "dense",
+                        "sparse"
+                    ],
+                    "description": "Type of search to perform"
+                }
+            },
+            "returns": {
+                "query": "string",
+                "collection": "string",
+                "results": "array of RerankResult objects",
+                "count": "integer",
+                "initial_count": "integer",
+                "search_type": "string",
+                "reranked": "boolean",
+                "backend": "string",
+                "request_id": "string"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "get_reranker_info",
+            "description": "Get information about the configured reranker",
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "parameters": {},
+            "returns": {
+                "backend": "string",
+                "model": "string",
+                "total_rerank_calls": "integer",
+                "total_documents_reranked": "integer",
+                "request_id": "string"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "compare_backends",
+            "description": "Compare reranking results across backends (admin only)",
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 1500,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "parameters": {
+                "query": {
+                    "type": "string",
+                    "required": true,
+                    "description": "Search query"
+                },
+                "documents": {
+                    "type": "array",
+                    "required": true,
+                    "description": "Documents to rerank"
+                },
+                "top_k": {
+                    "type": "integer",
+                    "required": false,
+                    "default": 10,
+                    "description": "Number of results per backend"
+                }
+            },
+            "returns": {
+                "query": "string",
+                "document_count": "integer",
+                "backends_tested": "array of strings",
+                "results": "object with results per backend",
+                "request_id": "string"
+            },
+            "admin_only": true,
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "health_check",
+            "description": "Health check with reranker statistics",
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 75,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "parameters": {},
+            "returns": {
+                "module": "string",
+                "version": "string",
+                "status": "string (healthy|unhealthy)",
+                "total_rerank_calls": "integer",
+                "total_documents_reranked": "integer",
+                "provider": "object"
+            },
+            "security": "none",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "list_reranker_models",
+            "description": "List all available reranker models across backends",
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 150,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "parameters": {},
+            "returns": {
+                "models": "array of reranker model objects",
+                "providers": "object with backend availability status",
+                "total_count": "integer",
+                "available_count": "integer",
+                "request_id": "string"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        }
+    ],
+    "dependencies": {
+        "modules": [
+            "rag_qdrant"
+        ],
+        "optional_modules": [
+            "rag_hybrid_search"
+        ]
+    },
+    "config_file": "config.json",
+    "production_ready": true,
+    "tools": [
+        {
+            "name": "rerank",
+            "operation": "rerank",
+            "tool_type": "step",
+            "description": "Rerank documents by relevance to query",
+            "providers": [],
+            "input_schema": {
+                "query": {
+                    "type": "string",
+                    "required": true
+                },
+                "documents": {
+                    "type": "array",
+                    "required": true
+                },
+                "top_k": {
+                    "type": "integer"
+                }
+            },
+            "output_schema": {
+                "results": {
+                    "type": "array"
+                },
+                "count": {
+                    "type": "integer"
+                }
+            },
+            "timeout": 15.0,
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 1500,
+                "requires_session": false,
+                "category": "knowledge"
+            }
+        }
+    ]
+}

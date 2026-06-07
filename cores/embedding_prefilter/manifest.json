@@ -1,0 +1,215 @@
+{
+    "name": "embedding_prefilter",
+    "version": "1.1.0",
+    "description": "Embedding-based meta-routing brain with 4-layer decision engine",
+    "module_type": "routing",
+    "requires_redis": false,
+    "requires_postgres": false,
+    "requires_event_bus": true,
+    "operations": [
+        {
+            "name": "initialize",
+            "description": "Initialize embedding centroids and engine",
+            "security": "none",
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 200,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "pre_route",
+            "description": "Classify query and return PreRouteDecision",
+            "security": "authenticated",
+            "parameters": {
+                "query": "str",
+                "context": "Dict[str, Any]",
+                "ctx": "UBPContext"
+            },
+            "returns": "PreRouteDecision",
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 400,
+                "requires_session": false,
+                "category": "routing"
+            },
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "get_routing_profile",
+            "description": "Get per-user routing profile from Redis (R3, future)",
+            "security": "authenticated",
+            "parameters": {
+                "user_id": "str"
+            },
+            "returns": "Optional[RoutingProfile]",
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "routing"
+            },
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "health_check",
+            "description": "Health status of the prefilter engine",
+            "security": "none",
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "shutdown",
+            "description": "Graceful shutdown",
+            "security": "none",
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 150,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "reload_centroids",
+            "description": "Hot-reload centroids from Qdrant without restart",
+            "security": "admin",
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": true,
+                "estimated_latency_ms": 300,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "list_prototypes",
+            "description": "List routing prototypes with optional cluster/active filters",
+            "security": "admin",
+            "parameters": {
+                "cluster": "Optional[str]",
+                "active": "Optional[bool]",
+                "limit": "int",
+                "offset": "int"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "add_prototype",
+            "description": "Add a new routing prototype (auto-embeds text)",
+            "security": "admin",
+            "parameters": {
+                "text": "str",
+                "cluster": "str",
+                "weight": "float",
+                "language": "str",
+                "domain": "str"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 400,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "update_prototype",
+            "description": "Update prototype metadata (weight, cluster, active)",
+            "security": "admin",
+            "parameters": {
+                "id": "str",
+                "weight": "Optional[float]",
+                "cluster": "Optional[str]",
+                "active": "Optional[bool]"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 150,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "delete_prototype",
+            "description": "Soft-delete (active=false) or hard-delete a prototype",
+            "security": "admin",
+            "parameters": {
+                "id": "str",
+                "hard": "bool"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 150,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "prototype_stats",
+            "description": "Per-cluster statistics for routing prototypes",
+            "security": "admin",
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "scope": "system",
+            "client_types": []
+        }
+    ],
+    "event_publications": [
+        "embedding_prefilter.route_decided",
+        "embedding_prefilter.deferred_to_llm_router",
+        "embedding_prefilter.fallback_activated",
+        "embedding_prefilter.stability_override"
+    ],
+    "event_subscriptions": [],
+    "dependencies": {
+        "modules": [
+            "rag_qdrant"
+        ],
+        "optional_modules": [
+            "user_profile_memory"
+        ]
+    },
+    "config_file": "config.json",
+    "settings_prefix": "UBP_PREFILTER__"
+}

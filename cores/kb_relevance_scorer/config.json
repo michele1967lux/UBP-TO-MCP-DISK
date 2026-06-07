@@ -1,0 +1,21 @@
+{
+  "abs_min": 0.13,
+  "avg_min": 0.11,
+  "mid_floor": 0.16,
+  "hi_floor": 0.22,
+  "delta12_normalizer": 0.06,
+  "std_normalizer": 0.08,
+  "max_docs_normalizer": 5,
+  "rel_threshold_default": 0.62,
+  "rel_threshold_general_knowledge": 0.72,
+  "rel_threshold_doc_seeking": 0.58,
+  "short_query_min_tokens": 3,
+  "default_top_k": 5,
+  "weights": {
+    "strength": 0.45,
+    "support": 0.20,
+    "separation": 0.20,
+    "coverage": 0.10,
+    "dispersion": 0.05
+  }
+}

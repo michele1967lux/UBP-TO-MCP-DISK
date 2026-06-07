@@ -1,0 +1,759 @@
+{
+    "name": "multimodal_rag",
+    "version": "1.0.0",
+    "description": "Multi-Modal RAG - Image, text, and document understanding with cross-modal retrieval, VQA, captioning, and unified embedding space",
+    "author": "UBP Team",
+    "module_type": "retrieval",
+    "architecture": "3-file-pattern",
+    "requires_redis": true,
+    "requires_postgres": false,
+    "requires_event_bus": true,
+    "dependencies": {
+        "modules": [],
+        "optional_modules": [
+            "inference_vllm",
+            "inference_ollama_grok",
+            "inference_openai_anthropic"
+        ],
+        "python_packages": [
+            "torch",
+            "transformers",
+            "Pillow",
+            "numpy"
+        ],
+        "optional_packages": [
+            "open-clip-torch",
+            "sentence-transformers",
+            "pytesseract",
+            "easyocr",
+            "PyMuPDF",
+            "pdf2image"
+        ],
+        "redis_keys": [
+            "ubp:multimodal:cache:*",
+            "ubp:multimodal:embed:*",
+            "ubp:multimodal:caption:*",
+            "ubp:multimodal:ocr:*"
+        ],
+        "notes": "Requires CLIP/BLIP models for embeddings. VQA requires BLIP-2 or LLaVA. OCR requires Tesseract or EasyOCR. PDF processing requires PyMuPDF."
+    },
+    "supported_models": {
+        "embedding": [
+            "openai/clip-vit-base-patch32",
+            "openai/clip-vit-large-patch14",
+            "Salesforce/blip-image-captioning-base",
+            "Salesforce/blip2-opt-2.7b",
+            "google/siglip-base-patch16-224",
+            "laion/CLIP-ViT-H-14-laion2B-s32B-b79K"
+        ],
+        "vqa": [
+            "Salesforce/blip2-opt-2.7b",
+            "Salesforce/blip2-flan-t5-xl",
+            "llava-hf/llava-1.5-7b-hf",
+            "Qwen/Qwen-VL-Chat"
+        ],
+        "captioning": [
+            "Salesforce/blip-image-captioning-base",
+            "Salesforce/blip-image-captioning-large",
+            "Salesforce/blip2-opt-2.7b"
+        ]
+    },
+    "operations": [
+        {
+            "name": "initialize",
+            "description": "Initialize multi-modal RAG pipeline with embedding models, VQA, and document processing",
+            "parameters": {
+                "preload_models": {
+                    "type": "boolean",
+                    "required": false,
+                    "default": false,
+                    "description": "Preload embedding and VQA models"
+                }
+            },
+            "returns": {
+                "status": "string",
+                "embedding_model": "string",
+                "vqa_enabled": "boolean",
+                "ocr_enabled": "boolean"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "none",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "shutdown",
+            "description": "Graceful shutdown, unload models",
+            "parameters": {},
+            "returns": {
+                "status": "string",
+                "resources_released": "array"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "none",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "health_check",
+            "description": "Health check for all components",
+            "parameters": {},
+            "returns": {
+                "module": "string",
+                "status": "string",
+                "embedder": "object",
+                "vqa": "object",
+                "cache": "object"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "none",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "load_image",
+            "description": "Load and preprocess an image from various sources (file, bytes, base64, URL)",
+            "parameters": {
+                "source": {
+                    "type": "string|bytes",
+                    "required": true,
+                    "description": "Image source: file path, bytes, base64 string, or URL"
+                },
+                "image_id": {
+                    "type": "string",
+                    "required": false,
+                    "description": "Optional ID for the image"
+                }
+            },
+            "returns": {
+                "id": "string",
+                "width": "integer",
+                "height": "integer",
+                "format": "string"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 500,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "embed_image",
+            "description": "Generate embedding for an image using CLIP/BLIP",
+            "parameters": {
+                "image_source": {
+                    "type": "string|bytes|object",
+                    "required": true,
+                    "description": "Image source or ImageData object"
+                }
+            },
+            "returns": {
+                "image_id": "string",
+                "embedding_dimension": "integer",
+                "embedding_preview": "array (first 5 values)",
+                "time_ms": "number"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 3000,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "embed_text",
+            "description": "Generate embedding for text in same space as images",
+            "parameters": {
+                "text": {
+                    "type": "string",
+                    "required": true
+                }
+            },
+            "returns": {
+                "text_preview": "string",
+                "embedding_dimension": "integer",
+                "embedding_preview": "array",
+                "time_ms": "number"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 2000,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "compute_similarity",
+            "description": "Compute similarity between text and image embeddings",
+            "parameters": {
+                "text": {
+                    "type": "string",
+                    "required": true
+                },
+                "image_source": {
+                    "type": "string|bytes|object",
+                    "required": true
+                }
+            },
+            "returns": {
+                "similarity": "number (0-1)",
+                "time_ms": "number"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 2000,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "extract_text_from_image",
+            "description": "Extract text from image using OCR (Tesseract/EasyOCR)",
+            "parameters": {
+                "image_source": {
+                    "type": "string|bytes|object",
+                    "required": true
+                }
+            },
+            "returns": {
+                "image_id": "string",
+                "extracted_text": "string",
+                "text_length": "integer",
+                "time_ms": "number"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 2000,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "index_item",
+            "description": "Add single multi-modal item to index",
+            "parameters": {
+                "item": {
+                    "type": "object",
+                    "required": true,
+                    "description": "{id, modality, text_content, image_data/image_source, source_id}"
+                }
+            },
+            "returns": {
+                "indexed": "boolean",
+                "item_id": "string",
+                "modality": "string"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 500,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "client_admin",
+            "scope": "general",
+            "client_types": []
+        },
+        {
+            "name": "index_batch",
+            "description": "Add batch of multi-modal items to index",
+            "parameters": {
+                "items": {
+                    "type": "array",
+                    "required": true
+                }
+            },
+            "returns": {
+                "indexed_count": "integer",
+                "total_in_index": "integer",
+                "time_ms": "number"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 1000,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "client_admin",
+            "scope": "general",
+            "client_types": []
+        },
+        {
+            "name": "retrieve",
+            "description": "Main retrieval operation - find items matching query",
+            "parameters": {
+                "query": {
+                    "type": "string|object",
+                    "required": true,
+                    "description": "Text query or image object"
+                },
+                "mode": {
+                    "type": "string",
+                    "required": false,
+                    "default": "hybrid",
+                    "options": [
+                        "hybrid",
+                        "text_to_image",
+                        "image_to_text",
+                        "image_to_image",
+                        "unified"
+                    ]
+                },
+                "top_k": {
+                    "type": "integer",
+                    "required": false,
+                    "default": 10
+                }
+            },
+            "returns": {
+                "query": "string",
+                "query_modality": "string",
+                "retrieval_mode": "string",
+                "items": "array of MultiModalItem",
+                "total_candidates": "integer",
+                "time_ms": "number"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 1500,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "text_to_image_search",
+            "description": "Find images matching text query",
+            "parameters": {
+                "text": {
+                    "type": "string",
+                    "required": true
+                },
+                "top_k": {
+                    "type": "integer",
+                    "required": false,
+                    "default": 10
+                }
+            },
+            "returns": {
+                "items": "array of images",
+                "time_ms": "number"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 1500,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "image_to_text_search",
+            "description": "Find text matching image query",
+            "parameters": {
+                "image_source": {
+                    "type": "string|bytes|object",
+                    "required": true
+                },
+                "top_k": {
+                    "type": "integer",
+                    "required": false,
+                    "default": 10
+                }
+            },
+            "returns": {
+                "items": "array of text items",
+                "time_ms": "number"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 1500,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "find_similar_images",
+            "description": "Find visually similar images",
+            "parameters": {
+                "image_source": {
+                    "type": "string|bytes|object",
+                    "required": true
+                },
+                "top_k": {
+                    "type": "integer",
+                    "required": false,
+                    "default": 10
+                }
+            },
+            "returns": {
+                "items": "array of similar images",
+                "time_ms": "number"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 1500,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "answer_question",
+            "description": "Visual Question Answering - answer questions about an image",
+            "parameters": {
+                "image_source": {
+                    "type": "string|bytes|object",
+                    "required": true
+                },
+                "question": {
+                    "type": "string",
+                    "required": true
+                }
+            },
+            "returns": {
+                "question": "string",
+                "answer": "string",
+                "image_id": "string",
+                "confidence": "number",
+                "model_used": "string",
+                "time_ms": "number"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 3000,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "generate_caption",
+            "description": "Generate caption/description for image",
+            "parameters": {
+                "image_source": {
+                    "type": "string|bytes|object",
+                    "required": true
+                },
+                "style": {
+                    "type": "string",
+                    "required": false,
+                    "default": "descriptive",
+                    "options": [
+                        "descriptive",
+                        "detailed",
+                        "concise",
+                        "technical"
+                    ]
+                }
+            },
+            "returns": {
+                "image_id": "string",
+                "caption": "string",
+                "style": "string",
+                "confidence": "number",
+                "time_ms": "number"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 2000,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "describe_image",
+            "description": "Comprehensive image description with multiple aspects",
+            "parameters": {
+                "image_source": {
+                    "type": "string|bytes|object",
+                    "required": true
+                },
+                "aspects": {
+                    "type": "array",
+                    "required": false,
+                    "default": [
+                        "content",
+                        "objects",
+                        "colors",
+                        "scene"
+                    ],
+                    "options": [
+                        "content",
+                        "objects",
+                        "colors",
+                        "scene",
+                        "mood",
+                        "text"
+                    ]
+                }
+            },
+            "returns": {
+                "image_id": "string",
+                "caption": "string",
+                "aspects": "object with aspect answers"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 3000,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "process_document",
+            "description": "Process PDF/document extracting text and images with associations",
+            "parameters": {
+                "source": {
+                    "type": "string|bytes",
+                    "required": true,
+                    "description": "PDF file path or bytes"
+                },
+                "document_id": {
+                    "type": "string",
+                    "required": false
+                },
+                "generate_captions": {
+                    "type": "boolean",
+                    "required": false,
+                    "default": true
+                },
+                "run_ocr": {
+                    "type": "boolean",
+                    "required": false,
+                    "default": true
+                },
+                "auto_index": {
+                    "type": "boolean",
+                    "required": false,
+                    "default": true
+                }
+            },
+            "returns": {
+                "id": "string",
+                "title": "string",
+                "page_count": "integer",
+                "total_images": "integer",
+                "total_chunks": "integer",
+                "auto_indexed": "boolean",
+                "time_ms": "number"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 5000,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "multimodal_query",
+            "description": "Query with both text and image for enhanced retrieval",
+            "parameters": {
+                "text": {
+                    "type": "string",
+                    "required": false
+                },
+                "image_source": {
+                    "type": "string|bytes|object",
+                    "required": false
+                },
+                "fusion_method": {
+                    "type": "string",
+                    "required": false,
+                    "default": "average",
+                    "options": [
+                        "average",
+                        "weighted",
+                        "concat"
+                    ]
+                },
+                "top_k": {
+                    "type": "integer",
+                    "required": false,
+                    "default": 10
+                }
+            },
+            "returns": {
+                "items": "array",
+                "fusion_method": "string",
+                "time_ms": "number"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 2000,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "get_stats",
+            "description": "Get module statistics",
+            "admin_only": true,
+            "parameters": {
+                "period": {
+                    "type": "string",
+                    "required": false,
+                    "default": "24h"
+                }
+            },
+            "returns": {
+                "module": "string",
+                "metrics": "object",
+                "index": "object",
+                "cache": "object"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "get_index_stats",
+            "description": "Get index statistics",
+            "parameters": {},
+            "returns": {
+                "index_size": "integer",
+                "text_items": "integer",
+                "image_items": "integer"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "client_admin",
+            "scope": "general",
+            "client_types": []
+        },
+        {
+            "name": "clear_index",
+            "description": "Clear all items from index",
+            "admin_only": true,
+            "parameters": {},
+            "returns": {
+                "cleared": "boolean",
+                "items_removed": "integer"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        }
+    ],
+    "event_subscriptions": [],
+    "event_publications": [
+        "multimodal.initialized",
+        "multimodal.item_indexed",
+        "multimodal.retrieval_completed",
+        "multimodal.document_processed",
+        "multimodal.shutdown"
+    ],
+    "retrieval_modes": {
+        "hybrid": "Combined text and image search across all modalities",
+        "text_to_image": "Find images matching text description",
+        "image_to_text": "Find text describing an image",
+        "image_to_image": "Find visually similar images",
+        "unified": "Search unified embedding space"
+    },
+    "fusion_methods": {
+        "early": "Concatenate features before similarity computation",
+        "late": "Combine scores after individual retrievals",
+        "hybrid": "Multi-stage fusion with filtering and reranking",
+        "attention": "Cross-modal attention fusion"
+    },
+    "config_file": "config.json",
+    "test_suite": "test_multimodal_rag.py",
+    "production_ready": true,
+    "hardware_requirements": {
+        "gpu_recommended": true,
+        "min_vram_gb": 4,
+        "recommended_vram_gb": 8,
+        "cpu_fallback": true
+    }
+}

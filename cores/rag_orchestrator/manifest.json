@@ -1,0 +1,995 @@
+{
+  "name": "rag_orchestrator",
+  "version": "1.0.0",
+  "description": "RAG Orchestrator with Access Control - Orchestrates RAG pipeline with Qdrant and LLM integration, includes per-user/client configuration and ACL",
+  "author": "UBP Team",
+  "module_type": "rag_orchestrator",
+  "architecture": "3-file-pattern",
+  "requires_redis": true,
+  "requires_postgres": false,
+  "requires_event_bus": false,
+  "operations": [
+    {
+      "name": "initialize",
+      "description": "Initialize RAG Orchestrator with dependencies injection",
+      "parameters": {},
+      "returns": {
+        "status": "string (initialized status)",
+        "dependencies": "object (injected modules status)"
+      },
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 500,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "none",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "create_knowledge_base",
+      "description": "Create a new knowledge base (Qdrant collection) - ADMIN ONLY",
+      "security": "admin",
+      "parameters": {
+        "name": "string (required, collection name)",
+        "description": "string (optional, collection description)"
+      },
+      "returns": {
+        "collection_id": "string (Qdrant collection name)",
+        "status": "string (created/error)",
+        "message": "string (status message)"
+      },
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 800,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "ingest_document",
+      "description": "Ingest a text document into a knowledge base - ADMIN ONLY",
+      "security": "admin",
+      "parameters": {
+        "collection_id": "string (required, target collection)",
+        "text": "string (required, document text)",
+        "metadata": "object (optional, document metadata)",
+        "tags": "array[string] (optional, document tags for search filtering. Auto-extracted from filename if omitted)"
+      },
+      "returns": {
+        "document_id": "string (generated document ID)",
+        "chunks_count": "integer (number of chunks created)",
+        "status": "string (success/error)",
+        "message": "string (status message)"
+      },
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 1000,
+        "requires_session": false,
+        "category": "operations"
+      },
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "ingest_document_authorized",
+      "description": "Ingest a text document with ACL-based authorization - Requires write permission on collection. Fixes GAP-INGEST-002.",
+      "security": "authenticated",
+      "parameters": {
+        "collection_id": "string (required, target collection)",
+        "text": "string (required, document text)",
+        "metadata": "object (optional, document metadata)",
+        "tags": "array[string] (optional, document tags for search filtering. Auto-extracted from filename if omitted)"
+      },
+      "returns": {
+        "document_id": "string (generated document ID)",
+        "chunks_count": "integer (number of chunks created)",
+        "status": "string (success/error)",
+        "message": "string (status message)"
+      },
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 1000,
+        "requires_session": true,
+        "category": "operations"
+      },
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "ingest_file",
+      "description": "Ingest a file (TXT, MD, PDF, JSON) into a knowledge base with server-side text extraction - ADMIN ONLY",
+      "security": "admin",
+      "parameters": {
+        "collection_name": "string (required, target collection)",
+        "file_content": "string (required, file content - base64 for PDF, plaintext for others)",
+        "filename": "string (required, original filename)",
+        "file_type": "string (optional, MIME type, default text/plain)",
+        "chunking_config": "object (optional, {chunk_size, chunk_overlap})",
+        "tags": "array[string] (optional, document tags for search filtering. Auto-extracted from filename if omitted)"
+      },
+      "returns": {
+        "document_id": "string (generated document ID)",
+        "chunks_count": "integer (number of chunks created)",
+        "status": "string (success/error)",
+        "message": "string (status message)"
+      },
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 2000,
+        "requires_session": false,
+        "category": "operations"
+      },
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "set_permission",
+      "description": "Set access permission for an entity (user or client) on a collection - ADMIN ONLY",
+      "security": "admin",
+      "parameters": {
+        "entity_type": "string (required, 'user' or 'client')",
+        "entity_id": "string (required, user_id or client_id)",
+        "collection_id": "string (required, target collection)",
+        "access_level": "string (required, 'read', 'write', or 'none')"
+      },
+      "returns": {
+        "status": "string (success/error)",
+        "message": "string (status message)"
+      },
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": true,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "get_permissions",
+      "description": "Get all permissions for a collection or entity - Admins see all, users see only their own",
+      "parameters": {
+        "collection_id": "string (optional, filter by collection)",
+        "entity_type": "string (optional, 'user' or 'client')",
+        "entity_id": "string (optional, filter by entity - non-admins are restricted to own user)"
+      },
+      "returns": {
+        "permissions": "array of permission objects",
+        "count": "integer (number of permissions)"
+      },
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 200,
+        "requires_session": true,
+        "category": "knowledge"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "set_rag_config",
+      "description": "Set RAG configuration for an entity (user, client, or default) - ADMIN ONLY",
+      "security": "admin",
+      "parameters": {
+        "entity_type": "string (required, 'user', 'client', or 'default')",
+        "entity_id": "string (optional, user_id or client_id, null for default)",
+        "config_json": "object (required, RAG configuration with model, temperature, top_k, system_prompt)"
+      },
+      "returns": {
+        "status": "string (success/error)",
+        "message": "string (status message)"
+      },
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": true,
+        "estimated_latency_ms": 150,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "get_rag_config",
+      "description": "Get RAG configuration for an entity (with fallback to default) - Users get own config, admins get any",
+      "parameters": {
+        "entity_type": "string (optional, defaults to 'user' for non-admins)",
+        "entity_id": "string (optional, defaults to ctx.user.user_id for non-admins)"
+      },
+      "returns": {
+        "config": "object (RAG configuration)",
+        "source": "string (entity_specific or default)"
+      },
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 150,
+        "requires_session": true,
+        "category": "knowledge"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "rag_chat",
+      "description": "The magic function - Execute RAG pipeline with ACL checks. User identity from security context (ctx), NOT from parameters.",
+      "parameters": {
+        "query": "string (required, user question)",
+        "collections": "array of strings (optional, specific collections to query)",
+        "override_config": "object (optional, override RAG config for this request)",
+        "conversation_id": "string (optional, existing conversation ID to continue)"
+      },
+      "returns": {
+        "answer": "string (generated answer)",
+        "sources": "array of source documents with metadata",
+        "config_used": "object (RAG config used for generation)",
+        "permissions_checked": "array (collections checked for access)",
+        "conversation_id": "string (conversation ID - new or existing)",
+        "debug": "object (optional debug info with retrieved chunks)"
+      },
+      "notes": "User identity (user_id, client_id) is automatically extracted from the security context (ctx). If conversation_id is not provided, a new conversation is created. Messages are automatically persisted.",
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 3500,
+        "requires_session": true,
+        "category": "operations",
+        "priority": 1
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "get_user_collections",
+      "description": "Get collections accessible by current user (alias for list_knowledge_bases filtering). Fixes GAP-001.",
+      "parameters": {},
+      "returns": {
+        "collections": "array of collection names",
+        "count": "integer"
+      },
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 250,
+        "requires_session": true,
+        "category": "knowledge"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "set_pipeline_permission",
+      "description": "Set access permission for pipeline - ADMIN ONLY",
+      "security": "admin",
+      "parameters": {
+        "entity_type": "string (user|client|default)",
+        "entity_id": "string (user_id or client_id, null for default)",
+        "pipeline_name": "string (pipeline template name or '*' for all)",
+        "access_level": "string (read|execute|none)"
+      },
+      "returns": {
+        "status": "string (success/error)",
+        "message": "string"
+      },
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": true,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "get_user_pipelines",
+      "description": "Get pipelines accessible by current user based on ACL",
+      "parameters": {},
+      "returns": {
+        "pipelines": "array of pipeline names (null = all)",
+        "count": "integer (-1 = unlimited)"
+      },
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 200,
+        "requires_session": true,
+        "category": "knowledge"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "list_knowledge_bases",
+      "description": "List all knowledge bases (collections) accessible by user. User identity from security context.",
+      "parameters": {},
+      "returns": {
+        "collections": "array of collection objects with metadata",
+        "count": "integer (number of collections)"
+      },
+      "notes": "User identity is automatically extracted from the security context. Admins see all collections, users see only accessible ones.",
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 300,
+        "requires_session": true,
+        "category": "knowledge"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "delete_personal_document",
+      "description": "Delete a document from the user's Personal KB",
+      "parameters": {
+        "document_id": {
+          "type": "string",
+          "description": "ID of the document to delete"
+        }
+      },
+      "returns": {
+        "success": "boolean",
+        "message": "string"
+      },
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 300,
+        "requires_session": true,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "delete_knowledge_base",
+      "description": "Delete a knowledge base completely (Qdrant collection + ACL bindings + client assignments) - ADMIN ONLY",
+      "security": "admin",
+      "parameters": {
+        "name": "string (preferred, collection name to delete)",
+        "collection_id": "string (DEPRECATED - alias for 'name', use 'name' instead)",
+        "force": "boolean (optional, default false - skip rebuild safety check)"
+      },
+      "returns": {
+        "status": "string (success/error)",
+        "message": "string (status message)",
+        "details": "object (delete steps summary)"
+      },
+      "notes": "Either 'name' or 'collection_id' must be provided. Deletion is blocked for populated KBs with matching dimensions unless force=true. The 'collection_id' parameter is deprecated and will be removed in v2.0.",
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 1500,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "health_check",
+      "description": "Perform health check on module and dependencies",
+      "parameters": {},
+      "returns": {
+        "module": "string (module name)",
+        "status": "string (healthy, degraded, or unhealthy)",
+        "dependencies": "object (status of rag_qdrant and inference modules)"
+      },
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 300,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "none",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "get_stats",
+      "description": "Get module statistics and metrics - ADMIN ONLY",
+      "security": "admin",
+      "parameters": {},
+      "returns": {
+        "module": "string (module name)",
+        "total_knowledge_bases": "integer (total collections)",
+        "total_documents": "integer (total ingested documents)",
+        "total_permissions": "integer (total ACL entries)",
+        "total_configs": "integer (total RAG configs)",
+        "dependencies_loaded": "boolean (rag_qdrant and inference ready)"
+      },
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 400,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "reload_router_config",
+      "description": "Hot-reload router configuration (weights + config) without restart - ADMIN ONLY",
+      "security": "admin",
+      "parameters": {},
+      "returns": {
+        "status": "string (success/partial/error)",
+        "weights_reloaded": "boolean (router_weights.yaml reloaded)",
+        "weights_changed": "boolean (weights values changed)",
+        "weights_before": "object (previous weight values)",
+        "weights_after": "object (new weight values)",
+        "config_reloaded": "boolean (RouterConfig rebuilt from env)",
+        "config_changed": "boolean (config values changed)",
+        "config_before": "object (previous config values)",
+        "config_after": "object (new config values)",
+        "router_stats": "object (current router statistics)",
+        "errors": "array (any errors during reload)"
+      },
+      "notes": "Reloads router_weights.yaml and rebuilds RouterConfig from UBP_ROUTER__* environment variables. Changes take effect immediately for subsequent queries.",
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 500,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "list_conversations",
+      "description": "List all conversations for the current user. User identity from security context.",
+      "parameters": {
+        "limit": "integer (optional, max conversations to return, default 50)",
+        "offset": "integer (optional, pagination offset, default 0)"
+      },
+      "returns": {
+        "conversations": "array of conversation objects with id, title, created_at, updated_at, message_count",
+        "count": "integer (number of conversations returned)",
+        "total": "integer (total conversations for user)"
+      },
+      "notes": "User identity is automatically extracted from the security context. Each user sees only their own conversations.",
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 300,
+        "requires_session": true,
+        "category": "knowledge"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "get_conversation",
+      "description": "Get a specific conversation with all messages. User identity from security context.",
+      "parameters": {
+        "conversation_id": "string (required, conversation UUID)"
+      },
+      "returns": {
+        "status": "string (success/error)",
+        "conversation": "object with id, title, created_at, updated_at, messages array, message_count"
+      },
+      "notes": "Users can only access their own conversations.",
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 250,
+        "requires_session": true,
+        "category": "knowledge"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "delete_conversation",
+      "description": "Delete a conversation. User identity from security context.",
+      "parameters": {
+        "conversation_id": "string (required, conversation UUID)"
+      },
+      "returns": {
+        "status": "string (success/error)",
+        "message": "string (status message)",
+        "conversation_id": "string (deleted conversation ID)"
+      },
+      "notes": "Users can only delete their own conversations.",
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 200,
+        "requires_session": true,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "create_conversation",
+      "description": "Create a new conversation explicitly. Usually auto-created on first message.",
+      "parameters": {
+        "title": "string (optional, conversation title)"
+      },
+      "returns": {
+        "conversation_id": "string (new conversation UUID)",
+        "title": "string (conversation title)",
+        "created_at": "string (ISO timestamp)",
+        "status": "string (created/error)"
+      },
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 150,
+        "requires_session": true,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "update_conversation_title",
+      "description": "Update the title of a conversation.",
+      "parameters": {
+        "conversation_id": "string (required, conversation UUID)",
+        "title": "string (required, new title)"
+      },
+      "returns": {
+        "status": "string (success/error)",
+        "message": "string (status message)",
+        "conversation_id": "string"
+      },
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": true,
+        "estimated_latency_ms": 150,
+        "requires_session": true,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "ask_architect",
+      "description": "Ask the System Architect Agent a question. Uses RAG on official UBP documentation (KB: ubp_system_docs) with Grok-4 2M context. Returns structured responses with [ANALISI], [RIFERIMENTI], [DIRETTIVA] format.",
+      "security": "authenticated",
+      "parameters": {
+        "query": "string (required, question for the architect)",
+        "conversation_id": "string (optional, for follow-up questions)",
+        "max_tokens": "number (optional, override response max tokens, default 8000)",
+        "top_k": "number (optional, override retrieval top_k, default from config)",
+        "hyde_enabled": "boolean (optional, enable HyDE for improved retrieval, default false)",
+        "investigative_enabled": "boolean (optional, enable Investigative Query Decomposition v2.2.2, default false)",
+        "reranking_enabled": "boolean (optional, enable cross-encoder reranking, default true)",
+        "adaptive_budget_enabled": "boolean (optional, enable adaptive budget manager v3.5.1, default from UBP_ADAPTIVE_BUDGET__ENABLED)"
+      },
+      "returns": {
+        "answer": "string (structured response from architect)",
+        "sources": "array (referenced documentation chunks)",
+        "model_used": "string (LLM model used, e.g. grok/grok-4-fast-reasoning)",
+        "kb_used": "string (knowledge base name)",
+        "config_used": "object (top_k, reranking_enabled, relevance_threshold, hyde_enabled, investigative_enabled, max_tokens)",
+        "conversation_id": "string (for follow-up queries)",
+        "latency_ms": "number (response time)",
+        "status": "string (success/error)",
+        "debug": "object (optional, chunks_retrieved, hyde_document if HyDE enabled)"
+      },
+      "notes": "Requires UBP_ARCHITECT__ENABLED=true. KB 'ubp_system_docs' must be populated with official documentation. See MANUAL_14_ARCHITECT_AGENT.md. v2.2.2: Added investigative_enabled, reranking_enabled parameters with client override support.",
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 4000,
+        "requires_session": true,
+        "category": "operations"
+      },
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "start_report",
+      "description": "v2.3: Start an interactive report generation session. Detects template from query and proposes a structured plan.",
+      "security": "authenticated",
+      "parameters": {
+        "query": "string (required, report request query)",
+        "template_id": "string (optional, force specific template)",
+        "collections": "array of strings (optional, collections to use for RAG)"
+      },
+      "returns": {
+        "session_id": "string (report session UUID)",
+        "state": "string (session state: planning, awaiting_approval, etc.)",
+        "template_id": "string (selected template ID)",
+        "template_name": "string (selected template name)",
+        "sections": "array (planned sections with source preferences)",
+        "proposal": "string (human-readable plan proposal)",
+        "conversation_id": "string (linked conversation ID)"
+      },
+      "notes": "Part of Interactive Analyst v2.3. User can approve, modify, or cancel the proposed plan. Session state is persisted in Redis.",
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 2000,
+        "requires_session": true,
+        "category": "operations"
+      },
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "get_report_session",
+      "description": "v2.3: Get current state of a report session",
+      "security": "authenticated",
+      "parameters": {
+        "session_id": "string (optional, specific session ID)",
+        "conversation_id": "string (optional, find session by conversation)"
+      },
+      "returns": {
+        "session_id": "string (session UUID)",
+        "state": "string (current state)",
+        "plan": "object (current report plan)",
+        "progress": "object (sections completed vs total)",
+        "created_at": "string (ISO timestamp)",
+        "expires_at": "string (ISO timestamp)"
+      },
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 200,
+        "requires_session": true,
+        "category": "knowledge"
+      },
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "approve_structure",
+      "description": "v2.6: Approve report structure and transition to enrichment configuration phase",
+      "security": "authenticated",
+      "parameters": {
+        "session_id": "string (required, report session UUID)"
+      },
+      "returns": {
+        "session_id": "string (session UUID)",
+        "state": "string (awaiting_enrichment_config)",
+        "sections": "array (sections with default enrichment configs)",
+        "presets_available": "array (available preset names: fast, standard, quality, custom)",
+        "enrichment_options": "object (available enrichment options with labels and descriptions)"
+      },
+      "notes": "v2.6: Transitions from awaiting_approval to awaiting_enrichment_config. Returns sections with default enrichment presets based on source_preference for UI rendering.",
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 300,
+        "requires_session": true,
+        "category": "operations"
+      },
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "configure_enrichment",
+      "description": "v2.6: Configure enrichment settings for each section and start research",
+      "security": "authenticated",
+      "parameters": {
+        "session_id": "string (required, report session UUID)",
+        "section_configs": "array (required, enrichment config per section: [{index, rerank_enabled, query_expansion_enabled, hyde_enabled, investigative_enabled, metadata_injection_enabled, debug_enabled}])",
+        "global_debug": "boolean (optional, enable debug for all sections)"
+      },
+      "returns": {
+        "session_id": "string (session UUID)",
+        "state": "string (researching)",
+        "debug_enabled": "boolean (true if any debug is enabled)",
+        "debug_events_key": "string (Redis key for debug events polling)",
+        "sections_configured": "array (sections with applied enrichment configs)"
+      },
+      "notes": "v2.6: Applies user-configured enrichment to each section and starts swarm execution. If debug is enabled, events are streamed to Redis for frontend polling.",
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 500,
+        "requires_session": true,
+        "category": "operations"
+      },
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "get_debug_events",
+      "description": "v2.6: Get debug events for real-time worker execution visualization",
+      "security": "authenticated",
+      "parameters": {
+        "session_id": "string (required, report session UUID)",
+        "from_index": "integer (optional, start index for pagination, default 0)"
+      },
+      "returns": {
+        "session_id": "string (session UUID)",
+        "events": "array (debug events with phase, settings, input/output data, metrics)",
+        "events_count": "integer (number of events returned)",
+        "from_index": "integer (requested start index)",
+        "next_index": "integer (index for next poll)",
+        "is_complete": "boolean (true if research phase is complete)",
+        "session_state": "string (current session state)"
+      },
+      "notes": "v2.6: Poll this endpoint for real-time debug events. Events include worker init, enrichment steps, retrieval, reranking, and completion. Use from_index for efficient polling.",
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 150,
+        "requires_session": true,
+        "category": "knowledge"
+      },
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "list_report_templates",
+      "description": "v2.3: List available report templates",
+      "security": "authenticated",
+      "parameters": {},
+      "returns": {
+        "templates": "array of template objects with id, name, description, category, sections_count"
+      },
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 200,
+        "requires_session": true,
+        "category": "knowledge"
+      },
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "get_report_draft",
+      "description": "v2.4: Get the generated report draft after swarm execution completes",
+      "security": "authenticated",
+      "parameters": {
+        "session_id": "string (required, report session UUID)"
+      },
+      "returns": {
+        "status": "string (success/not_ready/error)",
+        "session_id": "string (session UUID)",
+        "draft_status": "string (completed/partial)",
+        "plan_title": "string (generated report title)",
+        "full_draft": "string (complete report markdown)",
+        "sections": "array (section drafts with content and metrics)",
+        "metrics": "object (execution metrics: time_ms, parallel_efficiency, etc.)",
+        "generated_at": "string (ISO timestamp)"
+      },
+      "notes": "Returns not_ready if swarm execution is still in progress. Poll get_swarm_status for progress updates.",
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 500,
+        "requires_session": true,
+        "category": "knowledge"
+      },
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "get_swarm_status",
+      "description": "v2.4: Get the current swarm execution status for a report session",
+      "security": "authenticated",
+      "parameters": {
+        "session_id": "string (required, report session UUID)"
+      },
+      "returns": {
+        "status": "string (in_progress/completed/error/not_found)",
+        "session_id": "string (session UUID)",
+        "state": "string (current session state)",
+        "draft_available": "boolean (true if draft is ready)",
+        "metrics": "object (available when completed)",
+        "error": "string (error message if status=error)"
+      },
+      "notes": "Use this to poll for swarm completion. When status=completed, call get_report_draft to retrieve the full report.",
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 200,
+        "requires_session": true,
+        "category": "knowledge"
+      },
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "start_batch_ingest",
+      "description": "Start a server-side batch ingestion job. All files are uploaded in a single POST and processed sequentially in a background task. The browser can close/reload without interrupting ingestion.",
+      "security": "admin",
+      "parameters": {
+        "collection_id": "string (required, target collection)",
+        "files": "array (required, [{filename, file_content, file_type}])",
+        "chunking_config": "object (optional, {chunk_size, chunk_overlap})",
+        "tags": "array[string] (optional, document tags for search filtering. Auto-extracted from filename if omitted)"
+      },
+      "returns": {
+        "status": "string (accepted/error)",
+        "job_id": "string (batch job UUID)",
+        "total_files": "integer (number of files queued)"
+      },
+      "notes": "Files are stored in Redis and processed server-side. Poll get_batch_ingest_status for progress. Max recommended batch: ~100 files.",
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 500,
+        "requires_session": false,
+        "category": "operations"
+      },
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "get_batch_ingest_status",
+      "description": "Get batch ingestion job status with per-file details. Supports reconnect by collection_id (finds active job for current user).",
+      "security": "admin",
+      "parameters": {
+        "job_id": "string (optional, direct job lookup)",
+        "collection_id": "string (optional, find active job for reconnect)"
+      },
+      "returns": {
+        "job_id": "string (job UUID)",
+        "state": "string (pending/processing/completed/failed/cancelled)",
+        "collection_id": "string (target collection)",
+        "total_files": "integer",
+        "current_file_index": "integer",
+        "current_filename": "string (file being processed)",
+        "success_count": "integer",
+        "error_count": "integer",
+        "progress_pct": "number (0-100)",
+        "files": "array (per-file status details)"
+      },
+      "notes": "Use collection_id for browser reconnect after reload. Poll every 2 seconds during active ingestion.",
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 200,
+        "requires_session": false,
+        "category": "knowledge"
+      },
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "cancel_batch_ingest",
+      "description": "Cancel an active batch ingestion job. The background task stops before the next file.",
+      "security": "admin",
+      "parameters": {
+        "job_id": "string (required, job to cancel)"
+      },
+      "returns": {
+        "status": "string (cancelled/error/not_found)",
+        "job_id": "string (cancelled job UUID)"
+      },
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 150,
+        "requires_session": false,
+        "category": "operations"
+      },
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "retrieve_with_acl",
+      "description": "Retrieve documents from knowledge base with ACL enforcement. Same ACL check as rag_chat but retrieval only — no LLM generation. Returns chunks ordered by semantic relevance, filtered by user's authorized collections.",
+      "security": "authenticated",
+      "parameters": {
+        "query_text": {
+          "type": "string",
+          "required": true,
+          "description": "Search query text"
+        },
+        "collections": {
+          "type": "array",
+          "required": false,
+          "description": "Target collection names (filtered by ACL). If empty, searches all authorized collections."
+        },
+        "top_k": {
+          "type": "integer",
+          "required": false,
+          "default": 5,
+          "description": "Number of results per collection (1-20)"
+        }
+      },
+      "returns": {
+        "chunks": "array of documents with content, score, metadata, collection",
+        "collections_used": "array of collection names that had results",
+        "total": "integer, total chunks returned"
+      },
+      "notes": "Requires security context (ctx). ACL enforced via get_user_collections(). Accepts parameter aliases: query (for query_text), collection/collection_name (single collection).",
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 500,
+        "requires_session": true,
+        "category": "knowledge"
+      },
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "retrieve_enriched",
+      "description": "Retrieve documents with UBP enrichment pipeline (rerank, dedup, fusion). Returns enriched chunks without LLM generation.",
+      "security": "authenticated",
+      "parameters": {
+        "query_text": {
+          "type": "string",
+          "required": true,
+          "description": "Search query text"
+        },
+        "collections": {
+          "type": "array",
+          "required": false,
+          "description": "Target collection names (ACL-filtered). If empty, searches all authorized collections."
+        },
+        "top_k": {
+          "type": "integer",
+          "required": false,
+          "default": 5,
+          "description": "Number of enriched results to return (1-20)"
+        }
+      },
+      "returns": {
+        "chunks": "array of enriched documents with content, score, metadata, collection",
+        "collections_used": "array of collection names that had results",
+        "total": "integer, total enriched chunks returned",
+        "enrichment_applied": "array of enrichment step names executed",
+        "warnings": "array of warning strings (empty if no issues)"
+      },
+      "notes": "Uses identical 4-layer config resolution as rag_chat (System → Client → Collection → User). Enrichment flags determined by canonical UBP config, not exposed as parameters in v1. Accepts parameter aliases: query (for query_text), collection/collection_name (single collection).",
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 1500,
+        "requires_session": true,
+        "category": "knowledge",
+        "priority": 1
+      },
+      "scope": "free",
+      "client_types": []
+    }
+  ],
+  "dependencies": {
+    "modules": [
+      "rag_qdrant",
+      "inference_ollama_grok",
+      "enrichment_pipeline",
+      "rag_reranker"
+    ],
+    "optional_modules": [
+      "adaptive_budget_manager"
+    ],
+    "redis_keys": [
+      "ubp:rag:acl:*",
+      "ubp:rag:config:*",
+      "ubp:rag:stats:*",
+      "ubp:rag:history:*"
+    ],
+    "redis_keys_note": "Keys are prefixed by RedisKeyManager based on environment. Test: ubp:test:{suite}:rag:*, Dev: ubp:dev:rag:*, Prod: ubp:rag:*. See NAMING_POLICY.md Section 7."
+  },
+  "config_file": "config.json",
+  "production_ready": true
+}

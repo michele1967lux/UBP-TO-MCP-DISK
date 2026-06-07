@@ -1,0 +1,75 @@
+{
+  "_redis_keys_note": "DEPRECATED: redis_key_prefix fields are legacy fallback only. Keys are now managed by RedisKeyManager with proper environment prefixes (ubp:, ubp:test:, ubp:dev:). See NAMING_POLICY.md Section 7.",
+  "module_name": "rag_orchestrator",
+  "enabled": true,
+  "llm_module": "${UBP_RAG__LLM_MODULE:-inference_ollama_grok}",
+  "dependencies": {
+    "rag_qdrant": {
+      "module_name": "rag_qdrant",
+      "required": true
+    },
+    "inference_ollama_grok": {
+      "module_name": "inference_ollama_grok",
+      "required": true
+    }
+  },
+  "default_rag_config": {
+    "_note_model": "Optional: Override LLM module default. If not set, each module uses its own UBP_*__DEFAULT_MODEL. Examples: llama3.2:latest (Ollama), grok/grok-4-fast (Grok), model-name (vLLM)",
+    "model": "${UBP_RAG__MODEL:-}",
+    "temperature": "${UBP_RAG__TEMPERATURE:-0.7}",
+    "max_tokens": "${UBP_RAG__MAX_TOKENS:-1000}",
+    "top_k": "${UBP_RAG__TOP_K:-5}",
+    "system_prompt": "You are a helpful AI assistant. Use the following context to answer the user's question:\n\n{context}\n\nIf the context doesn't contain relevant information, say so honestly.",
+    "include_sources": true,
+    "context_max_turns": 10,
+    "max_context_chars": "${UBP_RAG__MAX_CONTEXT_CHARS:-8000}",
+    "_note_prompt_tuning": "v1.8.6: Externalized prompt tuning parameters for token budget calculation",
+    "chars_per_token": "${UBP_RAG__CHARS_PER_TOKEN:-3.0}",
+    "safety_margin": "${UBP_RAG__SAFETY_MARGIN:-1000}",
+    "_note_response_budget": "v4.1.0: response_budget_ratio = fraction of context_window reserved for output. effective_max_tokens = min(max_tokens, context_window * ratio). Set 1.0 to disable (same as before).",
+    "response_budget_ratio": "${UBP_RAG__RESPONSE_BUDGET_RATIO:-0.30}",
+    "enrichment": {
+      "_note": "v1.8.2 - FIX-001: Moved inside default_rag_config for proper propagation",
+      "enabled": "${UBP_ENRICHMENT__ENABLED:-true}",
+      "rerank_enabled": "${UBP_ENRICHMENT__RERANK_ENABLED:-true}",
+      "query_expansion_enabled": "${UBP_ENRICHMENT__QUERY_EXPANSION_ENABLED:-false}",
+      "hyde_enabled": "${UBP_ENRICHMENT__HYDE_ENABLED:-false}",
+      "investigative_enabled": "${UBP_ENRICHMENT__INVESTIGATIVE_ENABLED:-false}",
+      "investigative_num_questions": "${UBP_ENRICHMENT__INVESTIGATIVE_NUM_QUESTIONS:-5}",
+      "query_filters_enabled": "${UBP_ENRICHMENT__QUERY_FILTERS_ENABLED:-true}",
+      "compression_enabled": "${UBP_ENRICHMENT__COMPRESSION_ENABLED:-false}",
+      "fusion_enabled": "${UBP_ENRICHMENT__FUSION_ENABLED:-false}",
+      "dedup_enabled": "${UBP_ENRICHMENT__DEDUP_ENABLED:-false}",
+      "metadata_enabled": "${UBP_ENRICHMENT__METADATA_ENABLED:-true}",
+      "oversample_factor": 4
+    }
+  },
+  "chunking": {
+    "strategy": "fixed",
+    "chunk_size": 500,
+    "overlap": 50
+  },
+  "acl": {
+    "default_access": "none",
+    "redis_key_prefix": "rag:acl",
+    "redis_ttl": null
+  },
+  "rag_config_storage": {
+    "redis_key_prefix": "rag:config",
+    "redis_ttl": null
+  },
+  "conversation_storage": {
+    "redis_key_prefix": "rag:history",
+    "conversation_ttl_days": 30,
+    "max_messages_per_conversation": 100
+  },
+  "stats": {
+    "redis_key_prefix": "rag:stats",
+    "track_queries": true
+  },
+  "security": {
+    "max_query_length": "${UBP_RAG__MAX_QUERY_LENGTH:-32000}",
+    "max_collections_per_query": 10,
+    "sanitize_input": true
+  }
+}

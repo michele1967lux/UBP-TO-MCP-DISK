@@ -1,0 +1,17 @@
+{
+  "enabled": true,
+  "shadow_mode": false,
+  "min_chars_hard": 30,
+  "min_score_hard": 0.06,
+  "min_score_soft": 0.13,
+  "min_chars_soft": 80,
+  "boilerplate_penalty": 0.25,
+  "truncation_penalty": 0.15,
+  "keyword_bonus": 0.20,
+  "relevance_floor": 0.10,
+  "diversity_cap_per_source": 3,
+  "max_chunks": 10,
+  "max_total_chars": 12000,
+  "min_output_guarantee": 2,
+  "low_confidence_threshold": 0.35
+}

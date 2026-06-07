@@ -1,0 +1,23 @@
+{
+    "_note": "Context Compression Engine — configurable via UBP_CONTEXT_COMPRESSION__* env vars",
+    "enabled": "${UBP_CONTEXT_COMPRESSION__ENABLED:-true}",
+    "log_level": "${UBP_CONTEXT_COMPRESSION__LOG_LEVEL:-INFO}",
+    "chat_profile": {
+        "compression_trigger_threshold": "${UBP_CONTEXT_COMPRESSION__CHAT_TRIGGER:-10}",
+        "max_sub_layers_retained": "${UBP_CONTEXT_COMPRESSION__CHAT_MAX_SUB_LAYERS:-50}",
+        "compression_model_role": "${UBP_CONTEXT_COMPRESSION__CHAT_MODEL_ROLE:-enrichment}",
+        "layer1_max_tokens": "${UBP_CONTEXT_COMPRESSION__CHAT_L1_TOKENS:-800}",
+        "layer2_max_tokens": "${UBP_CONTEXT_COMPRESSION__CHAT_L2_TOKENS:-400}",
+        "include_layer2": "${UBP_CONTEXT_COMPRESSION__CHAT_INCLUDE_L2:-true}"
+    },
+    "agent_loop_profile": {
+        "compression_trigger_threshold": "${UBP_CONTEXT_COMPRESSION__AGENT_TRIGGER:-8}",
+        "max_sub_layers_retained": "${UBP_CONTEXT_COMPRESSION__AGENT_MAX_SUB_LAYERS:-30}",
+        "compression_model_role": "${UBP_CONTEXT_COMPRESSION__AGENT_MODEL_ROLE:-enrichment}",
+        "layer1_max_tokens": "${UBP_CONTEXT_COMPRESSION__AGENT_L1_TOKENS:-600}",
+        "layer2_max_tokens": "${UBP_CONTEXT_COMPRESSION__AGENT_L2_TOKENS:-300}",
+        "include_layer2": "${UBP_CONTEXT_COMPRESSION__AGENT_INCLUDE_L2:-true}"
+    },
+    "compression_provider_override": "${UBP_CONTEXT_COMPRESSION__PROVIDER_OVERRIDE:-}",
+    "compression_model_override": "${UBP_CONTEXT_COMPRESSION__MODEL_OVERRIDE:-}"
+}

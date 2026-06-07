@@ -1,0 +1,17 @@
+{
+  "module_name": "kb_manager",
+  "enabled": true,
+  "max_versions_per_item": 10,
+  "max_audit_entries": 1000,
+  "default_search_limit": 10,
+  "dependencies": {
+    "rag_qdrant": {"required": true}
+  },
+  "redis": {
+    "keys": {
+      "version_prefix": "ubp:kb_mgr:ver:",
+      "audit_prefix": "ubp:kb_mgr:audit:",
+      "schema_prefix": "ubp:kb_mgr:schema:"
+    }
+  }
+}

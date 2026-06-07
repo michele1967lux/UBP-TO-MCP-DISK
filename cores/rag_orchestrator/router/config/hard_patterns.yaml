@@ -1,0 +1,304 @@
+# =============================================================================
+# Layer A - Hard Patterns (Binary Flags)
+# =============================================================================
+# These patterns produce binary yes/no flags with ABSOLUTE priority.
+# They don't contribute to scoring - they set hard constraints.
+#
+# Rules:
+# - Patterns here are few and highly curated
+# - They should be unambiguous
+# - They override scoring-based decisions
+#
+# ROADMAP v1.7.x - FEAT-ROUTER-002
+# =============================================================================
+
+version: "2.0"  # v2.0 - Smart Auto-Fallback System upgrade
+
+# -----------------------------------------------------------------------------
+# GREETING patterns -> greeting_detected = true
+# -----------------------------------------------------------------------------
+greetings:
+  # Single-word greetings (exact match, case-insensitive)
+  exact:
+    - "ciao"
+    - "salve"
+    - "buongiorno"
+    - "buonasera"
+    - "buonanotte"
+    - "hey"
+    - "hi"
+    - "hello"
+    - "hola"
+    - "salut"
+  
+  # Pattern-based greetings (regex)
+  patterns:
+    # Italian compound greetings
+    - pattern: "^(ciao|salve|buongiorno|buonasera)[,!]?\\s*(come\\s+(stai|va|ti\\s+chiami)|tutto\\s+bene)[?!.]*$"
+      flags: "i"
+    # English compound greetings  
+    - pattern: "^(hi|hey|hello)[,!]?\\s*how\\s+are\\s+you(\\s+doing)?[?!.]*$"
+      flags: "i"
+    # Time-based greetings
+    - pattern: "^good\\s+(morning|afternoon|evening|night)[!.]*$"
+      flags: "i"
+    # Simple "come stai/va"
+    - pattern: "^come\\s+(stai|va)[?!.]*$"
+      flags: "i"
+    - pattern: "^how\\s+are\\s+you[?!.]*$"
+      flags: "i"
+
+# -----------------------------------------------------------------------------
+# FAREWELL patterns -> farewell_detected = true
+# -----------------------------------------------------------------------------
+farewells:
+  exact:
+    - "ciao"  # Context-dependent, also greeting
+    - "arrivederci"
+    - "addio"
+    - "bye"
+    - "goodbye"
+    - "byebye"
+  
+  patterns:
+    - pattern: "^(ciao\\s+ciao|bye\\s+bye)[!.]*$"
+      flags: "i"
+    - pattern: "^(a\\s+presto|alla\\s+prossima|ci\\s+vediamo)[!.]*$"
+      flags: "i"
+    - pattern: "^(see\\s+you|talk\\s+to\\s+you)\\s+(later|soon|tomorrow)[!.]*$"
+      flags: "i"
+
+# -----------------------------------------------------------------------------
+# TEMPORAL patterns -> temporal_query = true
+# -----------------------------------------------------------------------------
+# Queries with explicit time references (suggests need for fresh info)
+temporal:
+  patterns:
+    # Italian temporal
+    - pattern: "(oggi|adesso|ora|attualmente|in\\s+questo\\s+momento)"
+      flags: "i"
+    - pattern: "(domani|dopodomani|prossima\\s+settimana)"
+      flags: "i"
+    - pattern: "(ieri|l'altro\\s+ieri|scorsa\\s+settimana)"
+      flags: "i"
+    # English temporal
+    - pattern: "(today|now|currently|right\\s+now|at\\s+the\\s+moment)"
+      flags: "i"
+    - pattern: "(tomorrow|next\\s+week|next\\s+month)"
+      flags: "i"
+    - pattern: "(yesterday|last\\s+week|last\\s+month)"
+      flags: "i"
+    # Date patterns (YYYY-MM-DD, DD/MM/YYYY, etc.)
+    - pattern: "\\d{4}[-/]\\d{1,2}[-/]\\d{1,2}"
+      flags: ""
+    - pattern: "\\d{1,2}[-/]\\d{1,2}[-/]\\d{2,4}"
+      flags: ""
+
+# -----------------------------------------------------------------------------
+# INTERNAL REFERENCE patterns -> internal_reference = true
+# -----------------------------------------------------------------------------
+# References to internal documents, systems, or knowledge base
+internal_reference:
+  keywords:
+    - "documento interno"
+    - "documentazione interna"
+    - "knowledge base"
+    - "manuale aziendale"
+    - "procedura interna"
+    - "policy aziendale"
+    - "regolamento interno"
+    - "internal document"
+    - "company manual"
+    - "internal policy"
+  
+  patterns:
+    # "nel documento", "nella documentazione"
+    - pattern: "(nel|nella|nei|nelle)\\s+(documento|documentazione|manuale|guida)"
+      flags: "i"
+    # "secondo il documento", "come da procedura"
+    - pattern: "(secondo|come\\s+da)\\s+(il\\s+)?(documento|procedura|manuale|policy)"
+      flags: "i"
+    # "our docs", "company knowledge"
+    - pattern: "(our|company|internal)\\s+(docs|documents|knowledge|manual)"
+      flags: "i"
+
+# -----------------------------------------------------------------------------
+# POLICY SENSITIVE patterns -> policy_sensitive = true
+# -----------------------------------------------------------------------------
+# Queries touching compliance, legal, HR sensitive topics
+policy_sensitive:
+  keywords:
+    # Legal/Compliance
+    - "gdpr"
+    - "privacy"
+    - "compliance"
+    - "legale"
+    - "legal"
+    - "normativa"
+    - "regulation"
+    - "contratto"
+    - "contract"
+    # HR Sensitive
+    - "licenziamento"
+    - "dimissioni"
+    - "stipendio"
+    - "salary"
+    - "ferie"
+    - "malattia"
+    - "disciplinare"
+    # Financial compliance
+    - "audit"
+    - "sox"
+    - "whistleblower"
+
+# -----------------------------------------------------------------------------
+# SAFETY patterns -> safety_triggered = true
+# -----------------------------------------------------------------------------
+# Safety-critical keywords that require special handling
+safety:
+  keywords:
+    - "emergenza"
+    - "emergency"
+    - "pericolo"
+    - "danger"
+    - "sicurezza"
+    - "safety"
+    - "incidente"
+    - "incident"
+    - "infortunio"
+    - "injury"
+
+# -----------------------------------------------------------------------------
+# EXPLICIT SOURCE patterns -> explicit_source = true
+# -----------------------------------------------------------------------------
+# User explicitly requesting a specific source type
+# v2.0: Extended patterns to support forms with AND without prepositions
+explicit_source:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # WEB EXPLICIT - User explicitly requests web/online search
+  # ─────────────────────────────────────────────────────────────────────────────
+  web_patterns:
+    # "cerca su internet/web/google" (con preposizione)
+    - pattern: "(cerca|cercare|search|searching)\\s+(su|on|in)\\s+(internet|web|google|bing|online)"
+      flags: "i"
+      source_type: "web"
+    
+    # "cerca online" / "search online" (SENZA preposizione) - FIX CRITICO
+    - pattern: "(cerca|cercare|cerco|search|searching)\\s+online"
+      flags: "i"
+      source_type: "web"
+    
+    # "online cerca" / "online search" (ordine invertito)
+    - pattern: "^online\\s+(cerca|cercare|search)"
+      flags: "i"
+      source_type: "web"
+    
+    # "cercami online" / "trovami sul web" / "find me online"
+    - pattern: "(cercami|trovami|cercalo|trovalo|find\\s*me|look\\s*up)\\s+(online|sul\\s+web|on\\s+the\\s+web|on\\s+google|su\\s+google|su\\s+internet)"
+      flags: "i"
+      source_type: "web"
+    
+    # "vai su google" / "usa google" / "use google"
+    - pattern: "(vai|go|usa|use|apri|open)\\s+(su|on|to)?\\s*(google|bing|internet|web|duckduckgo)"
+      flags: "i"
+      source_type: "web"
+    
+    # "googla" / "googlalo" / "google it" (colloquiale)
+    - pattern: "(googla|googlalo|googlare|google\\s*it|google\\s*this|cerca\\s*su\\s*google)"
+      flags: "i"
+      source_type: "web"
+    
+    # "fai una ricerca" / "do a search" (senza contesto interno = web)
+    - pattern: "(fai|do|make|esegui)\\s+(una\\s+)?(ricerca|search|query)\\s+(online|web|internet|su\\s+google)"
+      flags: "i"
+      source_type: "web"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # INTERNAL EXPLICIT - User explicitly requests internal/document search
+  # ─────────────────────────────────────────────────────────────────────────────
+  internal_patterns:
+    # "cerca nei documenti" / "search in documents"
+    - pattern: "(cerca|search|trova|find)\\s+(nei|nei\\s+miei|in\\s+my|in\\s+our|nostri|tra\\s+i)\\s+(documenti|documents|files|file)"
+      flags: "i"
+      source_type: "internal"
+    
+    # "solo documenti" / "only from docs"
+    - pattern: "(solo|only|esclusivamente|exclusively)\\s+(da|from|dai|nei)?\\s*(documenti|documents|interno|internal|kb|knowledge\\s*base)"
+      flags: "i"
+      source_type: "internal"
+    
+    # "senza cercare online" / "without web search"
+    - pattern: "(senza|without|non)\\s+(cercare\\s+)?(online|internet|web|su\\s+google)"
+      flags: "i"
+      source_type: "internal"
+    
+    # "nella knowledge base" / "in the KB"
+    - pattern: "(nella|in\\s+the|nel|from\\s+the)\\s+(knowledge\\s*base|kb|documentazione|documentation)"
+      flags: "i"
+      source_type: "internal"
+    
+    # "usa i documenti interni" / "use internal documents"
+    - pattern: "(usa|use|utilizza|consult)\\s+(i\\s+)?(documenti|documents|file)?\\s*(interni|internal|aziendali|company)"
+      flags: "i"
+      source_type: "internal"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # WEB KEYWORDS - Exact match keywords that imply web search (fast path)
+  # ─────────────────────────────────────────────────────────────────────────────
+  web_keywords:
+    - "cerca online"
+    - "search online"
+    - "cercalo online"
+    - "find it online"
+    - "cerca sul web"
+    - "cerca su internet"
+    - "cerca in internet"
+    - "search on the web"
+    - "google it"
+    - "googlalo"
+    - "googla"
+    - "cerca su google"
+    - "search on google"
+    - "vai su google"
+    - "use google"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # INTERNAL KEYWORDS - Exact match keywords that imply internal search
+  # ─────────────────────────────────────────────────────────────────────────────
+  internal_keywords:
+    - "cerca nei documenti"
+    - "cerca nel documento"
+    - "search in documents"
+    - "cerca nella kb"
+    - "search in kb"
+    - "usa i documenti"
+    - "use the documents"
+    - "solo interno"
+    - "only internal"
+
+# -----------------------------------------------------------------------------
+# ACKNOWLEDGMENT patterns -> Pure chat, no action needed
+# -----------------------------------------------------------------------------
+acknowledgments:
+  exact:
+    - "ok"
+    - "okay"
+    - "va bene"
+    - "perfetto"
+    - "bene"
+    - "ottimo"
+    - "grande"
+    - "fantastico"
+    - "grazie"
+    - "thanks"
+    - "si"
+    - "no"
+    - "yes"
+    - "yeah"
+    - "nope"
+  
+  patterns:
+    - pattern: "^(grazie|thanks)(\\s+(mille|molto|tanto|a lot|very much))?[!.]*$"
+      flags: "i"
+    - pattern: "^(ok|okay|va\\s+bene|all\\s+right)[!.]*$"
+      flags: "i"

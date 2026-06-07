@@ -1,0 +1,836 @@
+"""
+RAG Orchestrator Adapter - UBP Bridge Layer
+
+This module provides the UBP framework integration for RAG orchestration.
+Acts as a bridge between UBP's module system and technical RAG implementations.
+
+Features:
+- Dependency Injection (rag_qdrant, inference_ollama_grok)
+- Access Control Lists (ACL) via Redis
+- Per-user/client RAG configuration
+- Complete RAG pipeline orchestration
+- Security context enforcement
+"""
+
+from pathlib import Path
+from typing import Dict, Any, List, Optional
+import logging
+import json
+import uuid
+import redis.asyncio as aioredis
+
+from modules.cores._shared import BaseHybridModule
+from .providers import RAGPipeline, DocumentChunker, ACLManager, ConfigManager
+
+# Configure structured logging
+logger = logging.getLogger(__name__)
+
+
+class RagOrchestratorAdapter(BaseHybridModule):
+    """
+    UBP Adapter for RAG Orchestration.
+
+    This class handles:
+    - UBP lifecycle integration (initialize, shutdown, health_check)
+    - Dependency injection (rag_qdrant, inference_ollama_grok, Redis)
+    - ACL management via ACLManager provider
+    - RAG configuration management via ConfigManager provider
+    - Full RAG pipeline orchestration
+    - Security context (ctx) enforcement
+    """
+
+    def __init__(self, module_path: Path, **kwargs):
+        """Initialize the RAG orchestrator adapter."""
+        super().__init__(module_path, **kwargs)
+
+        # Injected dependencies (will be set during initialize)
+        self.qdrant_module = None
+        self.llm_module = None
+        self.redis_client = None
+
+        # Provider instances
+        self.rag_pipeline: Optional[RAGPipeline] = None
+        self.acl_manager: Optional[ACLManager] = None
+        self.config_manager: Optional[ConfigManager] = None
+
+        # Statistics
+        self.total_queries = 0
+        self.total_documents_ingested = 0
+
+    async def initialize(self) -> Dict[str, Any]:
+        """Initialize RAG Orchestrator with dependency injection."""
+        logger.info(
+            f"Initializing {self.manifest.name} module",
+            extra={"module": self.manifest.name},
+        )
+
+        # Inject dependencies via DI container
+        if not self.di_container:
+            raise RuntimeError("DI container not available")
+
+        # === Infrastructure Services (Typed Resolution) ===
+        try:
+            self.redis_client = await self.di_container.resolve(aioredis.Redis)
+            if not self.redis_client:
+                raise RuntimeError("Redis client not found in DI container")
+            logger.info("✅ Redis client resolved from DI container")
+        except Exception as e:
+            logger.error(f"Failed to resolve Redis client: {e}")
+            raise
+
+        # === Core Modules (String-based Resolution) ===
+        try:
+            self.qdrant_module = await self.di_container.resolve("rag_qdrant")
+            if not self.qdrant_module:
+                raise RuntimeError("rag_qdrant module not found in DI container")
+            logger.info("✅ rag_qdrant module resolved")
+        except Exception as e:
+            logger.error(f"Failed to resolve rag_qdrant: {e}")
+            raise
+
+        try:
+            self.llm_module = await self.di_container.resolve("inference_ollama_grok")
+            if not self.llm_module:
+                raise RuntimeError("inference_ollama_grok module not found in DI container")
+            logger.info("✅ inference_ollama_grok module resolved")
+        except Exception as e:
+            logger.error(f"Failed to resolve inference_ollama_grok: {e}")
+            raise
+
+        # === Initialize Providers (Business Logic Layer) ===
+        self.acl_manager = ACLManager(self.redis_client, self.config['acl'])
+        logger.info("✅ ACLManager provider initialized")
+
+        self.config_manager = ConfigManager(self.redis_client, self.config['rag_config_storage'])
+        logger.info("✅ ConfigManager provider initialized")
+
+        self.rag_pipeline = RAGPipeline(self.qdrant_module, self.llm_module)
+        logger.info("✅ RAG pipeline initialized")
+
+        logger.info(f"✅ {self.manifest.name} initialized successfully")
+
+        return {
+            "status": "initialized",
+            "module": self.manifest.name,
+            "dependencies": {
+                "rag_qdrant": self.qdrant_module is not None,
+                "inference_ollama_grok": self.llm_module is not None,
+                "redis": self.redis_client is not None
+            }
+        }
+
+    async def shutdown(self) -> None:
+        """Shutdown RAG Orchestrator and cleanup."""
+        logger.info(f"Shutting down {self.manifest.name} module")
+
+        # Redis client is managed by DI container, just clear reference
+        self.redis_client = None
+        self.acl_manager = None
+        self.config_manager = None
+        self.rag_pipeline = None
+
+        logger.info(f"✅ {self.manifest.name} shutdown successfully")
+
+    async def health_check(self) -> Dict[str, Any]:
+        """Perform health check on module and dependencies."""
+        health = {
+            "module": self.manifest.name,
+            "status": "healthy",
+            "dependencies": {
+                "rag_qdrant": {"status": "unknown"},
+                "inference_ollama_grok": {"status": "unknown"},
+                "redis": {"status": "unknown"}
+            }
+        }
+
+        # Check qdrant module
+        if self.qdrant_module:
+            try:
+                qdrant_health = await self.qdrant_module.health_check()
+                health["dependencies"]["rag_qdrant"] = qdrant_health
+            except Exception as e:
+                health["dependencies"]["rag_qdrant"] = {"status": "unhealthy", "error": str(e)}
+
+        # Check LLM module
+        if self.llm_module:
+            try:
+                llm_health = await self.llm_module.health_check()
+                health["dependencies"]["inference_ollama_grok"] = llm_health
+            except Exception as e:
+                health["dependencies"]["inference_ollama_grok"] = {"status": "unhealthy", "error": str(e)}
+
+        # Check Redis
+        if self.redis_client:
+            try:
+                await self.redis_client.ping()
+                health["dependencies"]["redis"] = {"status": "healthy"}
+            except Exception as e:
+                health["dependencies"]["redis"] = {"status": "unhealthy", "error": str(e)}
+
+        # Determine overall status
+        dep_statuses = [dep.get("status", "unknown") for dep in health["dependencies"].values()]
+        if "unhealthy" in dep_statuses:
+            health["status"] = "degraded"
+        elif all(s == "healthy" for s in dep_statuses):
+            health["status"] = "healthy"
+        else:
+            health["status"] = "degraded"
+
+        return health
+
+    # ===== Helper Methods =====
+
+    def _is_admin(self, ctx) -> bool:
+        """
+        Check if the current user is an administrator.
+        
+        Args:
+            ctx: Security context with user info
+        
+        Returns:
+            True if user has admin role, False otherwise
+        """
+        if not hasattr(ctx, 'user') or not hasattr(ctx.user, 'roles'):
+            return False
+        
+        roles = ctx.user.roles
+        # Ensure roles is iterable
+        if not isinstance(roles, (list, set, tuple)):
+            return False
+        
+        return "admin" in roles
+
+    # ===== Knowledge Base Management =====
+
+    async def op_create_knowledge_base(
+        self,
+        payload: Dict[str, Any],
+        ctx
+    ) -> Dict[str, Any]:
+        """
+        Create a new knowledge base (Qdrant collection).
+        
+        Security: Admin only operation.
+        
+        Args:
+            payload: {
+                "name": "collection_name",
+                "description": "optional description"
+            }
+            ctx: Security context with user info
+        
+        Returns:
+            Status with collection_id
+        """
+        # Admin guard
+        if not self._is_admin(ctx):
+            logger.warning(
+                f"Unauthorized create_knowledge_base attempt by user {ctx.user.user_id}",
+                extra={"user_id": ctx.user.user_id}
+            )
+            raise PermissionError("Only administrators can create knowledge bases")
+        
+        name = payload.get("name")
+        description = payload.get("description")
+        
+        if not name:
+            return {
+                "collection_id": "",
+                "status": "error",
+                "message": "Collection name is required"
+            }
+        
+        logger.info(
+            f"Creating knowledge base: {name}",
+            extra={"admin_user_id": ctx.user.user_id, "name": name}
+        )
+
+        try:
+            # Create collection via qdrant module
+            result = await self.qdrant_module.create_collection(
+                collection_name=name,
+                vector_size=384,  # Default for MiniLM embeddings
+                distance="Cosine"
+            )
+
+            if result.get("success"):
+                logger.info(f"✅ Knowledge base '{name}' created successfully")
+
+                # Store metadata in Redis if description provided
+                if description:
+                    metadata_key = f"rag:kb:{name}:metadata"
+                    await self.redis_client.set(
+                        metadata_key,
+                        json.dumps({"name": name, "description": description})
+                    )
+
+                return {
+                    "collection_id": name,
+                    "status": "created",
+                    "message": f"Knowledge base '{name}' created successfully"
+                }
+            else:
+                error_msg = result.get("error", "Unknown error")
+                logger.error(f"Failed to create knowledge base: {error_msg}")
+                return {
+                    "collection_id": name,
+                    "status": "error",
+                    "message": f"Failed to create knowledge base: {error_msg}"
+                }
+
+        except Exception as e:
+            logger.error(f"Error creating knowledge base: {e}")
+            return {
+                "collection_id": name,
+                "status": "error",
+                "message": f"Error creating knowledge base: {str(e)}"
+            }
+
+    async def op_ingest_document(
+        self,
+        payload: Dict[str, Any],
+        ctx
+    ) -> Dict[str, Any]:
+        """
+        Ingest a text document into a knowledge base.
+        
+        Security: Admin only operation.
+        
+        Args:
+            payload: {
+                "collection_id": "target_collection",
+                "text": "document text",
+                "metadata": {} (optional)
+            }
+            ctx: Security context
+        
+        Returns:
+            Status with document_id and chunks_count
+        """
+        # Admin guard
+        if not self._is_admin(ctx):
+            logger.warning(
+                f"Unauthorized ingest_document attempt by user {ctx.user.user_id}",
+                extra={"user_id": ctx.user.user_id}
+            )
+            raise PermissionError("Only administrators can ingest documents")
+        
+        collection_id = payload.get("collection_id")
+        text = payload.get("text")
+        metadata = payload.get("metadata", {})
+        
+        if not collection_id or not text:
+            return {
+                "document_id": "",
+                "chunks_count": 0,
+                "status": "error",
+                "message": "collection_id and text are required"
+            }
+        
+        logger.info(
+            "Ingesting document",
+            extra={
+                "collection": collection_id,
+                "text_length": len(text),
+                "admin_user_id": ctx.user.user_id
+            }
+        )
+
+        try:
+            # Generate document ID
+            document_id = str(uuid.uuid4())
+
+            # Chunk the document
+            chunker_config = self.config.get("chunking", {})
+            chunks = DocumentChunker.chunk_text(
+                text,
+                chunk_size=chunker_config.get("chunk_size", 500),
+                overlap=chunker_config.get("overlap", 50)
+            )
+
+            if not chunks:
+                return {
+                    "document_id": document_id,
+                    "chunks_count": 0,
+                    "status": "error",
+                    "message": "No chunks generated from text"
+                }
+
+            # Prepare metadata
+            chunk_metadata = metadata or {}
+            chunk_metadata["document_id"] = document_id
+
+            # Ingest chunks via qdrant module
+            points_added = 0
+            for idx, chunk_text in enumerate(chunks):
+                chunk_meta = {**chunk_metadata, "chunk_index": idx, "total_chunks": len(chunks)}
+
+                result = await self.qdrant_module.upsert_points(
+                    collection_name=collection_id,
+                    points=[{
+                        "id": f"{document_id}_chunk_{idx}",
+                        "text": chunk_text,
+                        "metadata": chunk_meta
+                    }]
+                )
+
+                if result.get("success"):
+                    points_added += 1
+
+            self.total_documents_ingested += 1
+
+            logger.info(
+                f"✅ Document ingested: {points_added}/{len(chunks)} chunks",
+                extra={"document_id": document_id, "collection": collection_id}
+            )
+
+            return {
+                "document_id": document_id,
+                "chunks_count": points_added,
+                "status": "success",
+                "message": f"Document ingested with {points_added} chunks"
+            }
+
+        except Exception as e:
+            logger.error(f"Error ingesting document: {e}")
+            return {
+                "document_id": "",
+                "chunks_count": 0,
+                "status": "error",
+                "message": f"Error ingesting document: {str(e)}"
+            }
+
+    # ===== ACL Management (Delegated to ACLManager) =====
+
+    async def op_set_permission(
+        self,
+        payload: Dict[str, Any],
+        ctx
+    ) -> Dict[str, Any]:
+        """
+        Set access permission for an entity on a collection.
+        
+        Security: Admin only operation.
+        
+        Args:
+            payload: {
+                "entity_type": "user" or "client",
+                "entity_id": "user_id or client_id",
+                "collection_id": "target_collection",
+                "access_level": "read", "write", or "none"
+            }
+            ctx: Security context
+        
+        Returns:
+            Status dict
+        """
+        # Admin guard
+        if not self._is_admin(ctx):
+            logger.warning(
+                f"Unauthorized set_permission attempt by user {ctx.user.user_id}",
+                extra={"user_id": ctx.user.user_id}
+            )
+            raise PermissionError("Only administrators can set permissions")
+        
+        entity_type = payload.get("entity_type")
+        entity_id = payload.get("entity_id")
+        collection_id = payload.get("collection_id")
+        access_level = payload.get("access_level")
+        
+        logger.info(
+            "Setting permission",
+            extra={
+                "entity_type": entity_type,
+                "entity_id": entity_id,
+                "collection": collection_id,
+                "access": access_level,
+                "admin_user_id": ctx.user.user_id
+            }
+        )
+        
+        # Delegate to ACL manager
+        return await self.acl_manager.set_permission(
+            entity_type=entity_type,
+            entity_id=entity_id,
+            collection_id=collection_id,
+            access_level=access_level
+        )
+
+    async def op_get_permissions(
+        self,
+        payload: Dict[str, Any],
+        ctx
+    ) -> Dict[str, Any]:
+        """
+        Get permissions (optionally filtered).
+        
+        Security: Admin can see all, users can see only their own.
+        
+        Args:
+            payload: {
+                "collection_id": "optional filter",
+                "entity_type": "optional filter",
+                "entity_id": "optional filter"
+            }
+            ctx: Security context
+        
+        Returns:
+            Dict with permissions array and count
+        """
+        collection_id = payload.get("collection_id")
+        entity_type = payload.get("entity_type")
+        entity_id = payload.get("entity_id")
+        
+        # Security: Non-admins can only see their own permissions
+        if not self._is_admin(ctx):
+            # Force filter to current user
+            entity_type = "user"
+            entity_id = ctx.user.user_id
+            logger.info(
+                f"Non-admin user requesting permissions - filtered to own user",
+                extra={"user_id": ctx.user.user_id}
+            )
+        
+        # Delegate to ACL manager
+        return await self.acl_manager.get_permissions(
+            collection_id=collection_id,
+            entity_type=entity_type,
+            entity_id=entity_id
+        )
+
+    # ===== RAG Configuration Management (Delegated to ConfigManager) =====
+
+    async def op_set_rag_config(
+        self,
+        payload: Dict[str, Any],
+        ctx
+    ) -> Dict[str, Any]:
+        """
+        Set RAG configuration for an entity.
+        
+        Security: Admin only operation.
+        
+        Args:
+            payload: {
+                "entity_type": "user", "client", or "default",
+                "entity_id": "user_id or client_id (null for default)",
+                "config_json": {}
+            }
+            ctx: Security context
+        
+        Returns:
+            Status dict
+        """
+        # Admin guard
+        if not self._is_admin(ctx):
+            logger.warning(
+                f"Unauthorized set_rag_config attempt by user {ctx.user.user_id}",
+                extra={"user_id": ctx.user.user_id}
+            )
+            raise PermissionError("Only administrators can set RAG configurations")
+        
+        entity_type = payload.get("entity_type")
+        entity_id = payload.get("entity_id")
+        config_json = payload.get("config_json")
+        
+        logger.info(
+            "Setting RAG config",
+            extra={
+                "entity_type": entity_type,
+                "entity_id": entity_id,
+                "admin_user_id": ctx.user.user_id
+            }
+        )
+        
+        # Delegate to config manager
+        return await self.config_manager.set_rag_config(
+            entity_type=entity_type,
+            entity_id=entity_id,
+            config_json=config_json
+        )
+
+    async def op_get_rag_config(
+        self,
+        payload: Dict[str, Any],
+        ctx
+    ) -> Dict[str, Any]:
+        """
+        Get RAG configuration for an entity (with fallback to default).
+        
+        Security: Users can get their own config, admins can get any.
+        
+        Args:
+            payload: {
+                "entity_type": "user", "client", or "default",
+                "entity_id": "user_id or client_id"
+            }
+            ctx: Security context
+        
+        Returns:
+            Dict with config and source
+        """
+        entity_type = payload.get("entity_type", "user")
+        entity_id = payload.get("entity_id")
+        
+        # Security: Non-admins can only get their own config
+        if not self._is_admin(ctx):
+            entity_type = "user"
+            entity_id = ctx.user.user_id
+            logger.info(
+                f"Non-admin user requesting config - using own user_id",
+                extra={"user_id": ctx.user.user_id}
+            )
+        
+        # Delegate to config manager
+        return await self.config_manager.get_rag_config(
+            entity_type=entity_type,
+            entity_id=entity_id,
+            default_config=self.config.get("default_rag_config", {})
+        )
+
+    # ===== RAG Chat (The Magic Function) =====
+
+    async def op_rag_chat(
+        self,
+        payload: Dict[str, Any],
+        ctx
+    ) -> Dict[str, Any]:
+        """
+        The magic function - Execute RAG pipeline with ACL checks.
+        
+        Security: Uses ctx.user for identity, enforces ACL.
+        
+        Args:
+            payload: {
+                "query": "user question",
+                "collections": ["optional", "list"],
+                "override_config": {} (optional)
+            }
+            ctx: Security context (provides user_id and client_id)
+        
+        Returns:
+            Dict with answer, sources, config_used, permissions_checked, debug
+        """
+        query = payload.get("query")
+        collections = payload.get("collections")
+        override_config = payload.get("override_config")
+        
+        # ✅ Security: Use ctx for user identity (not from payload!)
+        user_id = ctx.user.user_id
+        client_id = getattr(ctx.user, 'client_id', None)
+        
+        logger.info(
+            "Executing RAG chat",
+            extra={"user_id": user_id, "client_id": client_id}
+        )
+
+        try:
+            # Validate query
+            max_length = self.config['security']['max_query_length']
+            if len(query) > max_length:
+                return {
+                    "answer": f"Query too long. Maximum {max_length} characters allowed.",
+                    "sources": [],
+                    "config_used": {},
+                    "permissions_checked": [],
+                    "error": "query_too_long"
+                }
+
+            # Get user's RAG config
+            config_result = await self.config_manager.get_rag_config(
+                entity_type="user",
+                entity_id=user_id,
+                default_config=self.config.get("default_rag_config", {})
+            )
+            rag_config = config_result["config"]
+
+            # Override config if provided
+            if override_config:
+                rag_config.update(override_config)
+
+            # Determine collections to query
+            if collections:
+                target_collections = collections[:self.config['security']['max_collections_per_query']]
+            else:
+                # Get all accessible collections
+                accessible = await self.acl_manager.get_accessible_collections(user_id, client_id)
+                target_collections = accessible
+
+            if not target_collections:
+                return {
+                    "answer": "You don't have access to any knowledge bases.",
+                    "sources": [],
+                    "config_used": rag_config,
+                    "permissions_checked": [],
+                    "error": "no_accessible_collections"
+                }
+
+            # Filter collections by ACL
+            allowed_collections = []
+            for coll in target_collections:
+                has_access = await self.acl_manager.check_access(user_id, client_id, coll)
+                if has_access:
+                    allowed_collections.append(coll)
+
+            if not allowed_collections:
+                return {
+                    "answer": "You don't have permission to access the requested knowledge bases.",
+                    "sources": [],
+                    "config_used": rag_config,
+                    "permissions_checked": target_collections,
+                    "error": "access_denied"
+                }
+
+            # Execute RAG pipeline
+            result = await self.rag_pipeline.chat(
+                query=query,
+                collections=allowed_collections,
+                config=rag_config,
+                return_debug=True  # Always return debug info
+            )
+
+            # Track query
+            self.total_queries += 1
+
+            # Add permissions info
+            result["permissions_checked"] = allowed_collections
+
+            logger.info(
+                "✅ RAG chat completed",
+                extra={"user_id": user_id, "collections": len(allowed_collections)}
+            )
+
+            return result
+
+        except Exception as e:
+            logger.error(f"Error in RAG chat: {e}")
+            return {
+                "answer": "I encountered an error while processing your question.",
+                "sources": [],
+                "config_used": {},
+                "permissions_checked": [],
+                "error": str(e)
+            }
+
+    # ===== Utility Operations =====
+
+    async def op_list_knowledge_bases(
+        self,
+        payload: Dict[str, Any],
+        ctx
+    ) -> Dict[str, Any]:
+        """
+        List all knowledge bases (filtered by user access).
+        
+        Security: Users see only accessible collections, admins see all.
+        
+        Args:
+            payload: {} (no parameters needed, ctx provides identity)
+            ctx: Security context
+        
+        Returns:
+            Dict with collections array and count
+        """
+        # Use ctx for user identity
+        user_id = ctx.user.user_id
+        client_id = getattr(ctx.user, 'client_id', None)
+        is_admin = self._is_admin(ctx)
+        
+        try:
+            # Get all collections from Qdrant
+            result = await self.qdrant_module.list_collections()
+
+            if not result.get("success"):
+                return {"collections": [], "count": 0, "error": result.get("error")}
+
+            all_collections = result.get("result", {}).get("collections", [])
+
+            # Admins see all, users see only accessible
+            if is_admin:
+                return {
+                    "collections": [{"name": c} for c in all_collections],
+                    "count": len(all_collections)
+                }
+            else:
+                accessible = []
+                for coll_name in all_collections:
+                    has_access = await self.acl_manager.check_access(
+                        user_id,
+                        client_id,
+                        coll_name
+                    )
+                    if has_access:
+                        accessible.append({"name": coll_name})
+
+                return {"collections": accessible, "count": len(accessible)}
+
+        except Exception as e:
+            logger.error(f"Error listing knowledge bases: {e}")
+            return {"collections": [], "count": 0, "error": str(e)}
+
+    async def op_get_stats(
+        self,
+        payload: Dict[str, Any],
+        ctx
+    ) -> Dict[str, Any]:
+        """
+        Get module statistics.
+        
+        Security: Admin only operation.
+        
+        Args:
+            payload: {}
+            ctx: Security context
+        
+        Returns:
+            Module statistics
+        """
+        # Admin guard
+        if not self._is_admin(ctx):
+            logger.warning(
+                f"Unauthorized get_stats attempt by user {ctx.user.user_id}",
+                extra={"user_id": ctx.user.user_id}
+            )
+            raise PermissionError("Only administrators can view statistics")
+        
+        try:
+            # Get collection count
+            kb_result = await self.op_list_knowledge_bases({}, ctx)
+            total_kb = kb_result.get("count", 0)
+
+            # Get permission count
+            perms_result = await self.acl_manager.get_permissions()
+            total_perms = perms_result.get("count", 0)
+
+            # Get config count
+            prefix = self.config['rag_config_storage']['redis_key_prefix']
+            config_count = 0
+            async for _ in self.redis_client.scan_iter(match=f"{prefix}:*"):
+                config_count += 1
+
+            return {
+                "module": self.manifest.name,
+                "total_knowledge_bases": total_kb,
+                "total_documents": self.total_documents_ingested,
+                "total_permissions": total_perms,
+                "total_configs": config_count,
+                "total_queries": self.total_queries,
+                "dependencies_loaded": all([
+                    self.qdrant_module is not None,
+                    self.llm_module is not None,
+                    self.redis_client is not None
+                ])
+            }
+
+        except Exception as e:
+            logger.error(f"Error getting stats: {e}")
+            return {
+                "module": self.manifest.name,
+                "total_knowledge_bases": 0,
+                "total_documents": 0,
+                "total_permissions": 0,
+                "total_configs": 0,
+                "total_queries": self.total_queries,
+                "dependencies_loaded": False,
+                "error": str(e)
+            }

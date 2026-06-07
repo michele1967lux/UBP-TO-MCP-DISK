@@ -1,0 +1,233 @@
+{
+    "name": "media_hub",
+    "version": "1.0.0",
+    "description": "Centralized multimedia orchestrator — charts, diagrams, images, composites with provider chain and policy enforcement",
+    "module_type": "service",
+    "architecture": "3-file-pattern",
+    "requires_redis": true,
+    "requires_event_bus": true,
+    "dependencies": {
+        "modules": [],
+        "optional_modules": [
+            "inference_ollama_grok",
+            "inference_vllm",
+            "requirements_collector"
+        ],
+        "redis_keys": [
+            "ubp:media:asset:*",
+            "ubp:media:cache:*",
+            "ubp:media:user:*"
+        ]
+    },
+    "operations": [
+        {
+            "name": "plan_media",
+            "description": "Create a deterministic RenderPlan from a MediaRequest",
+            "parameters": {
+                "request": {
+                    "type": "object",
+                    "required": true,
+                    "description": "MediaRequest dict"
+                },
+                "context": {
+                    "type": "object",
+                    "required": false
+                }
+            },
+            "returns": {
+                "plan": "object",
+                "validation": "object"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 500,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "render_media",
+            "description": "Execute a RenderPlan and produce MediaResult",
+            "parameters": {
+                "plan": {
+                    "type": "object",
+                    "required": false,
+                    "description": "Pre-computed RenderPlan"
+                },
+                "request": {
+                    "type": "object",
+                    "required": false,
+                    "description": "MediaRequest (will auto-plan)"
+                },
+                "context": {
+                    "type": "object",
+                    "required": false
+                }
+            },
+            "returns": {
+                "result": "object",
+                "validation": "object"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 2000,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "get_media",
+            "description": "Retrieve a previously rendered asset by ID",
+            "parameters": {
+                "asset_id": {
+                    "type": "string",
+                    "required": true
+                }
+            },
+            "returns": {
+                "result": "object",
+                "metadata": "object"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 100,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "admin",
+            "scope": "system",
+            "client_types": []
+        },
+        {
+            "name": "validate_media",
+            "description": "Validate a MediaResult against its request",
+            "parameters": {
+                "result": {
+                    "type": "object",
+                    "required": true
+                },
+                "request": {
+                    "type": "object",
+                    "required": true
+                }
+            },
+            "returns": {
+                "report": "object"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 300,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "resolve_slots",
+            "description": "Resolve MediaSlots from requirements_collector IntakeResult",
+            "parameters": {
+                "slots": {
+                    "type": "array",
+                    "required": true,
+                    "description": "List of MediaSlot dicts"
+                },
+                "context": {
+                    "type": "object",
+                    "required": false
+                }
+            },
+            "returns": {
+                "resolved": "array",
+                "results": "array"
+            },
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": false,
+                "estimated_latency_ms": 1500,
+                "requires_session": false,
+                "category": "operations"
+            },
+            "security": "authenticated",
+            "scope": "free",
+            "client_types": []
+        },
+        {
+            "name": "health_check",
+            "description": "Module health check",
+            "parameters": {},
+            "returns": {
+                "status": "string",
+                "providers": "object",
+                "capabilities": "object"
+            },
+            "mcp_hints": {
+                "read_only": true,
+                "idempotent": true,
+                "estimated_latency_ms": 75,
+                "requires_session": false,
+                "category": "admin"
+            },
+            "security": "none",
+            "scope": "system",
+            "client_types": []
+        }
+    ],
+    "event_publications": [
+        "media.render.started",
+        "media.render.completed",
+        "media.render.failed",
+        "media.cache.hit",
+        "media.slot.resolved"
+    ],
+    "event_subscriptions": [
+        "intake.session.completed"
+    ],
+    "tools": [
+        {
+            "name": "render_media",
+            "operation": "render_media",
+            "tool_type": "tool",
+            "description": "Render a chart, diagram, or image asset. Accepts a media request with intent (chart/diagram/image), optional chart_data/diagram_spec/image_spec. Returns rendered asset with preview markdown.",
+            "providers": [
+                "local"
+            ],
+            "input_schema": {
+                "request": {
+                    "type": "object",
+                    "required": true
+                }
+            },
+            "output_schema": {
+                "result": {
+                    "type": "object"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "cache_hit": {
+                    "type": "boolean"
+                }
+            },
+            "timeout": 30.0,
+            "mcp_hints": {
+                "read_only": false,
+                "idempotent": true,
+                "estimated_latency_ms": 2000,
+                "requires_session": false,
+                "category": "operations"
+            }
+        }
+    ]
+}

@@ -1,0 +1,47 @@
+{
+  "redis_prefix": "ubp:media",
+  "storage": {
+    "base_dir": "data/media_assets",
+    "max_asset_size_mb": 10,
+    "cleanup_after_days": 30
+  },
+  "cache": {
+    "enabled": true,
+    "ttl_seconds": 86400,
+    "max_entries": 1000
+  },
+  "chart": {
+    "engine": "matplotlib",
+    "default_dpi": 150,
+    "default_format": "png",
+    "default_style": "seaborn-v0_8-whitegrid",
+    "max_data_rows": 10000,
+    "colors": ["#2563eb", "#dc2626", "#16a34a", "#ca8a04", "#9333ea", "#0891b2"]
+  },
+  "diagram": {
+    "engine": "mermaid",
+    "default_format": "svg",
+    "mermaid_cli_path": null,
+    "fallback_to_text": true
+  },
+  "image_gen": {
+    "enabled": false,
+    "default_provider": null,
+    "max_resolution": "1024x1024",
+    "default_style": "professional"
+  },
+  "policy_defaults": {
+    "allow_external": false,
+    "allow_generative": false,
+    "requires_citations": false,
+    "copyright_mode": "generated_only",
+    "watermark": false
+  },
+  "provider_chain": {
+    "chart": ["local"],
+    "diagram": ["local"],
+    "image": ["local", "cluster", "external"],
+    "composite": ["local"]
+  },
+  "language": "it"
+}

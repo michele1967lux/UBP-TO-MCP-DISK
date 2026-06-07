@@ -1,0 +1,144 @@
+{
+  "_comment": "Citations Verifier — configuration with ENV override support",
+  "_version": "1.0.0",
+
+  "verification": {
+    "_comment": "How to verify claims",
+    "enabled": "${UBP_CITATIONS__ENABLED:-true}",
+    "default_depth": "${UBP_CITATIONS__DEFAULT_DEPTH:-standard}",
+    "max_claims_per_document": "${UBP_CITATIONS__MAX_CLAIMS:-50}",
+    "max_parallel_verifications": "${UBP_CITATIONS__MAX_PARALLEL:-5}",
+    "claim_min_length": "${UBP_CITATIONS__CLAIM_MIN_LEN:-15}",
+    "confidence_threshold_supported": "${UBP_CITATIONS__CONF_SUPPORTED:-0.75}",
+    "confidence_threshold_partial": "${UBP_CITATIONS__CONF_PARTIAL:-0.45}",
+    "web_search_per_claim": "${UBP_CITATIONS__SEARCHES_PER_CLAIM:-2}",
+    "timeout_per_claim_s": "${UBP_CITATIONS__CLAIM_TIMEOUT:-30}"
+  },
+
+  "trust_lists": {
+    "_comment": "Trust list management and persistence",
+    "storage_backend": "${UBP_CITATIONS__STORAGE:-redis}",
+    "redis_prefix": "${UBP_CITATIONS__REDIS_PREFIX:-ubp:trust_list}",
+    "json_backup_path": "${UBP_CITATIONS__JSON_BACKUP:-data/trust_lists}",
+    "auto_backup_on_change": "${UBP_CITATIONS__AUTO_BACKUP:-true}",
+    "default_trust_score": "${UBP_CITATIONS__DEFAULT_SCORE:-0.7}",
+    "score_decay_days": "${UBP_CITATIONS__SCORE_DECAY_DAYS:-90}",
+    "max_domains_per_list": "${UBP_CITATIONS__MAX_DOMAINS:-200}"
+  },
+
+  "discovery": {
+    "_comment": "Auto-discovery of trusted sources",
+    "enabled": "${UBP_CITATIONS__DISCOVERY_ENABLED:-true}",
+    "searches_per_domain": "${UBP_CITATIONS__DISC_SEARCHES:-5}",
+    "min_appearances": "${UBP_CITATIONS__DISC_MIN_APPEARANCES:-3}",
+    "authority_signals": "${UBP_CITATIONS__DISC_SIGNALS:-tld,https,domain_age,academic_refs}",
+    "auto_add_threshold": "${UBP_CITATIONS__DISC_AUTO_ADD:-0.85}",
+    "cooldown_hours": "${UBP_CITATIONS__DISC_COOLDOWN:-24}"
+  },
+
+  "search_integration": {
+    "_comment": "How trust lists integrate with web_search module",
+    "filter_mode": "${UBP_CITATIONS__FILTER_MODE:-prioritize}",
+    "max_sites_in_filter": "${UBP_CITATIONS__MAX_FILTER_SITES:-10}",
+    "fallback_to_generic": "${UBP_CITATIONS__FALLBACK_GENERIC:-true}",
+    "exclusive_domains": "${UBP_CITATIONS__EXCLUSIVE_DOMAINS:-}"
+  },
+
+  "predefined_lists": {
+    "_comment": "Seed trust lists — loaded on first init if Redis is empty",
+    "medical": [
+      {"url": "pubmed.ncbi.nlm.nih.gov", "score": 0.98, "notes": "PubMed - NIH biomedical literature"},
+      {"url": "who.int", "score": 0.97, "notes": "World Health Organization"},
+      {"url": "iss.it", "score": 0.96, "notes": "Istituto Superiore di Sanità"},
+      {"url": "cochranelibrary.com", "score": 0.96, "notes": "Cochrane systematic reviews"},
+      {"url": "uptodate.com", "score": 0.95, "notes": "Clinical decision support"},
+      {"url": "ema.europa.eu", "score": 0.95, "notes": "European Medicines Agency"},
+      {"url": "aifa.gov.it", "score": 0.94, "notes": "Agenzia Italiana del Farmaco"},
+      {"url": "nejm.org", "score": 0.95, "notes": "New England Journal of Medicine"},
+      {"url": "thelancet.com", "score": 0.94, "notes": "The Lancet"},
+      {"url": "mayoclinic.org", "score": 0.93, "notes": "Mayo Clinic"},
+      {"url": "medscape.com", "score": 0.88, "notes": "Medscape medical reference"},
+      {"url": "webmd.com", "score": 0.75, "notes": "WebMD - consumer health (lower authority)"}
+    ],
+    "legal_it": [
+      {"url": "normattiva.it", "score": 0.99, "notes": "Portale della legge vigente"},
+      {"url": "gazzettaufficiale.it", "score": 0.99, "notes": "Gazzetta Ufficiale"},
+      {"url": "cortecostituzionale.it", "score": 0.98, "notes": "Corte Costituzionale"},
+      {"url": "giustizia.it", "score": 0.97, "notes": "Ministero della Giustizia"},
+      {"url": "camera.it", "score": 0.97, "notes": "Camera dei Deputati"},
+      {"url": "senato.it", "score": 0.97, "notes": "Senato della Repubblica"},
+      {"url": "dejure.it", "score": 0.92, "notes": "Banca dati giuridica"},
+      {"url": "altalex.com", "score": 0.88, "notes": "Portale giuridico"},
+      {"url": "brocardi.it", "score": 0.87, "notes": "Codice civile e penale commentato"}
+    ],
+    "legal_eu": [
+      {"url": "eur-lex.europa.eu", "score": 0.99, "notes": "EU law database"},
+      {"url": "curia.europa.eu", "score": 0.98, "notes": "Court of Justice EU"},
+      {"url": "echr.coe.int", "score": 0.98, "notes": "European Court of Human Rights"},
+      {"url": "ec.europa.eu", "score": 0.96, "notes": "European Commission"},
+      {"url": "europarl.europa.eu", "score": 0.96, "notes": "European Parliament"}
+    ],
+    "technical": [
+      {"url": "arxiv.org", "score": 0.95, "notes": "Preprint server (not peer-reviewed but high quality)"},
+      {"url": "ieee.org", "score": 0.96, "notes": "IEEE publications"},
+      {"url": "acm.org", "score": 0.95, "notes": "ACM Digital Library"},
+      {"url": "docs.python.org", "score": 0.99, "notes": "Python official docs"},
+      {"url": "developer.mozilla.org", "score": 0.97, "notes": "MDN Web Docs"},
+      {"url": "learn.microsoft.com", "score": 0.95, "notes": "Microsoft Learn"},
+      {"url": "cloud.google.com", "score": 0.94, "notes": "Google Cloud docs"},
+      {"url": "docs.aws.amazon.com", "score": 0.94, "notes": "AWS documentation"},
+      {"url": "kubernetes.io", "score": 0.95, "notes": "Kubernetes official docs"},
+      {"url": "github.com", "score": 0.85, "notes": "GitHub repos (variable quality)"},
+      {"url": "stackoverflow.com", "score": 0.80, "notes": "StackOverflow (community, verify answers)"},
+      {"url": "huggingface.co", "score": 0.92, "notes": "HuggingFace ML docs and models"}
+    ],
+    "financial": [
+      {"url": "consob.it", "score": 0.98, "notes": "CONSOB - authority mercati finanziari"},
+      {"url": "bancaditalia.it", "score": 0.98, "notes": "Banca d'Italia"},
+      {"url": "ecb.europa.eu", "score": 0.98, "notes": "European Central Bank"},
+      {"url": "sec.gov", "score": 0.97, "notes": "SEC US"},
+      {"url": "imf.org", "score": 0.96, "notes": "International Monetary Fund"},
+      {"url": "worldbank.org", "score": 0.96, "notes": "World Bank"},
+      {"url": "agenziaentrate.gov.it", "score": 0.97, "notes": "Agenzia delle Entrate"},
+      {"url": "mef.gov.it", "score": 0.96, "notes": "Ministero Economia e Finanze"},
+      {"url": "borsaitaliana.it", "score": 0.92, "notes": "Borsa Italiana"},
+      {"url": "ilsole24ore.com", "score": 0.85, "notes": "Il Sole 24 Ore (financial news)"}
+    ],
+    "academic": [
+      {"url": "scholar.google.com", "score": 0.95, "notes": "Google Scholar"},
+      {"url": "semanticscholar.org", "score": 0.94, "notes": "Semantic Scholar AI"},
+      {"url": "jstor.org", "score": 0.96, "notes": "JSTOR digital library"},
+      {"url": "nature.com", "score": 0.97, "notes": "Nature journal"},
+      {"url": "science.org", "score": 0.97, "notes": "Science journal"},
+      {"url": "springer.com", "score": 0.93, "notes": "Springer publishing"},
+      {"url": "wiley.com", "score": 0.93, "notes": "Wiley publishing"},
+      {"url": "researchgate.net", "score": 0.85, "notes": "ResearchGate (preprints, variable)"},
+      {"url": "scopus.com", "score": 0.95, "notes": "Scopus citation database"}
+    ],
+    "government_it": [
+      {"url": "governo.it", "score": 0.98, "notes": "Presidenza del Consiglio"},
+      {"url": "istat.it", "score": 0.98, "notes": "ISTAT statistiche"},
+      {"url": "inps.it", "score": 0.97, "notes": "INPS previdenza"},
+      {"url": "inail.it", "score": 0.97, "notes": "INAIL sicurezza lavoro"},
+      {"url": "salute.gov.it", "score": 0.97, "notes": "Ministero della Salute"},
+      {"url": "lavoro.gov.it", "score": 0.96, "notes": "Ministero del Lavoro"},
+      {"url": "mise.gov.it", "score": 0.96, "notes": "Min. Imprese e Made in Italy"},
+      {"url": "pec.governo.it", "score": 0.95, "notes": "PEC istituzionale"}
+    ],
+    "news_it": [
+      {"url": "ansa.it", "score": 0.90, "notes": "ANSA agenzia stampa"},
+      {"url": "adnkronos.com", "score": 0.88, "notes": "Adnkronos"},
+      {"url": "repubblica.it", "score": 0.82, "notes": "La Repubblica"},
+      {"url": "corriere.it", "score": 0.82, "notes": "Corriere della Sera"},
+      {"url": "ilsole24ore.com", "score": 0.85, "notes": "Il Sole 24 Ore"}
+    ],
+    "news_intl": [
+      {"url": "reuters.com", "score": 0.93, "notes": "Reuters"},
+      {"url": "apnews.com", "score": 0.93, "notes": "Associated Press"},
+      {"url": "bbc.com", "score": 0.90, "notes": "BBC"},
+      {"url": "nytimes.com", "score": 0.87, "notes": "New York Times"},
+      {"url": "theguardian.com", "score": 0.86, "notes": "The Guardian"},
+      {"url": "economist.com", "score": 0.90, "notes": "The Economist"}
+    ]
+  }
+}

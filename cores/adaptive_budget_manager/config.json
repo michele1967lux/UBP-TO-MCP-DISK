@@ -1,0 +1,45 @@
+{
+  "_migration_note": "v3.7.0: Using canonical UBP_ADAPTIVE_BUDGET__* environment variable names with ENV interpolation",
+  "_fix_v412": "FIX-BUDGET-005: Lowered thresholds for high-dim embeddings (BGE-m3 1024d produces ~0.5-0.7 scores, not 0.8+)",
+  "enabled": "${UBP_ADAPTIVE_BUDGET__ENABLED:-true}",
+  "base_min_score": "${UBP_ADAPTIVE_BUDGET__BASE_MIN_SCORE:-0.15}",
+  "max_threshold": "${UBP_ADAPTIVE_BUDGET__MAX_THRESHOLD:-0.50}",
+  "quality_floor": "${UBP_ADAPTIVE_BUDGET__QUALITY_FLOOR:-0.35}",
+  "min_memory_fraction": "${UBP_ADAPTIVE_BUDGET__MIN_MEMORY_FRACTION:-0.2}",
+  "max_memory_fraction": "${UBP_ADAPTIVE_BUDGET__MAX_MEMORY_FRACTION:-0.4}",
+  "turn_penalty_factor": "${UBP_ADAPTIVE_BUDGET__TURN_PENALTY_FACTOR:-0.05}",
+  "compression_enabled": "${UBP_ADAPTIVE_BUDGET__COMPRESSION_ENABLED:-true}",
+  "compression_threshold": "${UBP_ADAPTIVE_BUDGET__COMPRESSION_THRESHOLD:-0.5}",
+  "min_compression_tokens": "${UBP_ADAPTIVE_BUDGET__MIN_COMPRESSION_TOKENS:-800}",
+  "min_recent_turns": "${UBP_ADAPTIVE_BUDGET__MIN_RECENT_TURNS:-4}",
+  "split_enabled": "${UBP_ADAPTIVE_BUDGET__SPLIT_ENABLED:-true}",
+  "split_tightness_threshold": "${UBP_ADAPTIVE_BUDGET__SPLIT_TIGHTNESS_THRESHOLD:-0.70}",
+  "min_response_tokens_override": "${UBP_ADAPTIVE_BUDGET__MIN_RESPONSE_TOKENS:-0}",
+  "support_llm_provider": "${UBP_ADAPTIVE_BUDGET__SUPPORT_LLM_PROVIDER:-vllm}",
+  "tightness_thresholds": {
+    "_note": "v3.7.0: Configurable tightness thresholds for context strategy selection",
+    "emergency": "${UBP_ADAPTIVE_BUDGET__TIGHTNESS_EMERGENCY:-0.95}",
+    "critical": "${UBP_ADAPTIVE_BUDGET__TIGHTNESS_CRITICAL:-0.85}",
+    "tight": "${UBP_ADAPTIVE_BUDGET__TIGHTNESS_TIGHT:-0.7}",
+    "comfortable": "${UBP_ADAPTIVE_BUDGET__TIGHTNESS_COMFORTABLE:-0.5}"
+  },
+  "context_governor": {
+    "_note": "v3.7.0: Context Governor feature flags (preview)",
+    "enabled": "${UBP_CONTEXT_GOVERNOR__ENABLED:-false}",
+    "workers_enabled": "${UBP_CONTEXT_GOVERNOR__WORKERS_ENABLED:-false}",
+    "max_workers": "${UBP_CONTEXT_GOVERNOR__MAX_WORKERS:-10}",
+    "pre_summarize": "${UBP_CONTEXT_GOVERNOR__PRE_SUMMARIZE:-false}",
+    "dynamic_prompt": "${UBP_CONTEXT_GOVERNOR__DYNAMIC_PROMPT:-false}"
+  },
+  "overflow_strategy": {
+    "_note": "v6.3.0: Overflow strategy thresholds. Active when total_chunk_tokens > 0 is passed to get_execution_plan().",
+    "enabled": "${UBP_BUDGET__OVERFLOW_ENABLED:-true}",
+    "selective_threshold": "${UBP_BUDGET__OVERFLOW_SELECTIVE:-1.3}",
+    "compressed_threshold": "${UBP_BUDGET__OVERFLOW_COMPRESSED:-2.0}",
+    "split_threshold": "${UBP_BUDGET__OVERFLOW_SPLIT:-2.0}",
+    "summarize_threshold": "${UBP_BUDGET__OVERFLOW_SUMMARIZE:-4.0}",
+    "prefer_split_for_tasks": "${UBP_BUDGET__OVERFLOW_PREFER_SPLIT_TASKS:-reasoning,report,analysis}",
+    "fallback_without_splitter": "${UBP_BUDGET__OVERFLOW_FALLBACK:-compressed}",
+    "include_chunks_in_tightness": "${UBP_BUDGET__INCLUDE_CHUNKS_IN_TIGHTNESS:-true}"
+  }
+}

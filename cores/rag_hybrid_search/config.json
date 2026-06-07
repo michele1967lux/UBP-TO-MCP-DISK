@@ -1,0 +1,10 @@
+{
+  "enabled": true,
+  "fusion_method": "rrf",
+  "dense_weight": 0.7,
+  "rrf_k": 60,
+  "bm25_k1": 1.5,
+  "bm25_b": 0.75,
+  "auto_sync_with_qdrant": true,
+  "max_indexed_docs_per_collection": 100000
+}

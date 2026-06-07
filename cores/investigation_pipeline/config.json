@@ -1,0 +1,199 @@
+{
+  "investigation": {
+    "enabled": "${UBP_INVESTIGATION__ENABLED:-true}",
+    "default_num_questions": "${UBP_INVESTIGATION__DEFAULT_NUM_QUESTIONS:-5}",
+    "min_questions": "${UBP_INVESTIGATION__MIN_QUESTIONS:-3}",
+    "max_questions": "${UBP_INVESTIGATION__MAX_QUESTIONS:-10}",
+    "default_strategy": "${UBP_INVESTIGATION__DEFAULT_STRATEGY:-adaptive}",
+    "temperature": "${UBP_INVESTIGATION__TEMPERATURE:-0.7}",
+    "max_tokens": "${UBP_INVESTIGATION__MAX_TOKENS:-500}",
+    "timeout_seconds": "${UBP_INVESTIGATION__TIMEOUT_SECONDS:-30}",
+    "retry_enabled": "${UBP_INVESTIGATION__RETRY_ENABLED:-true}",
+    "max_retries": "${UBP_INVESTIGATION__MAX_RETRIES:-2}",
+    "retry_delay_seconds": "${UBP_INVESTIGATION__RETRY_DELAY_SECONDS:-1}"
+  },
+
+  "strategies": {
+    "decomposition": {
+      "enabled": "${UBP_INVESTIGATION__DECOMPOSITION_ENABLED:-true}",
+      "weight": "${UBP_INVESTIGATION__DECOMPOSITION_WEIGHT:-1.0}",
+      "description": "Breaks query into aspects: definition, components, purpose, implementation, examples"
+    },
+    "chain_of_thought": {
+      "enabled": "${UBP_INVESTIGATION__COT_ENABLED:-true}",
+      "weight": "${UBP_INVESTIGATION__COT_WEIGHT:-0.9}",
+      "description": "Logical reasoning steps for complex queries"
+    },
+    "semantic_expansion": {
+      "enabled": "${UBP_INVESTIGATION__SEMANTIC_ENABLED:-true}",
+      "weight": "${UBP_INVESTIGATION__SEMANTIC_WEIGHT:-0.8}",
+      "description": "Generates synonyms, related concepts, technical alternatives"
+    },
+    "cross_reference": {
+      "enabled": "${UBP_INVESTIGATION__CROSSREF_ENABLED:-true}",
+      "weight": "${UBP_INVESTIGATION__CROSSREF_WEIGHT:-0.7}",
+      "description": "Prerequisites, dependencies, related features"
+    },
+    "adaptive": {
+      "enabled": "${UBP_INVESTIGATION__ADAPTIVE_ENABLED:-true}",
+      "weight": "${UBP_INVESTIGATION__ADAPTIVE_WEIGHT:-1.2}",
+      "description": "Auto-selects strategy based on query classification"
+    }
+  },
+
+  "query_classification": {
+    "enabled": "${UBP_INVESTIGATION__CLASSIFICATION_ENABLED:-true}",
+    "categories": {
+      "ai_ml": {
+        "weight": "${UBP_INVESTIGATION__CAT_AI_ML_WEIGHT:-1.3}",
+        "keywords": ["machine learning", "deep learning", "neural network", "llm", "rag", "embedding", "transformer", "training", "inference", "model"]
+      },
+      "troubleshooting": {
+        "weight": "${UBP_INVESTIGATION__CAT_TROUBLESHOOT_WEIGHT:-1.4}",
+        "keywords": ["error", "problem", "issue", "fail", "debug", "fix", "crash", "exception", "timeout", "not working"]
+      },
+      "api_integration": {
+        "weight": "${UBP_INVESTIGATION__CAT_API_WEIGHT:-1.2}",
+        "keywords": ["rest api", "graphql", "webhook", "oauth", "jwt", "endpoint", "request", "response", "http"]
+      },
+      "system_admin": {
+        "weight": "${UBP_INVESTIGATION__CAT_SYSADMIN_WEIGHT:-1.1}",
+        "keywords": ["docker", "kubernetes", "deploy", "configure", "install", "server", "database", "cloud"]
+      },
+      "technical": {
+        "weight": "${UBP_INVESTIGATION__CAT_TECHNICAL_WEIGHT:-1.0}",
+        "keywords": ["architecture", "design pattern", "implementation", "performance", "optimization"]
+      },
+      "conceptual": {
+        "weight": "${UBP_INVESTIGATION__CAT_CONCEPTUAL_WEIGHT:-0.9}",
+        "keywords": ["what is", "how does", "explain", "concept", "theory", "definition", "meaning"]
+      }
+    },
+    "default_category": "${UBP_INVESTIGATION__DEFAULT_CATEGORY:-technical}"
+  },
+
+  "quality_assurance": {
+    "enabled": "${UBP_INVESTIGATION__QA_ENABLED:-true}",
+    "auto_retry_on_low_quality": "${UBP_INVESTIGATION__QA_AUTO_RETRY:-true}",
+    "max_qa_retries": "${UBP_INVESTIGATION__QA_MAX_RETRIES:-2}",
+    "min_acceptable_score": "${UBP_INVESTIGATION__QA_MIN_SCORE:-4.0}",
+    "scoring": {
+      "weights": {
+        "relevance": "${UBP_INVESTIGATION__QA_WEIGHT_RELEVANCE:-0.40}",
+        "specificity": "${UBP_INVESTIGATION__QA_WEIGHT_SPECIFICITY:-0.25}",
+        "length": "${UBP_INVESTIGATION__QA_WEIGHT_LENGTH:-0.20}",
+        "structure": "${UBP_INVESTIGATION__QA_WEIGHT_STRUCTURE:-0.15}"
+      },
+      "thresholds": {
+        "excellent": "${UBP_INVESTIGATION__QA_THRESHOLD_EXCELLENT:-8.0}",
+        "good": "${UBP_INVESTIGATION__QA_THRESHOLD_GOOD:-6.0}",
+        "acceptable": "${UBP_INVESTIGATION__QA_THRESHOLD_ACCEPTABLE:-4.0}"
+      },
+      "length_optimal_min": "${UBP_INVESTIGATION__QA_LENGTH_MIN:-50}",
+      "length_optimal_max": "${UBP_INVESTIGATION__QA_LENGTH_MAX:-150}",
+      "min_words": "${UBP_INVESTIGATION__QA_MIN_WORDS:-4}",
+      "min_length": "${UBP_INVESTIGATION__QA_MIN_CHAR_LENGTH:-10}",
+      "max_length": "${UBP_INVESTIGATION__QA_MAX_CHAR_LENGTH:-500}"
+    },
+    "validation": {
+      "require_question_mark": "${UBP_INVESTIGATION__QA_REQUIRE_QMARK:-true}",
+      "require_capitalization": "${UBP_INVESTIGATION__QA_REQUIRE_CAPS:-false}",
+      "min_keyword_overlap": "${UBP_INVESTIGATION__QA_MIN_OVERLAP:-0.1}",
+      "check_off_topic": "${UBP_INVESTIGATION__QA_CHECK_OFFTOPIC:-true}"
+    }
+  },
+
+  "deduplication": {
+    "enabled": "${UBP_INVESTIGATION__DEDUP_ENABLED:-true}",
+    "similarity_threshold": "${UBP_INVESTIGATION__DEDUP_THRESHOLD:-0.85}",
+    "method": "${UBP_INVESTIGATION__DEDUP_METHOD:-fuzzy}",
+    "min_unique_ratio": "${UBP_INVESTIGATION__DEDUP_MIN_UNIQUE:-0.70}"
+  },
+
+  "worker_pool": {
+    "enabled": "${UBP_INVESTIGATION__WORKERS_ENABLED:-true}",
+    "pool_size": "${UBP_INVESTIGATION__WORKER_POOL_SIZE:-4}",
+    "max_pool_size": "${UBP_INVESTIGATION__WORKER_MAX_POOL_SIZE:-8}",
+    "task_timeout_seconds": "${UBP_INVESTIGATION__WORKER_TASK_TIMEOUT:-30}",
+    "queue_max_size": "${UBP_INVESTIGATION__WORKER_QUEUE_SIZE:-100}",
+    "retry_on_failure": "${UBP_INVESTIGATION__WORKER_RETRY:-true}",
+    "max_task_retries": "${UBP_INVESTIGATION__WORKER_MAX_RETRIES:-2}",
+    "backoff_multiplier": "${UBP_INVESTIGATION__WORKER_BACKOFF:-1.5}",
+    "enable_priorities": "${UBP_INVESTIGATION__WORKER_PRIORITIES:-true}"
+  },
+
+  "session_management": {
+    "enabled": "${UBP_INVESTIGATION__SESSION_ENABLED:-true}",
+    "ttl_seconds": "${UBP_INVESTIGATION__SESSION_TTL:-3600}",
+    "max_history_size": "${UBP_INVESTIGATION__SESSION_MAX_HISTORY:-50}",
+    "persist_results": "${UBP_INVESTIGATION__SESSION_PERSIST:-true}",
+    "auto_cleanup": "${UBP_INVESTIGATION__SESSION_AUTO_CLEANUP:-true}"
+  },
+
+  "cache": {
+    "enabled": "${UBP_INVESTIGATION__CACHE_ENABLED:-true}",
+    "ttl_seconds": "${UBP_INVESTIGATION__CACHE_TTL_SECONDS:-3600}",
+    "redis_prefix": "ubp:investigation:cache",
+    "cache_questions": "${UBP_INVESTIGATION__CACHE_QUESTIONS:-true}",
+    "cache_qa_results": "${UBP_INVESTIGATION__CACHE_QA:-true}",
+    "cache_sessions": "${UBP_INVESTIGATION__CACHE_SESSIONS:-true}",
+    "invalidate_on_config_change": "${UBP_INVESTIGATION__CACHE_INVALIDATE_ON_CHANGE:-true}"
+  },
+
+  "delegation": {
+    "llm_module": "${UBP_INVESTIGATION__LLM_MODULE:-inference_ollama_grok}",
+    "llm_operation": "generate",
+    "provider": "${UBP_INVESTIGATION__LLM_PROVIDER:-grok}",
+    "timeout_seconds": "${UBP_INVESTIGATION__DELEGATION_TIMEOUT:-30}",
+    "max_retries": "${UBP_INVESTIGATION__DELEGATION_MAX_RETRIES:-2}",
+    "fallback_chain": ["decomposition", "chain_of_thought", "simple"],
+    "fallback_enabled": "${UBP_INVESTIGATION__FALLBACK_ENABLED:-true}"
+  },
+
+  "pipeline": {
+    "default_steps": [
+      {"step": "classify_query", "enabled": "${UBP_INVESTIGATION__STEP_CLASSIFY:-true}"},
+      {"step": "select_strategy", "enabled": "${UBP_INVESTIGATION__STEP_SELECT:-true}"},
+      {"step": "generate_questions", "enabled": "${UBP_INVESTIGATION__STEP_GENERATE:-true}"},
+      {"step": "quality_assurance", "enabled": "${UBP_INVESTIGATION__STEP_QA:-true}"},
+      {"step": "cross_reference", "enabled": "${UBP_INVESTIGATION__STEP_CROSSREF:-false}"},
+      {"step": "deduplicate", "enabled": "${UBP_INVESTIGATION__STEP_DEDUP:-true}"},
+      {"step": "rank_questions", "enabled": "${UBP_INVESTIGATION__STEP_RANK:-true}"},
+      {"step": "format_output", "enabled": "${UBP_INVESTIGATION__STEP_FORMAT:-true}"}
+    ],
+    "timeout_seconds": "${UBP_INVESTIGATION__PIPELINE_TIMEOUT_SECONDS:-60}",
+    "fail_fast": "${UBP_INVESTIGATION__FAIL_FAST:-false}"
+  },
+
+  "metrics": {
+    "enabled": "${UBP_INVESTIGATION__METRICS_ENABLED:-true}",
+    "collect_timings": "${UBP_INVESTIGATION__METRICS_TIMINGS:-true}",
+    "collect_strategy_distribution": "${UBP_INVESTIGATION__METRICS_STRATEGY_DIST:-true}",
+    "collect_qa_scores": "${UBP_INVESTIGATION__METRICS_QA_SCORES:-true}",
+    "export_prometheus": "${UBP_INVESTIGATION__METRICS_PROMETHEUS:-false}",
+    "retention_hours": "${UBP_INVESTIGATION__METRICS_RETENTION:-24}"
+  },
+
+  "debug": {
+    "enabled": "${UBP_INVESTIGATION__DEBUG_ENABLED:-false}",
+    "log_prompts": "${UBP_INVESTIGATION__DEBUG_LOG_PROMPTS:-false}",
+    "log_responses": "${UBP_INVESTIGATION__DEBUG_LOG_RESPONSES:-false}",
+    "log_qa_scores": "${UBP_INVESTIGATION__DEBUG_LOG_QA:-true}",
+    "log_fallback_triggers": "${UBP_INVESTIGATION__DEBUG_LOG_FALLBACKS:-true}",
+    "log_strategy_selection": "${UBP_INVESTIGATION__DEBUG_LOG_STRATEGY:-true}",
+    "log_worker_stats": "${UBP_INVESTIGATION__DEBUG_LOG_WORKERS:-true}",
+    "trace_execution": "${UBP_INVESTIGATION__DEBUG_TRACE:-false}"
+  },
+
+  "logging": {
+    "log_requests": "${UBP_INVESTIGATION__LOG_REQUESTS:-true}",
+    "log_timings": "${UBP_INVESTIGATION__LOG_TIMINGS:-true}",
+    "log_level": "${UBP_INVESTIGATION__LOG_LEVEL:-INFO}"
+  },
+
+  "language": {
+    "default": "${UBP_INVESTIGATION__LANGUAGE:-auto}",
+    "supported": ["en", "it"],
+    "auto_detect": "${UBP_INVESTIGATION__LANG_AUTODETECT:-true}"
+  }
+}

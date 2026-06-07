@@ -1,0 +1,689 @@
+{
+  "name": "retrieval_strategy",
+  "version": "1.0.0",
+  "description": "Advanced Retrieval Strategies Engine with Hybrid, Hierarchical, Multi-Index, and Router-based retrieval",
+  "architecture": "3-file-pattern",
+  "category": "core",
+  "production_ready": true,
+  "features": [
+    "Hybrid retrieval (BM25 + Vector)",
+    "Reciprocal Rank Fusion (RRF)",
+    "Weighted score fusion",
+    "Hierarchical multi-level retrieval",
+    "Parent-child chunk linking",
+    "Context window expansion",
+    "Multi-index parallel search",
+    "LLM-based query routing",
+    "Query classification",
+    "Skip retrieval detection",
+    "Score normalization",
+    "Result deduplication",
+    "Query caching",
+    "Comprehensive metrics"
+  ],
+  "strategies": [
+    {
+      "name": "hybrid",
+      "description": "Combines BM25 keyword search with vector semantic search",
+      "use_cases": [
+        "General factual queries",
+        "Most common queries"
+      ]
+    },
+    {
+      "name": "hierarchical",
+      "description": "Multi-level retrieval across document/section/paragraph",
+      "use_cases": [
+        "Complex analytical queries",
+        "Context-heavy questions"
+      ]
+    },
+    {
+      "name": "multi_index",
+      "description": "Search across multiple specialized indexes",
+      "use_cases": [
+        "Comparative queries",
+        "Cross-domain questions"
+      ]
+    },
+    {
+      "name": "router",
+      "description": "LLM-based dynamic strategy selection",
+      "use_cases": [
+        "Unknown query types",
+        "Production systems"
+      ]
+    },
+    {
+      "name": "bm25",
+      "description": "Pure keyword-based BM25 retrieval",
+      "use_cases": [
+        "Technical terms",
+        "Exact matches"
+      ]
+    }
+  ],
+  "fusion_methods": [
+    {
+      "method": "rrf",
+      "description": "Reciprocal Rank Fusion - position-based"
+    },
+    {
+      "method": "weighted",
+      "description": "Weighted score combination"
+    },
+    {
+      "method": "max",
+      "description": "Take maximum score per document"
+    },
+    {
+      "method": "sum",
+      "description": "Sum of normalized scores"
+    },
+    {
+      "method": "dbsf",
+      "description": "Distribution-Based Score Fusion"
+    }
+  ],
+  "hierarchy_levels": [
+    {
+      "level": "document",
+      "default_chunk_size": 4000,
+      "description": "Full document context"
+    },
+    {
+      "level": "section",
+      "default_chunk_size": 1000,
+      "description": "Section-level chunks"
+    },
+    {
+      "level": "paragraph",
+      "default_chunk_size": 300,
+      "description": "Fine-grained paragraphs"
+    }
+  ],
+  "operations": [
+    {
+      "name": "initialize",
+      "description": "Initialize retrieval strategy components",
+      "parameters": {},
+      "returns": {
+        "status": "string",
+        "strategies": "array",
+        "indexes": "object"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "none",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "retrieve",
+      "description": "Execute document retrieval with specified strategy (hybrid, hierarchical, multi_index, router, bm25).",
+      "parameters": {
+        "query": {
+          "type": "string",
+          "required": true
+        },
+        "strategy": {
+          "type": "string",
+          "required": false,
+          "default": "hybrid",
+          "options": [
+            "hybrid",
+            "hierarchical",
+            "multi_index",
+            "router",
+            "bm25"
+          ]
+        },
+        "top_k": {
+          "type": "integer",
+          "required": false,
+          "default": 10
+        },
+        "collections": {
+          "type": "array",
+          "required": false,
+          "description": "Qdrant collection names to search (ACL-validated by caller). When provided, bypasses BM25/vector strategy and queries rag_qdrant directly."
+        },
+        "filters": {
+          "type": "object",
+          "required": false
+        },
+        "language": {
+          "type": "string",
+          "required": false,
+          "default": "en"
+        }
+      },
+      "returns": {
+        "query": "string",
+        "result_count": "integer",
+        "strategy_used": "string",
+        "fusion_method": "string",
+        "retrieval_time_ms": "number",
+        "results": "array",
+        "collections": "array"
+      },
+      "admin_only": false,
+      "max_observation_chars": 16000,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 2000,
+        "requires_session": false,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "hybrid_retrieve",
+      "description": "Force hybrid (BM25 + Vector) retrieval",
+      "parameters": {
+        "query": {
+          "type": "string",
+          "required": true
+        },
+        "top_k": {
+          "type": "integer",
+          "required": false,
+          "default": 10
+        },
+        "fusion_method": {
+          "type": "string",
+          "required": false,
+          "default": "rrf"
+        },
+        "alpha": {
+          "type": "number",
+          "required": false,
+          "default": 0.5
+        },
+        "filters": {
+          "type": "object",
+          "required": false
+        }
+      },
+      "returns": {
+        "query": "string",
+        "results": "array"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 1500,
+        "requires_session": false,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "hierarchical_retrieve",
+      "description": "Force hierarchical multi-level retrieval",
+      "parameters": {
+        "query": {
+          "type": "string",
+          "required": true
+        },
+        "top_k": {
+          "type": "integer",
+          "required": false,
+          "default": 10
+        },
+        "levels": {
+          "type": "array",
+          "required": false,
+          "description": "Levels to search: document, section, paragraph"
+        },
+        "expand_context": {
+          "type": "boolean",
+          "required": false,
+          "default": true
+        }
+      },
+      "returns": {
+        "query": "string",
+        "results": "array",
+        "levels_searched": "array"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 2500,
+        "requires_session": false,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "multi_index_retrieve",
+      "description": "Search across multiple indexes",
+      "parameters": {
+        "query": {
+          "type": "string",
+          "required": true
+        },
+        "top_k": {
+          "type": "integer",
+          "required": false,
+          "default": 10
+        },
+        "index_names": {
+          "type": "array",
+          "required": false,
+          "description": "Indexes to search"
+        }
+      },
+      "returns": {
+        "query": "string",
+        "results": "array",
+        "indexes_searched": "array"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 2500,
+        "requires_session": false,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "router_retrieve",
+      "description": "LLM-routed retrieval with automatic strategy selection",
+      "parameters": {
+        "query": {
+          "type": "string",
+          "required": true
+        },
+        "top_k": {
+          "type": "integer",
+          "required": false,
+          "default": 10
+        },
+        "language": {
+          "type": "string",
+          "required": false,
+          "default": "en"
+        }
+      },
+      "returns": {
+        "query": "string",
+        "results": "array",
+        "routing_decision": "object"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 3000,
+        "requires_session": false,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "bm25_search",
+      "description": "BM25-only keyword search",
+      "parameters": {
+        "query": {
+          "type": "string",
+          "required": true
+        },
+        "top_k": {
+          "type": "integer",
+          "required": false,
+          "default": 10
+        },
+        "index_name": {
+          "type": "string",
+          "required": false,
+          "default": "default"
+        }
+      },
+      "returns": {
+        "query": "string",
+        "results": "array"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 500,
+        "requires_session": false,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "add_documents",
+      "description": "Add documents to BM25 index",
+      "parameters": {
+        "documents": {
+          "type": "array",
+          "required": true,
+          "description": "List of {id, content, metadata}"
+        },
+        "index_name": {
+          "type": "string",
+          "required": false,
+          "default": "default"
+        }
+      },
+      "returns": {
+        "index": "string",
+        "documents_added": "integer",
+        "index_stats": "object"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 1000,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "admin",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "add_hierarchical_documents",
+      "description": "Add documents to hierarchical index with automatic chunking",
+      "parameters": {
+        "documents": {
+          "type": "array",
+          "required": true,
+          "description": "List of {id, content, metadata}"
+        }
+      },
+      "returns": {
+        "documents_processed": "integer",
+        "chunks_created": "object"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 2000,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "admin",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "create_index",
+      "description": "Create a new named index",
+      "parameters": {
+        "index_name": {
+          "type": "string",
+          "required": true
+        },
+        "index_type": {
+          "type": "string",
+          "required": false,
+          "default": "bm25",
+          "options": [
+            "bm25",
+            "hierarchical"
+          ]
+        }
+      },
+      "returns": {
+        "created": "boolean",
+        "index_name": "string"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 500,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "admin",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "get_indexes",
+      "description": "List available indexes",
+      "parameters": {},
+      "returns": {
+        "indexes": "object",
+        "stats": "object"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "classify_query",
+      "description": "Classify query without executing retrieval",
+      "parameters": {
+        "query": {
+          "type": "string",
+          "required": true
+        },
+        "language": {
+          "type": "string",
+          "required": false,
+          "default": "en"
+        }
+      },
+      "returns": {
+        "query_class": "string",
+        "selected_strategy": "string",
+        "confidence": "number"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 200,
+        "requires_session": false,
+        "category": "routing"
+      },
+      "security": "authenticated",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "get_stats",
+      "description": "Get metrics and statistics",
+      "parameters": {},
+      "returns": {
+        "metrics": "object",
+        "cache": "object"
+      },
+      "admin_only": true,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "admin",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "clear_index",
+      "description": "Clear an index",
+      "parameters": {
+        "index_name": {
+          "type": "string",
+          "required": false,
+          "default": "default"
+        }
+      },
+      "returns": {
+        "cleared": "boolean"
+      },
+      "admin_only": true,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 500,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "admin",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "reload_config",
+      "description": "Hot-reload configuration",
+      "parameters": {},
+      "returns": {
+        "status": "string"
+      },
+      "admin_only": true,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 500,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "admin",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "health_check",
+      "description": "Check component health",
+      "parameters": {},
+      "returns": {
+        "module": "string",
+        "status": "string"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 50,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "none",
+      "scope": "system",
+      "client_types": []
+    },
+    {
+      "name": "get_available_strategies",
+      "description": "Get list of available strategies",
+      "parameters": {},
+      "returns": {
+        "strategies": "array",
+        "fusion_methods": "array"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": true,
+        "idempotent": true,
+        "estimated_latency_ms": 50,
+        "requires_session": false,
+        "category": "operations"
+      },
+      "security": "authenticated",
+      "scope": "free",
+      "client_types": []
+    },
+    {
+      "name": "shutdown",
+      "description": "Graceful shutdown",
+      "parameters": {},
+      "returns": {
+        "status": "string"
+      },
+      "admin_only": false,
+      "mcp_hints": {
+        "read_only": false,
+        "idempotent": false,
+        "estimated_latency_ms": 100,
+        "requires_session": false,
+        "category": "admin"
+      },
+      "security": "none",
+      "scope": "system",
+      "client_types": []
+    }
+  ],
+  "events": {
+    "publishes": [
+      {
+        "event": "retrieval.initialized",
+        "description": "Module initialized"
+      },
+      {
+        "event": "retrieval.query.completed",
+        "description": "Retrieval completed"
+      },
+      {
+        "event": "retrieval.cache.hit",
+        "description": "Cache hit"
+      },
+      {
+        "event": "retrieval.shutdown",
+        "description": "Module shutdown"
+      }
+    ]
+  },
+  "dependencies": {
+    "optional": [
+      {
+        "module": "embedding_service",
+        "purpose": "Query embedding for vector search"
+      },
+      {
+        "module": "qdrant_store",
+        "purpose": "Vector store backend (legacy hybrid strategy path)"
+      },
+      {
+        "module": "rag_qdrant",
+        "purpose": "Direct Qdrant collection querying for pipeline mode (ACL-validated collections)"
+      },
+      {
+        "module": "inference_ollama_grok",
+        "purpose": "LLM for router decisions"
+      }
+    ]
+  },
+  "module_type": "rag"
+}

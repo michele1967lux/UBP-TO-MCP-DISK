@@ -1,0 +1,118 @@
+# =============================================================================
+# Layer C - Fuzzy Whitelist Configuration
+# =============================================================================
+# Controlled fuzzy matching for specific short keywords.
+#
+# Rules:
+# - NEVER fuzzy on: legal terms, codes, numbers, versions
+# - Only short keywords (≤8 chars typically)
+# - Max edit distance based on word length
+# - Whitelist-based, not global
+#
+# ROADMAP v1.7.x - FEAT-ROUTER-002
+# =============================================================================
+
+version: "1.0"
+
+# Settings for fuzzy matching
+settings:
+  # Enable/disable fuzzy matching globally
+  enabled: true
+  
+  # Maximum edit distance rules by word length
+  # word_length: max_edit_distance
+  max_distance_by_length:
+    3: 1    # 3-char words: max 1 edit
+    4: 1    # 4-char words: max 1 edit  
+    5: 1    # 5-char words: max 1 edit
+    6: 2    # 6-char words: max 2 edits
+    7: 2    # 7-char words: max 2 edits
+    8: 2    # 8+ char words: max 2 edits
+  
+  # Default max distance for words not in length rules
+  default_max_distance: 1
+  
+  # Minimum confidence to accept a fuzzy match
+  min_confidence: 0.7
+
+# =============================================================================
+# WHITELIST: Words that CAN be fuzzy-matched
+# =============================================================================
+# Only these words will be considered for fuzzy matching.
+# Format: canonical_form -> [common_typos/variants]
+
+whitelist:
+  # Italian greetings (common typos)
+  greetings_it:
+    ciao: ["ciaooo", "ciaoo", "ciaio", "caio"]
+    grazie: ["grazieee", "grazzie", "graziee", "graze"]
+    salve: ["salvee", "salv"]
+    buongiorno: ["buongirono", "buongioro"]
+    buonasera: ["buonasrea", "bonanasera"]
+  
+  # English greetings
+  greetings_en:
+    hello: ["helo", "helloo", "hllo"]
+    thanks: ["thanx", "thnks", "thans"]
+    please: ["plese", "pls", "plz"]
+  
+  # Common action words (frequently mistyped)
+  actions_it:
+    cerca: ["cerka", "ceca", "cercaa"]
+    trova: ["tova", "trovaa"]
+    mostra: ["mostar", "mosta"]
+  
+  actions_en:
+    search: ["serch", "seach", "searh"]
+    find: ["fnd", "fiind"]
+    show: ["shwo", "shw"]
+  
+  # Question words
+  questions_it:
+    cosa: ["kosa", "cossa"]
+    come: ["como", "comm"]
+    quando: ["qando", "quado"]
+    dove: ["dov", "dovee"]
+    perché: ["perche", "xche", "xke"]
+  
+  questions_en:
+    what: ["wat", "wht"]
+    where: ["were", "wher"]
+    when: ["wen", "whn"]
+    how: ["hw", "hwo"]
+
+# =============================================================================
+# BLACKLIST: Words that MUST NEVER be fuzzy-matched
+# =============================================================================
+# These categories/patterns are excluded from fuzzy matching.
+
+blacklist:
+  categories:
+    - "legal_terms"
+    - "regulatory"
+    - "codes"
+    - "versions"
+    - "identifiers"
+  
+  # Explicit patterns to never fuzzy-match
+  patterns:
+    - "^[A-Z]{2,}$"              # Acronyms (GDPR, API, etc.)
+    - "^v?\\d+\\.\\d+"           # Versions (v1.2, 2.0.1)
+    - "^[A-Z0-9]{5,}$"           # Codes (ABC123, ID codes)
+    - "^\\d+$"                   # Pure numbers
+  
+  # Explicit words to never fuzzy (even if short)
+  words:
+    - "gdpr"
+    - "api"
+    - "sql"
+    - "jwt"
+    - "oauth"
+    - "ssl"
+    - "tls"
+    - "http"
+    - "https"
+    - "json"
+    - "xml"
+    - "csv"
+    - "pdf"
